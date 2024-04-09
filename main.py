@@ -27,7 +27,7 @@ if __name__=="__main__":
     parser.add_argument('-R', '--result',action='store', help='base file name for results (without .csv)')
     parser.add_argument('-F', '--folder',action='store', help='folder to store the results')
     parser.add_argument('-P', '--pcap' ,action='store', help='path to pcap file')
-    parser.add_argument('-U', '--UDP' ,default=True,action='store_true', help='capture udp')
+    parser.add_argument('-U', '--UDP' ,default=False,action='store_true', help='capture udp')
     args = parser.parse_args()
     print(args)
     if args.result:

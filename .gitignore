@@ -3,6 +3,7 @@ Res
 .idea
 __pycache__
 *.txt
+!requirements.txt
 *.test.py
 .vscode
 .ipynb_checkpoints/

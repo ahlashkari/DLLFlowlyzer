@@ -1,6 +1,5 @@
 import pyshark
 from tqdm import tqdm
-import time
 from featureExt import eth_pkt_feature_extractor, llc_ext, dtp_ext,stp_ext,arp_ext,loop_ext,isl_ext,cdp_ext,dhcp_ext
 
 
