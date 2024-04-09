@@ -31,7 +31,6 @@ Options:
 
 ## flow features
 | eth_one_addr            | eth_one_addr_vendor      | eth_one_addr_device       | eth_one_addr_vendor_name | eth_one_addr_vendor_name_known | eth_one_ig                     | eth_one_lg               |   |
-|-------------------------|--------------------------|---------------------------|--------------------------|--------------------------------|--------------------------------|--------------------------|---|
 | eth_one_oui             | eth_two_addr             | eth_two_addr_vendor       | eth_two_addr_device      | eth_two_addr_vendor_name       | eth_two_addr_vendor_name_known | eth_two_ig               |   |
 | eth_two_lg              | eth_two_oui              | eth_type                  | connection               | time_delta                     | sum_frame_len                  | sum_frame_len_div_time   |   |
 | num_frame_marked        | num_frame_ignored        | num_llc_frame             | num_dtp_frame            | num_stp_frame                  | num_arp_frame                  | num_dhcp_frame           |   |
