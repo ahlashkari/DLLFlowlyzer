@@ -30,6 +30,8 @@ Options:
 **note**: in saved csv file you can see the keywords eth, protocols, all, final_flow which are refering to the csv file material.
 
 ## flow features
+|             |       |        |  |  |                      |                |
+|:-----------------------:|:------------------------:|:-------------------------:|:------------------------:|:------------------------------:|:------------------------------:|:------------------------:|:---:|
 | eth_one_addr            | eth_one_addr_vendor      | eth_one_addr_device       | eth_one_addr_vendor_name | eth_one_addr_vendor_name_known | eth_one_ig                     | eth_one_lg               |   |
 | eth_one_oui             | eth_two_addr             | eth_two_addr_vendor       | eth_two_addr_device      | eth_two_addr_vendor_name       | eth_two_addr_vendor_name_known | eth_two_ig               |   |
 | eth_two_lg              | eth_two_oui              | eth_type                  | connection               | time_delta                     | sum_frame_len                  | sum_frame_len_div_time   |   |
