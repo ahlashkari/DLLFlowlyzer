@@ -22,10 +22,10 @@ Options:
 **note**: the default value for options is in parentheses.
 
 ### structure:
- - main.py : main program - calling functions from other files and get arguments from user.
- - pcapExt.py: extract raw data from packets in pcap file, returning multiple dictionaries to main.py to save them in csv files calling function from csvSave.py (eth, protocols, all). protocols includes: llc, stp, arp, loop, dtp, isl, cdp and dhcp.
- - featureExt.py: extract features from eth, protocols, frame and finaly flows. for protocols there are sepreted functions so you can find all features that the program can extract.
- - csvSave.py: this file save given data in csv file (files). the given data are frame, eth, protocols and flow features.
+ - **main.py** : main program - calling functions from other files and get arguments from user.
+ - **pcapExt.py**: extract raw data from packets in pcap file, returning multiple dictionaries to main.py to save them in csv files calling function from csvSave.py (eth, protocols, all). protocols includes: llc, stp, arp, loop, dtp, isl, cdp and dhcp.
+ - **featureExt.py**: extract features from eth, protocols, frame and finaly flows. for protocols there are sepreted functions so you can find all features that the program can extract.
+ - **csvSave.py**: this file save given data in csv file (files). the given data are frame, eth, protocols and flow features.
 
 **note**: in saved csv file you can see the keywords eth, protocols, all, final_flow which are refering to the csv file material.
 
