@@ -24,6 +24,9 @@ def pcap_reader(PCAP_PATH, CAP_UDP):
 
         pkts_info_eth.append(eth_pkt_feature_extractor(pkt.ETH._all_fields,index, proto))
 
+        if not CAP_UDP and proto == 'UDP':
+            continue
+
         extra_dict = {'pkt_num':index ,'frame_num':pkt.frame_info.number,
                                         'frame_len':pkt.frame_info.len, 'frame_cap_len':pkt.frame_info.cap_len,
                                         'frame_marked':pkt.frame_info.marked, 'frame_ignored':pkt.frame_info.ignored,
