@@ -13,11 +13,11 @@ Options:
  -  -U / --UDP : extract features from udp in addition to TCP packets (false)
  - -P / --pcap : path to pcap file (./test.pcap)
  - -R / --result : results base csv file name (Final)
- - -F / --folder : results folder name (Res)
+ - -S / --save : save results folder name (Res)
  
  example:
 ```shell
- python main.py -UP ./test.pcap -F myFeatures -R testing 
+ python main.py -UP ./test.pcap -S myFeatures -R testing 
  ```
 **note**: the default value for options is in parentheses.
 

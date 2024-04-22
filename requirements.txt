@@ -1,15 +1,5 @@
-appdirs==1.4.4
-lxml==5.2.1
 numpy==1.26.4
-packaging==24.0
 pandas==2.2.1
-pip==23.3.1
 pyshark==0.6
-python-dateutil==2.9.0.post0
-pytz==2024.1
-setuptools==68.2.2
-six==1.16.0
-termcolor==2.4.0
+PyYAML==6.0.1
 tqdm==4.66.2
-tzdata==2024.1
-wheel==0.41.2
