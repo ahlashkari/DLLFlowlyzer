@@ -1,7 +1,7 @@
 import pyshark
 from tqdm import tqdm
-from ethFeatureExt import eth_pkt_feature_extractor
-from extraFeatureExt import llc_ext, dtp_ext,stp_ext,arp_ext,loop_ext,isl_ext,cdp_ext,dhcp_ext
+from featureExt.ethFeatureExt import eth_pkt_feature_extractor
+from featureExt.extraFeatureExt import llc_ext, dtp_ext,stp_ext,arp_ext,loop_ext,isl_ext,cdp_ext,dhcp_ext
 
 
 def pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTERA, FEATURES):

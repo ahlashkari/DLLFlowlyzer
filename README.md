@@ -10,10 +10,13 @@ pip install -r requirements.txt
 ```
 
 Options:
- -  -U / --UDP : extract features from udp in addition to TCP packets (false)
- - -P / --pcap : path to pcap file (./test.pcap)
- - -R / --result : results base csv file name (Final)
- - -S / --save : save results folder name (Res)
+ - -U / --UDP : extract features from udp in addition to TCP packets. (false)
+ - -P / --pcap : path to pcap file. (./test.pcap)
+ - -R / --result : results base csv file name. (Final)
+ - -S / --save : save results folder name. (Res)
+ - -J / --justTCP : just extract TCP packets Data Link features. (false)
+ - -E / --extra : extract all extra features from pcap include llc,stp,arp,loop,dtp,isl,cdp,dhcp. (false)
+ - -F / --features : which extra features you need to extract. use this keyword to specify them. for instance: <-F latc> to capture llc, arp, loop, cdp. the keys are l(llc), s(stp), a(arp), t(loop), d(dtp), i(isl), c(cdp), h(dhcp). (lsatdich)
  
  example:
 ```shell
@@ -23,10 +26,13 @@ Options:
 
 ### structure:
  - **main.py** : main program - calling functions from other files and get arguments from user.
- - **pcapExt.py**: extract raw data from packets in pcap file, returning multiple dictionaries to main.py to save them in csv files calling function from csvSave.py (eth, protocols, all). protocols includes: llc, stp, arp, loop, dtp, isl, cdp and dhcp.
- - **featureExt.py**: extract features from eth, protocols, frame and finaly flows. for protocols there are sepreted functions so you can find all features that the program can extract.
- - **csvSave.py**: this file save given data in csv file (files). the given data are frame, eth, protocols and flow features.
-
+ - **IO**: input and output functions - read PCAP and save CSV.
+   - **csvSave.py**: this file save given data in csv file (files). the given data are frame, eth, protocols and flow features.
+   - **pcapExt.py**: extract raw data from packets in pcap file, returning multiple dictionaries to main.py to save them in csv files calling function from csvSave.py (eth, protocols, all). protocols includes: llc, stp, arp, loop, dtp, isl, cdp and dhcp.
+ - **featureExt**: extracting features functions - eth and flow feature extractor.
+   - **flowFeatureExt.py**: extract features from flows. include raw features and statistical features. 
+   - **ethFeatureExt**: extract basic features of eth.(raw)
+   - **extraFeatureExt**: extract data link layer protocols and formats if the Extra argument activated.
 **note**: in saved csv file you can see the keywords eth, protocols, all, final_flow which are refering to the csv file material.
 
 ## flow features
