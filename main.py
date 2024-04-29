@@ -35,7 +35,6 @@ if __name__=="__main__":
                                                                  '** l(llc), s(stp), a(arp), t(loop), d(dtp), i(isl), c(cdp), h(dhcp) **  \n'
                                                                  '<for instance: -F latc > ## to capture llc, arp, loop, cdp ##')
     args = parser.parse_args()
-    print(args)
 
     with open(r'setting.yaml') as file:
         setting = yaml.safe_load(file)
@@ -68,5 +67,8 @@ if __name__=="__main__":
         FEATURES = [char for char in args.features]
     else:
         FEATURES = setting[1]['Capture']['features']
+
+    print(f'SETTINGS: \nPCAP_PATH:{PCAP_PATH}\nFINAL_FILE_PATH:{FINAL_FILE_PATH}\nFINAL_FILE_NAME:{FINAL_FILE_NAME}\
+          \nCAP_UDP:{CAP_UDP}\nJUSTTCP:{JUSTTCP}\nEXTRA:{EXTRA}\nFEATURES:{FEATURES}')
         
     extract_save()
