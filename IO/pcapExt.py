@@ -18,6 +18,7 @@ def pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTERA, FEATURES):
     pkts_info_isl = list()
     pkts_info_cdp = list()
     pkts_info_dhcp = list()
+    pkts_info_flow = list()
 
 
     for index, pkt in tqdm(enumerate(pcap)):
@@ -37,6 +38,35 @@ def pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTERA, FEATURES):
                                         'frame_len':pkt.frame_info.len, 'frame_cap_len':pkt.frame_info.cap_len,
                                         'frame_marked':pkt.frame_info.marked, 'frame_ignored':pkt.frame_info.ignored,
                                         'time_epoch':pkt.frame_info.time_epoch, 'time_utc':pkt.frame_info.time_utc, 'time_relative':pkt.frame_info.time_relative}
+
+        if proto == 'UDP' or proto == 'TCP':
+            try:
+                flow_pred_dict = {'pkt_num':index ,'src_ip': pkt.ip._all_fields['ip.src'], 'dst_ip': pkt.ip._all_fields['ip.dst']}
+            except:
+                flow_pred_dict = {'pkt_num':index ,'src_ip': pkt.ipv6._all_fields['ipv6.src'], 'dst_ip': pkt.ipv6._all_fields['ipv6.dst']}
+
+
+            try:
+                flow_pred_dict['src_port'] = pkt.tcp._all_fields['tcp.srcport']
+                flow_pred_dict['dst_port'] = pkt.tcp._all_fields['tcp.dstport']
+                flow_pred_dict['tcp_syn'] = pkt.tcp._all_fields['tcp.flags_tree']['tcp.flags.syn']
+                flow_pred_dict['tcp_ack'] = pkt.tcp._all_fields['tcp.flags_tree']['tcp.flags.ack']
+                flow_pred_dict['tcp_fin'] = pkt.tcp._all_fields['tcp.flags_tree']['tcp.flags.fin']
+                flow_pred_dict['tcp_res'] = pkt.tcp._all_fields['tcp.flags_tree']['tcp.flags.res']
+
+                flow_pred_dict['tcp_syn_ack'] = 1 if int(flow_pred_dict['tcp_syn'])==1 and int(flow_pred_dict['tcp_ack'])==1 else 0
+                flow_pred_dict['tcp_fin_ack'] = 1 if int(flow_pred_dict['tcp_fin']) == 1 and int(flow_pred_dict['tcp_ack']) == 1 else 0
+            except:
+                pass
+
+
+            try:
+                flow_pred_dict['src_port'] = pkt.udp._all_fields['udp.srcport']
+                flow_pred_dict['dst_port'] = pkt.udp._all_fields['udp.dstport']
+            except:
+                pass
+
+            pkts_info_flow.append(flow_pred_dict)
 
         if EXTERA:
             extra_dict['has_llc'] = 0
@@ -80,4 +110,4 @@ def pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTERA, FEATURES):
                     extra_dict['has_isl'] = 0
 
         pkts_info_extra.append(extra_dict)
-    return pkts_info_eth, pkts_info_extra,pkts_info_llc ,pkts_info_stp,pkts_info_arp,pkts_info_loop,pkts_info_dtp,pkts_info_isl,pkts_info_cdp,pkts_info_dhcp
+    return pkts_info_eth, pkts_info_extra,pkts_info_llc ,pkts_info_stp,pkts_info_arp,pkts_info_loop,pkts_info_dtp,pkts_info_isl,pkts_info_cdp,pkts_info_dhcp,pkts_info_flow

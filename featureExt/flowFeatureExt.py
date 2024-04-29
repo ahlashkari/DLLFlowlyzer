@@ -1,94 +1,77 @@
-import pandas as pd
 import numpy as np
 from numpy.linalg import norm
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
-def flow_pred(file, EXTRA, FEATURES):
-    df = pd.read_csv(file)
-    aaa = df.groupby(['dist_addr', 'src_addr'])
-    bbb = [aaa.get_group(x) for x in aaa.groups]
-    del (aaa)
-    dfs = []
-    checked = []
-    for i in range(len(bbb)):
-        for j in range(i, len(bbb)):
-            if i != j:
-                cond = {bbb[i].src_addr.unique()[0], bbb[i].dist_addr.unique()[0]} == {bbb[j].src_addr.unique()[0],
-                                                                                   bbb[j].dist_addr.unique()[0]}
-                if cond:
-                    dfs.append(pd.concat([bbb[i], bbb[j]], axis=0).sort_values('pkt_num'))
-                    checked += [i]
-                    checked += [j]
-        if i not in checked:
-            dfs.append(bbb[i])
-    del (checked)
-    del (bbb)
-
-    csv_dict = []
-    for grp in dfs:
-        grouped_df = grp.copy()
-        csv_dict.append(flow_feature_ext(grouped_df, EXTRA, FEATURES))
-
-    return csv_dict
-
 def flow_feature_ext(data, EXTRA, FEATURES):
     res = dict()
 
-    try: res['eth_one_addr'] = data.iloc[0]['dist_addr'] 
-    except: res['eth_one_addr']= np.nan
+    try: res['dst_mac_addr'] = data.iloc[0]['dist_addr'] 
+    except: res['dst_mac_addr']= np.nan
 
-    try: res['eth_one_addr_vendor'] = data.iloc[0]['dist_addr_vendor'] 
-    except: res['eth_one_addr_vendor']= np.nan
+    try: res['dst_mac_addr_vendor'] = data.iloc[0]['dist_addr_vendor'] 
+    except: res['dst_mac_addr_vendor']= np.nan
 
-    try: res['eth_one_addr_device'] = data.iloc[0]['dist_addr_device'] 
-    except: res['eth_one_addr_device']= np.nan
+    try: res['dst_mac_addr_device'] = data.iloc[0]['dist_addr_device'] 
+    except: res['dst_mac_addr_device']= np.nan
 
-    try: res['eth_one_addr_vendor_name'] = data.iloc[0]['dist_addr_vendor_name'] 
-    except: res['eth_one_addr_vendor_name']= 'UNKNOWN'
+    try: res['dst_mac_addr_vendor_name'] = data.iloc[0]['dist_addr_vendor_name'] 
+    except: res['dst_mac_addr_vendor_name']= 'UNKNOWN'
 
-    try: res['eth_one_addr_vendor_name_known'] = data.iloc[0]['dist_addr_vendor_name_known'] 
-    except: res['eth_one_addr_vendor_name_known']= np.nan
+    try: res['dst_mac_addr_vendor_name_known'] = data.iloc[0]['dist_addr_vendor_name_known'] 
+    except: res['dst_mac_addr_vendor_name_known']= np.nan
 
-    try: res['eth_one_ig'] = data.iloc[0]['dist_ig'] 
-    except: res['eth_one_ig']= np.nan
+    try: res['dst_mac_ig'] = data.iloc[0]['dist_ig'] 
+    except: res['dst_mac_ig']= np.nan
 
-    try: res['eth_one_lg'] = data.iloc[0]['dist_lg'] 
-    except: res['eth_one_lg']= np.nan
+    try: res['dst_mac_lg'] = data.iloc[0]['dist_lg'] 
+    except: res['dst_mac_lg']= np.nan
 
-    try: res['eth_one_oui'] = data.iloc[0]['dist_oui'] 
-    except: res['eth_one_oui']= np.nan
+    try: res['dst_mac_oui'] = data.iloc[0]['dist_oui'] 
+    except: res['dst_mac_oui']= np.nan
 
-    try: res['eth_two_addr'] = data.iloc[0]['src_addr'] 
-    except: res['eth_two_addr']= np.nan
+    try: res['src_mac_addr'] = data.iloc[0]['src_addr'] 
+    except: res['src_mac_addr']= np.nan
 
-    try: res['eth_two_addr_vendor'] = data.iloc[0]['src_addr_vendor'] 
-    except: res['eth_two_addr_vendor']= np.nan
+    try: res['src_mac_addr_vendor'] = data.iloc[0]['src_addr_vendor'] 
+    except: res['src_mac_addr_vendor']= np.nan
 
-    try: res['eth_two_addr_device'] = data.iloc[0]['src_addr_device'] 
-    except: res['eth_two_addr_device']= np.nan
+    try: res['src_mac_addr_device'] = data.iloc[0]['src_addr_device'] 
+    except: res['src_mac_addr_device']= np.nan
 
-    try: res['eth_two_addr_vendor_name'] = data.iloc[0]['src_addr_vendor_name'] 
-    except: res['eth_two_addr_vendor_name']= 'UNKNOWN'
+    try: res['src_mac_addr_vendor_name'] = data.iloc[0]['src_addr_vendor_name'] 
+    except: res['src_mac_addr_vendor_name']= 'UNKNOWN'
 
-    try: res['eth_two_addr_vendor_name_known'] = data.iloc[0]['src_addr_vendor_name_known'] 
-    except: res['eth_two_addr_vendor_name_known']= np.nan
+    try: res['src_mac_addr_vendor_name_known'] = data.iloc[0]['src_addr_vendor_name_known'] 
+    except: res['src_mac_addr_vendor_name_known']= np.nan
 
-    try: res['eth_two_ig'] = data.iloc[0]['src_ig'] 
-    except: res['eth_two_ig']= np.nan
+    try: res['src_mac_ig'] = data.iloc[0]['src_ig'] 
+    except: res['src_mac_ig']= np.nan
 
-    try: res['eth_two_lg'] = data.iloc[0]['src_lg'] 
-    except: res['eth_two_lg']= np.nan
+    try: res['src_mac_lg'] = data.iloc[0]['src_lg'] 
+    except: res['src_mac_lg']= np.nan
 
-    try: res['eth_two_oui'] = data.iloc[0]['src_oui'] 
-    except: res['eth_two_oui']= np.nan
+    try: res['src_mac_oui'] = data.iloc[0]['src_oui'] 
+    except: res['src_mac_oui']= np.nan
 
     try: res['eth_type'] = data.iloc[0]['eth_type'] 
     except: res['eth_type']= np.nan
 
     try: res['connection'] = data.iloc[0]['connection'] 
     except: res['connection']= np.nan
+
+    try: res['dst_ip_addr'] = data.iloc[0]['dst_ip'] 
+    except: res['dst_ip_addr']= np.nan
+
+    try: res['src_ip_addr'] = data.iloc[0]['src_ip'] 
+    except: res['src_ip_addr']= np.nan
+
+    try: res['dst_port'] = data.iloc[0]['dst_port'] 
+    except: res['dst_port']= np.nan
+
+    try: res['src_port'] = data.iloc[0]['src_port'] 
+    except: res['src_port']= np.nan
 
     try: res['time_delta'] = int(data.iloc[len(data) - 1]['time_relative']) - int(data.iloc[0]['time_relative'])
     except: res['time_delta'] = np.nan
@@ -105,47 +88,47 @@ def flow_feature_ext(data, EXTRA, FEATURES):
     try: res['num_frame_ignored'] = len(data['frame_ignored'].loc[data['frame_ignored']==1])
     except: res['num_frame_ignored'] = np.nan
 
-    try: res['sum_frames_mac1_mac2'] = data['frame_len'].loc[data['src_addr'] == res['eth_one_addr']].sum(skipna=True)
-    except: res['sum_frames_mac1_mac2'] = np.nan
+    try: res['sum_frames_dst_src'] = data['frame_len'].loc[data['src_addr'] == res['dst_mac_addr']].sum(skipna=True)
+    except: res['sum_frames_dst_src'] = np.nan
 
-    try: res['mean_frames_mac1_mac2'] = data['frame_len'].loc[data['src_addr'] == res['eth_one_addr']].mean(skipna=True)
-    except: res['mean_frames_mac1_mac2'] =np.nan
+    try: res['mean_frames_dst_src'] = data['frame_len'].loc[data['src_addr'] == res['dst_mac_addr']].mean(skipna=True)
+    except: res['mean_frames_dst_src'] =np.nan
 
-    try: res['max_frames_mac1_mac2'] = data['frame_len'].loc[data['src_addr'] == res['eth_one_addr']].max()
-    except: res['max_frames_mac1_mac2'] = np.nan
+    try: res['max_frames_dst_src'] = data['frame_len'].loc[data['src_addr'] == res['dst_mac_addr']].max()
+    except: res['max_frames_dst_src'] = np.nan
 
-    try: res['min_frames_mac1_mac2'] = data['frame_len'].loc[data['src_addr'] == res['eth_one_addr']].min()
-    except: res['min_frames_mac1_mac2'] = np.nan
+    try: res['min_frames_dst_src'] = data['frame_len'].loc[data['src_addr'] == res['dst_mac_addr']].min()
+    except: res['min_frames_dst_src'] = np.nan
 
-    try: res['median_frames_mac1_mac2'] = data['frame_len'].loc[data['src_addr'] == res['eth_one_addr']].median(skipna=True)
-    except: res['median_frames_mac1_mac2'] = np.nan
+    try: res['median_frames_dst_src'] = data['frame_len'].loc[data['src_addr'] == res['dst_mac_addr']].median(skipna=True)
+    except: res['median_frames_dst_src'] = np.nan
 
-    try: res['std_frames_mac1_mac2'] = data['frame_len'].loc[data['src_addr'] == res['eth_one_addr']].std(skipna=True)
-    except: res['std_frames_mac1_mac2'] = np.nan
+    try: res['std_frames_dst_src'] = data['frame_len'].loc[data['src_addr'] == res['dst_mac_addr']].std(skipna=True)
+    except: res['std_frames_dst_src'] = np.nan
 
-    try: res['norm_frames_mac1_mac2'] = norm(data['frame_len'].loc[data['src_addr'] == res['eth_one_addr']].values)
-    except: res['norm_frames_mac1_mac2'] =np.nan
+    try: res['norm_frames_dst_src'] = norm(data['frame_len'].loc[data['src_addr'] == res['dst_mac_addr']].values)
+    except: res['norm_frames_dst_src'] =np.nan
 
-    try: res['sum_frames_mac2_mac1'] = data['frame_len'].loc[data['src_addr'] == res['eth_two_addr']].sum(skipna=True)
-    except: res['sum_frames_mac2_mac1'] = np.nan
+    try: res['sum_frames_src_dst'] = data['frame_len'].loc[data['src_addr'] == res['src_mac_addr']].sum(skipna=True)
+    except: res['sum_frames_src_dst'] = np.nan
 
-    try: res['mean_frames_mac2_mac1'] = data['frame_len'].loc[data['src_addr'] == res['eth_two_addr']].mean(skipna=True)
-    except: res['mean_frames_mac2_mac1'] =np.nan
+    try: res['mean_frames_src_dst'] = data['frame_len'].loc[data['src_addr'] == res['src_mac_addr']].mean(skipna=True)
+    except: res['mean_frames_src_dst'] =np.nan
 
-    try: res['max_frames_mac2_mac1'] = data['frame_len'].loc[data['src_addr'] == res['eth_two_addr']].max()
-    except: res['max_frames_mac2_mac1'] = np.nan
+    try: res['max_frames_src_dst'] = data['frame_len'].loc[data['src_addr'] == res['src_mac_addr']].max()
+    except: res['max_frames_src_dst'] = np.nan
 
-    try: res['min_frames_mac2_mac1'] = data['frame_len'].loc[data['src_addr'] == res['eth_two_addr']].min()
-    except: res['min_frames_mac2_mac1'] = np.nan
+    try: res['min_frames_src_dst'] = data['frame_len'].loc[data['src_addr'] == res['src_mac_addr']].min()
+    except: res['min_frames_src_dst'] = np.nan
 
-    try: res['median_frames_mac2_mac1'] = data['frame_len'].loc[data['src_addr'] == res['eth_two_addr']].median(skipna=True)
-    except: res['median_frames_mac2_mac1']=np.nan
+    try: res['median_frames_src_dst'] = data['frame_len'].loc[data['src_addr'] == res['src_mac_addr']].median(skipna=True)
+    except: res['median_frames_src_dst']=np.nan
 
-    try: res['std_frames_mac2_mac1'] = data['frame_len'].loc[data['src_addr'] == res['eth_two_addr']].std(skipna=True)
-    except: res['std_frames_mac2_mac1'] = np.nan
+    try: res['std_frames_src_dst'] = data['frame_len'].loc[data['src_addr'] == res['src_mac_addr']].std(skipna=True)
+    except: res['std_frames_src_dst'] = np.nan
 
-    try: res['norm_frames_mac2_mac1'] = norm(data['frame_len'].loc[data['src_addr'] == res['eth_two_addr']].values)
-    except: res['norm_frames_mac2_mac1'] =np.nan
+    try: res['norm_frames_src_dst'] = norm(data['frame_len'].loc[data['src_addr'] == res['src_mac_addr']].values)
+    except: res['norm_frames_src_dst'] =np.nan
 
     try: res['mean_frame_len'] = data['frame_len'].mean(skipna=True)
     except: res['mean_frame_len'] = np.nan

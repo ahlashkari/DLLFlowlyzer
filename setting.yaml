@@ -4,7 +4,7 @@
       FINAL_FILE_NAME : "FINAL.csv"
 
 - Capture:
-      CAP_UDP : False
+      CAP_UDP : True
       JUSTTCP : False
-      extra : False
+      extra : True
       features : ["l","s","a","t","d","i","c","h"]

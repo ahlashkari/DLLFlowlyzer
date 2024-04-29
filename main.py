@@ -3,7 +3,8 @@ from IO.csvSave import pkt_csv,flow_csv
 import argparse
 import warnings
 import yaml
-from featureExt.flowFeatureExt import flow_pred
+from featureExt.flowPred import flow_pred
+from featureExt.flowFeatureExt import flow_feature_ext
 
 global PCAP_PATH
 global FINAL_FILE_PATH
@@ -18,8 +19,8 @@ parser = argparse.ArgumentParser(
                     prog='ETH_FLOW',
                     description='DataLink Layer Feature Extractor')
 def extract_save():
-    eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp = pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTRA, FEATURES)
-    pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,FINAL_FILE_PATH, FINAL_FILE_NAME)
+    eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,flow = pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTRA, FEATURES)
+    pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,flow,FINAL_FILE_PATH, FINAL_FILE_NAME)
     list_dict = flow_pred(f'{FINAL_FILE_PATH}/pkts_all_{FINAL_FILE_NAME}', EXTRA, FEATURES)
     flow_csv(list_dict,FINAL_FILE_PATH, FINAL_FILE_NAME)
 
@@ -27,9 +28,9 @@ if __name__=="__main__":
     parser.add_argument('-R', '--result', action='store', help='base file name for results (without .csv)')
     parser.add_argument('-S', '--save', action='store', help='save folder to store the results')
     parser.add_argument('-P', '--pcap', action='store', help='path to pcap file')
-    parser.add_argument('-U', '--UDP', default=False, action='store_true', help='capture udp')
-    parser.add_argument('-J', '--justTCP', default=False, action='store_true', help='Extract features just in TCP connections')
-    parser.add_argument('-E', '--extra', default=False, action='store_true', help='extract all extra features from pcap(llc,stp,arp,loop,dtp,isl,cdp,dhcp)')
+    parser.add_argument('-U', '--UDP', action='store_true', help='capture udp')
+    parser.add_argument('-J', '--justTCP',action='store_true', help='Extract features just in TCP connections')
+    parser.add_argument('-E', '--extra', action='store_true', help='extract all extra features from pcap(llc,stp,arp,loop,dtp,isl,cdp,dhcp)')
     parser.add_argument('-F', '--features', action='store', help='select which extra features to save as below:\n'
                                                                  '** l(llc), s(stp), a(arp), t(loop), d(dtp), i(isl), c(cdp), h(dhcp) **  \n'
                                                                  '<for instance: -F latc > ## to capture llc, arp, loop, cdp ##')

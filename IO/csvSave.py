@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 
 
-def pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,FINAL_FILE_PATH, FINAL_FILE_NAME):
+def pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,flow_pred,FINAL_FILE_PATH, FINAL_FILE_NAME):
     if not os.path.exists(FINAL_FILE_PATH):
         os.makedirs(FINAL_FILE_PATH)
     else:
@@ -29,8 +29,10 @@ def pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,FINAL_FILE_PATH, FINAL_
         protos.append(cdp)
     if len(dhcp) >0:
         protos.append(dhcp)
-    proto_data = True
+    if len(arp)>0:
+        protos.append(arp)
 
+    proto_data = True
     if len(protos)==1:
         df_inner_protocols = pd.DataFrame(protos[0])
     elif len(protos)==2:
@@ -39,7 +41,6 @@ def pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,FINAL_FILE_PATH, FINAL_
         df_inner_protocols = pd.merge(pd.DataFrame(protos[0]), pd.DataFrame(protos[1]),  on='pkt_num' ,how='outer')
         for i in range(2,len(protos)):
             df_inner_protocols = pd.merge(df_inner_protocols, pd.DataFrame(protos[i]),  on='pkt_num' ,how='outer')
-
     else:
         proto_data = False
 
@@ -47,6 +48,7 @@ def pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,FINAL_FILE_PATH, FINAL_
         df_inner_protocols.to_csv(f'{FINAL_FILE_PATH}/pkts_protocols_{FINAL_FILE_NAME}',index=False)
 
     df_inner = pd.merge(pkt_df_eth, pkt_df_extra, on='pkt_num', how='inner')
+    df_inner = pd.merge(df_inner, pd.DataFrame(flow_pred), on='pkt_num',how='outer')
     if proto_data:
         df_inner = pd.merge(df_inner, df_inner_protocols, on='pkt_num' ,how='outer')
 
