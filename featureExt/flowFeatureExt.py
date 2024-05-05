@@ -7,6 +7,9 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 def flow_feature_ext(data, EXTRA, FEATURES):
     res = dict()
 
+    try: res['connection'] = data.iloc[0]['connection']
+    except: res['connection']= np.nan
+
     try: res['dst_mac_addr'] = data.iloc[0]['dist_addr'] 
     except: res['dst_mac_addr']= np.nan
 
@@ -73,8 +76,11 @@ def flow_feature_ext(data, EXTRA, FEATURES):
     try: res['src_port'] = data.iloc[0]['src_port'] 
     except: res['src_port']= np.nan
 
-    try: res['time_delta'] = int(data.iloc[len(data) - 1]['time_relative']) - int(data.iloc[0]['time_relative'])
+    try: res['time_delta'] = float(data.iloc[len(data) - 1]['time_relative']) - float(data.iloc[0]['time_relative'])
     except: res['time_delta'] = np.nan
+
+    try: res['num_frame'] = len(data['frame_len'])
+    except: res['num_frame'] = np.nan
 
     try: res['sum_frame_len'] = sum(data['frame_len'])
     except: res['sum_frame_len'] = np.nan

@@ -54,8 +54,13 @@ def pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTERA, FEATURES):
                 flow_pred_dict['tcp_fin'] = pkt.tcp._all_fields['tcp.flags_tree']['tcp.flags.fin']
                 flow_pred_dict['tcp_res'] = pkt.tcp._all_fields['tcp.flags_tree']['tcp.flags.res']
 
+                flow_pred_dict['tcp_stream'] = pkt.tcp._all_fields['tcp.stream']
+                flow_pred_dict['tcp_ack_val'] = pkt.tcp._all_fields['tcp.ack']
+                flow_pred_dict['tcp_seq_val'] = pkt.tcp._all_fields['tcp.seq']
+
                 flow_pred_dict['tcp_syn_ack'] = 1 if int(flow_pred_dict['tcp_syn'])==1 and int(flow_pred_dict['tcp_ack'])==1 else 0
                 flow_pred_dict['tcp_fin_ack'] = 1 if int(flow_pred_dict['tcp_fin']) == 1 and int(flow_pred_dict['tcp_ack']) == 1 else 0
+
             except:
                 pass
 

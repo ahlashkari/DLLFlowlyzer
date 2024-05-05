@@ -70,5 +70,6 @@ def flow_csv(list_dict,FINAL_FILE_PATH, FINAL_FILE_NAME):
     else:
         final = dfs_list[0].copy()
 
+    final = final.drop_duplicates(keep='last')
     final.to_csv(f'{FINAL_FILE_PATH}/{datetime.now().strftime("%Y-%m-%d")}-{datetime.now().time().strftime("%H-%M")}-final_flow-{FINAL_FILE_NAME}', index=False)
     print(f'flows csv Created at {FINAL_FILE_PATH}/{datetime.now().strftime("%Y-%m-%d")}-{datetime.now().time().strftime("%H-%M")}-final_flow-{FINAL_FILE_NAME}')
