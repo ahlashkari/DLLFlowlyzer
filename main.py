@@ -21,8 +21,9 @@ parser = argparse.ArgumentParser(
 def extract_save():
     eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,flow = pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTRA, FEATURES)
     pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,flow,FINAL_FILE_PATH, FINAL_FILE_NAME)
-    list_dict = flow_pred(f'{FINAL_FILE_PATH}/pkts_all_{FINAL_FILE_NAME}', EXTRA, FEATURES)
+    list_dict = flow_pred(f'{FINAL_FILE_PATH}/pkts_all_{FINAL_FILE_NAME}', EXTRA, FEATURES, CAP_UDP)
     flow_csv(list_dict,FINAL_FILE_PATH, FINAL_FILE_NAME)
+
 
 if __name__=="__main__":
     parser.add_argument('-R', '--result', action='store', help='base file name for results (without .csv)')

@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.linalg import norm
+import pandas as pd
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
@@ -9,6 +10,9 @@ def flow_feature_ext(data, EXTRA, FEATURES):
 
     try: res['connection'] = data.iloc[0]['connection']
     except: res['connection']= np.nan
+
+    try: res['tcp_stream'] = str(pd.unique(data['tcp_stream']))
+    except: res['tcp_stream']= np.nan
 
     try: res['dst_mac_addr'] = data.iloc[0]['dist_addr'] 
     except: res['dst_mac_addr']= np.nan

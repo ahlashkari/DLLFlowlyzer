@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from . import flowFeatureExt
 from time import sleep
@@ -25,26 +26,47 @@ def flow_flag_res_fin_split(df, fin_indexes, res_indexes):
     else:
         flows.append(df)
     return flows
-def flow_pred(file, EXTRA, FEATURES):
+def flow_pred(file, EXTRA, FEATURES, CAP_UDP):
     df = pd.read_csv(file)
-    aaa = df.query("connection=='UDP'").groupby(df[['dist_addr', 'src_addr','src_ip', 'dst_ip', 'src_port', 'dst_port','connection']].apply(frozenset, axis=1))
-    ddd = df.query("connection=='TCP'").groupby(df[['dist_addr', 'src_addr','src_ip', 'dst_ip', 'src_port', 'dst_port','tcp_stream','connection']].apply(frozenset, axis=1))
-    ccc = df.query("connection!='TCP' or connection!='UDP'").groupby(df[['dist_addr', 'src_addr']].apply(frozenset, axis=1))
     bbb = []
-    bbb += [aaa.get_group(x) for x in aaa.groups]
+
+    if CAP_UDP:
+        aaa = df.query("connection=='UDP'").groupby(df[['dist_addr', 'src_addr','src_ip', 'dst_ip', 'src_port', 'dst_port']].apply(frozenset, axis=1))
+        bbb += [aaa.get_group(x) for x in aaa.groups]
+        del (aaa)
+
+
+    ddd = df.query("connection=='TCP'").groupby(df[['tcp_stream', 'dist_addr', 'src_addr','src_ip', 'dst_ip', 'src_port', 'dst_port']].apply(frozenset, axis=1))
     bbb += [ddd.get_group(x) for x in ddd.groups]
-    bbb += [ccc.get_group(x) for x in ccc.groups]
-    del (aaa)
-    del (ccc)
     del (ddd)
+
+    if EXTRA:
+        ccc = df.query("connection!='TCP' or connection!='UDP'").groupby(df[['dist_addr', 'src_addr']].apply(frozenset, axis=1))
+        bbb += [ccc.get_group(x) for x in ccc.groups]
+        del (ccc)
+
 
     dfs = []
     checked = []
     for i in range(len(bbb)):
+        in_it = -1
+        if len(checked)>0:
+            _,stream = zip(*checked)
+            if bbb[i].iloc[0]['connection'] == 'TCP' and bbb[i].iloc[0]['tcp_stream'] not in stream:
+                checked.append([i, bbb[i].iloc[0]['tcp_stream'] ])
+            else:
+                in_it = stream.index(bbb[i].iloc[0]['tcp_stream'])
+        else:
+            checked.append([i, bbb[i].iloc[0]['tcp_stream']])
+
         if bbb[i].iloc[0]['connection'] == 'TCP':
             tmp = flow_flag_res_fin_split(bbb[i], bbb[i]['tcp_fin_ack'].loc[lambda x: x == 1].index.tolist(),
                                           bbb[i]['tcp_res'].loc[lambda x: x == 1].index.tolist())
-            dfs+=tmp
+            if in_it>-1:
+                for z in range(len(tmp)):
+                    dfs[in_it] = pd.concat([dfs[in_it], tmp[z]])
+            else:
+                dfs+=tmp
         else:
             dfs.append(bbb[i])
 

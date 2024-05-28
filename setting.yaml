@@ -5,6 +5,10 @@
 
 - Capture:
       CAP_UDP : False
-      JUSTTCP : True
+      JUSTTCP : False
       extra : False
       features : ["l","s","a","t","d","i","c","h"]
+
+- Flow:
+      TimeOut : 120000
+      activity_timeout: 300
