@@ -5,7 +5,7 @@
 
 - Capture:
       CAP_UDP : False
-      JUSTTCP : False
+      JUSTTCP : True
       extra : False
       features : ["l","s","a","t","d","i","c","h"]
 

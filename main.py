@@ -14,6 +14,9 @@ global JUSTTCP
 global EXTRA
 global FEATURES
 
+
+import time
+
 warnings.filterwarnings("ignore")
 parser = argparse.ArgumentParser(
                     prog='ETH_FLOW',
@@ -71,5 +74,8 @@ if __name__=="__main__":
 
     print(f'SETTINGS: \nPCAP_PATH:{PCAP_PATH}\nFINAL_FILE_PATH:{FINAL_FILE_PATH}\nFINAL_FILE_NAME:{FINAL_FILE_NAME}\
           \nCAP_UDP:{CAP_UDP}\nJUSTTCP:{JUSTTCP}\nEXTRA:{EXTRA}\nFEATURES:{FEATURES}')
-        
+
+    start = time.time()
     extract_save()
+    end = time.time()
+    print(f'time is : {end-start}')

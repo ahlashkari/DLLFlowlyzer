@@ -115,4 +115,6 @@ def pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTERA, FEATURES):
                     extra_dict['has_isl'] = 0
 
         pkts_info_extra.append(extra_dict)
+
+    print(f'llc:{len(pkts_info_llc)}\nstp:{len(pkts_info_stp)}\narp:{len(pkts_info_arp)}\nloop:{len(pkts_info_loop)}\ndtp:{len(pkts_info_dtp)}\nisl:{len(pkts_info_isl)}\ncdp:{len(pkts_info_cdp)}\ndhcp:{len(pkts_info_dhcp)}')
     return pkts_info_eth, pkts_info_extra,pkts_info_llc ,pkts_info_stp,pkts_info_arp,pkts_info_loop,pkts_info_dtp,pkts_info_isl,pkts_info_cdp,pkts_info_dhcp,pkts_info_flow

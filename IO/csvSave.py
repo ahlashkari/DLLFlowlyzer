@@ -1,16 +1,17 @@
 import os
-import pandas as pd
+
 from datetime import datetime
+from pyspark.sql import SparkSession
 
-
+spark = SparkSession.builder.getOrCreate()
 def pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,flow_pred,FINAL_FILE_PATH, FINAL_FILE_NAME):
     if not os.path.exists(FINAL_FILE_PATH):
         os.makedirs(FINAL_FILE_PATH)
     else:
         os.system(f'rm -rf {FINAL_FILE_PATH}/*')
 
-    pkt_df_eth = pd.DataFrame(eth)
-    pkt_df_extra=pd.DataFrame(extra)
+    pkt_df_eth = spark.createDataFrame(eth)
+    pkt_df_extra= spark.createDataFrame(extra)
 
     pkt_df_eth.to_csv(f'{FINAL_FILE_PATH}/pkts_eth_{FINAL_FILE_NAME}',index=False)
 
@@ -34,23 +35,23 @@ def pkt_csv(eth,extra, llc,stp,arp,loop,dtp,isl,cdp,dhcp,flow_pred,FINAL_FILE_PA
 
     proto_data = True
     if len(protos)==1:
-        df_inner_protocols = pd.DataFrame(protos[0])
+        df_inner_protocols =  spark.createDataFrame(protos[0])
     elif len(protos)==2:
-        df_inner_protocols = pd.merge(pd.DataFrame(protos[0]), pd.DataFrame(protos[1]), on='pkt_num' ,how='outer')
+        df_inner_protocols = spark.createDataFrame(protos[0]).merge(spark.createDataFrame(protos[1]), on='pkt_num' ,how='outer')
     elif len(protos)>2:
-        df_inner_protocols = pd.merge(pd.DataFrame(protos[0]), pd.DataFrame(protos[1]),  on='pkt_num' ,how='outer')
+        df_inner_protocols = spark.createDataFrame(protos[0]).merge( spark.createDataFrame(protos[1]),  on='pkt_num' ,how='outer')
         for i in range(2,len(protos)):
-            df_inner_protocols = pd.merge(df_inner_protocols, pd.DataFrame(protos[i]),  on='pkt_num' ,how='outer')
+            df_inner_protocols = df_inner_protocols.merge(spark.createDataFrame(protos[i]),  on='pkt_num' ,how='outer')
     else:
         proto_data = False
 
     if proto_data:
         df_inner_protocols.to_csv(f'{FINAL_FILE_PATH}/pkts_protocols_{FINAL_FILE_NAME}',index=False)
 
-    df_inner = pd.merge(pkt_df_eth, pkt_df_extra, on='pkt_num', how='inner')
-    df_inner = pd.merge(df_inner, pd.DataFrame(flow_pred), on='pkt_num',how='outer')
+    df_inner = pkt_df_eth.merge(pkt_df_extra, on='pkt_num', how='inner')
+    df_inner = df_inner.merge(spark.createDataFrame(flow_pred), on='pkt_num',how='outer')
     if proto_data:
-        df_inner = pd.merge(df_inner, df_inner_protocols, on='pkt_num' ,how='outer')
+        df_inner = df_inner.merge(df_inner_protocols, on='pkt_num' ,how='outer')
 
     df_inner.to_csv(f'{FINAL_FILE_PATH}/pkts_all_{FINAL_FILE_NAME}', index=False)
 
@@ -60,13 +61,13 @@ def flow_csv(list_dict,FINAL_FILE_PATH, FINAL_FILE_NAME):
      
     dfs_list = []
     for dic in list_dict:
-        dfs_list.append(pd.DataFrame([dic]))
+        dfs_list.append(spark.createDataFrame([dic]))
     if len(dfs_list)>2:
-        final = pd.concat([dfs_list[0],dfs_list[1]])
+        final = dfs_list[0].union(dfs_list[1])
         for df in dfs_list[2:]:
-            final = pd.concat([final,df])
+            final = final.union(df)
     elif len(dfs_list)==2:
-        final = pd.concat([dfs_list[0],dfs_list[1]])
+        final = dfs_list[0].union(dfs_list[1])
     else:
         final = dfs_list[0].copy()
 
