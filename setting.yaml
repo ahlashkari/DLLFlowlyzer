@@ -8,6 +8,7 @@
       JUSTTCP : False
       extra : False
       features : ["l","s","a","t","d","i","c","h"]
+      realTime: False
 
 - Flow:
       TimeOut : 120000
