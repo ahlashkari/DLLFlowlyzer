@@ -33,11 +33,11 @@ def pcap_reader(PCAP_PATH, CAP_UDP,JUSTTCP, EXTERA, FEATURES):
 
         pkts_info_eth.append(eth_pkt_feature_extractor(pkt.ETH._all_fields,index, proto))
 
-
+        # print(pkt.frame_info._all_fields)
         extra_dict = {'pkt_num':index ,'frame_num':pkt.frame_info.number,
                                         'frame_len':pkt.frame_info.len, 'frame_cap_len':pkt.frame_info.cap_len,
                                         'frame_marked':pkt.frame_info.marked, 'frame_ignored':pkt.frame_info.ignored,
-                                        'time_epoch':pkt.frame_info.time_epoch, 'time_utc':pkt.frame_info.time_utc, 'time_relative':pkt.frame_info.time_relative}
+                                        'time_epoch':pkt.frame_info.time_epoch,  'time_relative':pkt.frame_info.time_relative}
 
         if proto == 'UDP' or proto == 'TCP':
             try:

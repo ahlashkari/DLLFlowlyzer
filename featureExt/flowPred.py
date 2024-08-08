@@ -12,10 +12,10 @@ def flow_flag_res_fin_split(df, fin_indexes, res_indexes):
     flows = []
     if len(fin_indexes)>0:
         for i in range(1,len(fin_indexes)):
-            if fin_indexes[i] == df.index[-1]:
+            if fin_indexes[i] == df.index[-1] or fin_indexes[i] == -1:
                 continue
             tmp = df.loc[fin_indexes[i-1]+1:fin_indexes[i]]
-            if len(tmp)<3:
+            if len(tmp)<1:
                 try:
                     flows[-1]=pd.concat([flows[-1], tmp], axis=0).sort_values('pkt_num')
                 except:
