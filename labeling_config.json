@@ -1,0 +1,73 @@
+{
+  "ip_attacks": [
+    {
+      "label": "ARP Spoofing",
+      "ips": [
+        "192.168.1.100",
+        "192.168.1.200"
+      ]
+    },
+    {
+      "label": "DHCP Starvation",
+      "ips": [
+        "192.168.1.50"
+      ]
+    }
+  ],
+  "mac_attacks": [
+    {
+      "label": "ARP Poisoning",
+      "macs": [
+        "00:11:22:33:44:55",
+        "aa:bb:cc:dd:ee:ff"
+      ]
+    },
+    {
+      "label": "CAM Flood",
+      "macs": [
+        "de:ad:be:ef:ca:fe"
+      ]
+    }
+  ],
+  "time_attacks": [
+    {
+      "label": "DHCP Starvation",
+      "time_ranges": [
+        {
+          "start": "10:13 AM",
+          "end": "11:00 AM"
+        },
+        {
+          "start": "2:00 PM",
+          "end": "3:30 PM"
+        }
+      ]
+    },
+    {
+      "label": "CDP Flood",
+      "time_ranges": [
+        {
+          "start": "10:00 AM",
+          "end": "11:00 AM"
+        },
+        {
+          "start": "11:05 AM",
+          "end": "12:06 PM"
+        },
+        {
+          "start": "12:09 PM",
+          "end": "1:19 PM"
+        }
+      ]
+    },
+    {
+      "label": "STP Attack",
+      "time_ranges": [
+        {
+          "start": "9:00 AM",
+          "end": "9:30 AM"
+        }
+      ]
+    }
+  ]
+}
