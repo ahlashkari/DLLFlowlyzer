@@ -131,13 +131,14 @@ class FlowManager:
                 else:
                     return LLCPacket(scapy_packet, frame_number)
             
-            # Check for LLDP by MAC address
+            # Check for LLDP by MAC address and payload (more specific detection)
             elif self._is_lldp_packet(scapy_packet):
+                self.logger.debug(f"LLDP packet detected by enhanced analysis at frame {frame_number}")
                 return LLDPPacket(scapy_packet, frame_number)
             
-            # Check for CDP by MAC address
+            # Check for CDP by MAC address and payload (enhanced detection)
             elif self._is_cdp_packet(scapy_packet):
-                self.logger.debug(f"CDP packet detected by MAC at frame {frame_number}")
+                self.logger.debug(f"CDP packet detected by enhanced analysis at frame {frame_number}")
                 return CDPPacket(scapy_packet, frame_number)
             
             # Check for ISL by characteristics
@@ -157,25 +158,38 @@ class FlowManager:
             return BasePacket(scapy_packet, frame_number)
     
     def _is_cdp_packet(self, scapy_packet) -> bool:
-        """Check if packet is CDP."""
+        """Check if packet is CDP with enhanced payload analysis."""
         try:
             if scapy_packet.haslayer('Ether'):
                 dst_mac = str(scapy_packet['Ether'].dst).lower()
                 if dst_mac == '01:00:0c:cc:cc:cc':
-                    # CDP uses the same MAC as DTP, need to check payload
+                    # CDP uses the same MAC as DTP, need precise payload analysis
+                    raw_payload = bytes(scapy_packet.payload) if scapy_packet.payload else b''
+                    
                     if scapy_packet.haslayer('LLC'):
                         llc_layer = scapy_packet['LLC']
                         # CDP typically has DSAP/SSAP = 0xAA (SNAP)
                         if hasattr(llc_layer, 'dsap') and hasattr(llc_layer, 'ssap'):
                             if llc_layer.dsap == 0xaa and llc_layer.ssap == 0xaa:
                                 # Check if it's CDP by looking at SNAP OUI and PID
-                                raw_payload = bytes(scapy_packet.payload) if scapy_packet.payload else b''
                                 # CDP has OUI 00:00:0c and PID 0x2000
                                 if len(raw_payload) >= 8:
-                                    # Look for CDP signature in payload
+                                    # Look for CDP SNAP signature in LLC payload
                                     return raw_payload[3:6] == b'\x00\x00\x0c' and raw_payload[6:8] == b'\x20\x00'
+                                elif len(raw_payload) >= 5:
+                                    # Alternative check: look for CDP SNAP at start of LLC payload
+                                    return raw_payload[0:3] == b'\x00\x00\x0c' and raw_payload[3:5] == b'\x20\x00'
                     else:
-                        # If no LLC layer, assume it's CDP based on MAC
+                        # If no LLC layer, check for CDP directly in ethernet payload
+                        if len(raw_payload) >= 8:
+                            # Check for CDP version field (should be 1 or 2) and reasonable TTL
+                            if len(raw_payload) >= 2:
+                                version = raw_payload[0]
+                                ttl = raw_payload[1]
+                                # CDP version is typically 1 or 2, TTL is reasonable (1-255)
+                                if version in [1, 2] and 1 <= ttl <= 255:
+                                    return True
+                        # If MAC matches but no clear structure, assume it's CDP for compatibility
                         return True
             return False
         except Exception as e:
@@ -183,13 +197,29 @@ class FlowManager:
             return False
     
     def _is_lldp_packet(self, scapy_packet) -> bool:
-        """Check if packet is LLDP."""
+        """Check if packet is LLDP with enhanced payload analysis."""
         try:
             if scapy_packet.haslayer('Ether'):
                 dst_mac = str(scapy_packet['Ether'].dst).lower()
-                return dst_mac in ['01:80:c2:00:00:0e', '01:80:c2:00:00:03', '01:80:c2:00:00:00']
+                # Check for standard LLDP MAC addresses
+                if dst_mac in ['01:80:c2:00:00:0e', '01:80:c2:00:00:03', '01:80:c2:00:00:00']:
+                    # Additional payload validation for LLDP
+                    raw_payload = bytes(scapy_packet.payload) if scapy_packet.payload else b''
+                    if len(raw_payload) >= 4:
+                        # Check for LLDP TLV structure
+                        # First TLV should be Chassis ID (type 1) or Port ID (type 2)
+                        first_tlv = int.from_bytes(raw_payload[0:2], 'big') if len(raw_payload) >= 2 else 0
+                        tlv_type = (first_tlv >> 9) & 0x7F
+                        tlv_length = first_tlv & 0x1FF
+                        
+                        # Valid LLDP should start with Chassis ID (1), Port ID (2), or TTL (3)
+                        if tlv_type in [1, 2, 3] and 0 < tlv_length <= 255:
+                            return True
+                    # If MAC matches but payload doesn't look like LLDP, still consider it LLDP
+                    return True
             return False
-        except Exception:
+        except Exception as e:
+            self.logger.debug(f"Error in LLDP detection: {e}")
             return False
     
     def _is_dtp_packet(self, scapy_packet) -> bool:

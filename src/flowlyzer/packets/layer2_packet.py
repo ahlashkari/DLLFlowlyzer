@@ -128,25 +128,38 @@ class CDPPacket(BasePacket):
         return 'CDP'
     
     def _extract_cdp_features(self):
-        """Extract comprehensive CDP-specific features."""
+        """Extract comprehensive CDP-specific features with enhanced validation."""
         try:
-            # CDP detection by destination MAC or LLC header
-            if (self.features.get('dst_mac_addr') == '01:00:0c:cc:cc:cc' or 
-                self.packet.haslayer('LLC')):
+            # Enhanced CDP detection - must match MAC and validate payload structure
+            dst_mac = self.features.get('dst_mac_addr', '').lower()
+            if dst_mac == '01:00:0c:cc:cc:cc':
                 
-                # Basic CDP header features
+                # Validate CDP structure and extract features
                 raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
-                if len(raw_payload) >= 8:
-                    self.features['cdp_version'] = raw_payload[0] if len(raw_payload) > 0 else 0
-                    self.features['cdp_ttl'] = raw_payload[1] if len(raw_payload) > 1 else 0
-                    self.features['cdp_checksum_status'] = int.from_bytes(raw_payload[2:4], 'big') if len(raw_payload) >= 4 else 0
+                
+                if self._validate_cdp_structure(raw_payload):
+                    # Extract CDP header fields
+                    cdp_offset = self._find_cdp_header_offset(raw_payload)
+                    
+                    if cdp_offset >= 0 and len(raw_payload) >= cdp_offset + 4:
+                        self.features['cdp_version'] = raw_payload[cdp_offset] if cdp_offset < len(raw_payload) else 0
+                        self.features['cdp_ttl'] = raw_payload[cdp_offset + 1] if cdp_offset + 1 < len(raw_payload) else 0
+                        if cdp_offset + 4 <= len(raw_payload):
+                            self.features['cdp_checksum_status'] = int.from_bytes(raw_payload[cdp_offset + 2:cdp_offset + 4], 'big')
+                        else:
+                            self.features['cdp_checksum_status'] = 0
+                    else:
+                        self.features['cdp_version'] = 0
+                        self.features['cdp_ttl'] = 0
+                        self.features['cdp_checksum_status'] = 0
                 else:
+                    # MAC matches but payload doesn't look like CDP, set defaults
                     self.features['cdp_version'] = 0
                     self.features['cdp_ttl'] = 0
                     self.features['cdp_checksum_status'] = 0
                 
-                # Enhanced CDP TLV analysis
-                tlv_data = self._parse_cdp_tlvs(raw_payload)
+                    # Enhanced CDP TLV analysis
+                    tlv_data = self._parse_cdp_tlvs(raw_payload[cdp_offset + 4:] if cdp_offset >= 0 else raw_payload)
                 
                 # Basic TLV counts
                 self.features['cdp_tlvs'] = tlv_data['tlv_count']
@@ -213,10 +226,16 @@ class CDPPacket(BasePacket):
                 self.features['cdp_spare_poe_tlv_pse_spare_pair_poe'] = tlv_data.get('pse_spare_pair_poe', 0)
                 
             else:
+                # Not a CDP packet based on MAC
                 self._set_default_cdp_features()
                 
-        except Exception:
-            self._set_default_cdp_features()
+        except Exception as e:
+            # On error, still try to mark as CDP if MAC matches
+            dst_mac = self.features.get('dst_mac_addr', '').lower()
+            if dst_mac == '01:00:0c:cc:cc:cc':
+                self._set_default_cdp_features()
+            else:
+                self._set_default_cdp_features()
     
     def _parse_cdp_tlvs(self, payload: bytes) -> dict:
         """Parse CDP TLVs and extract detailed information."""
@@ -312,6 +331,69 @@ class CDPPacket(BasePacket):
         
         return tlv_data
     
+    def _validate_cdp_structure(self, payload: bytes) -> bool:
+        """Validate that payload has proper CDP structure."""
+        try:
+            if len(payload) < 4:  # Minimum CDP header
+                return False
+            
+            # Look for CDP in different positions (LLC, direct ethernet payload, etc.)
+            cdp_offset = self._find_cdp_header_offset(payload)
+            if cdp_offset < 0:
+                return False
+            
+            if len(payload) < cdp_offset + 4:
+                return False
+            
+            # Check CDP header fields
+            version = payload[cdp_offset]
+            ttl = payload[cdp_offset + 1]
+            
+            # CDP version should be 1 or 2, TTL should be reasonable
+            if version not in [1, 2] or ttl == 0 or ttl > 255:
+                return False
+            
+            return True
+        except Exception:
+            return False
+    
+    def _find_cdp_header_offset(self, payload: bytes) -> int:
+        """Find the offset of CDP header in payload."""
+        try:
+            # Case 1: Direct CDP (no LLC/SNAP)
+            if len(payload) >= 4:
+                version = payload[0]
+                ttl = payload[1]
+                if version in [1, 2] and 1 <= ttl <= 255:
+                    return 0
+            
+            # Case 2: CDP after LLC/SNAP header
+            # Look for SNAP OUI/PID pattern: 00:00:0c:20:00
+            for i in range(len(payload) - 8):
+                if (payload[i:i+5] == b'\x00\x00\x0c\x20\x00' and 
+                    i + 5 < len(payload)):
+                    # CDP header should follow immediately
+                    cdp_start = i + 5
+                    if cdp_start + 2 < len(payload):
+                        version = payload[cdp_start]
+                        ttl = payload[cdp_start + 1]
+                        if version in [1, 2] and 1 <= ttl <= 255:
+                            return cdp_start
+            
+            # Case 3: Look for CDP version/TTL pattern anywhere
+            for i in range(len(payload) - 4):
+                version = payload[i]
+                ttl = payload[i + 1]
+                if version in [1, 2] and 1 <= ttl <= 255:
+                    # Additional validation - check if this looks like a CDP header
+                    if i + 4 <= len(payload):
+                        # CDP checksum follows version/TTL
+                        return i
+            
+            return -1
+        except Exception:
+            return -1
+    
     def _extract_address_count(self, tlv_value: bytes) -> int:
         """Extract address count from addresses TLV."""
         try:
@@ -386,30 +468,106 @@ class LLDPPacket(BasePacket):
         return 'LLDP'
     
     def _extract_lldp_features(self):
-        """Extract LLDP-specific features."""
+        """Extract comprehensive LLDP-specific features with enhanced validation."""
         try:
-            # LLDP detection by destination MAC (01:80:c2:00:00:0e)
-            if self.features.get('dst_mac_addr') in ['01:80:c2:00:00:0e', '01:80:c2:00:00:03', '01:80:c2:00:00:00']:
-                self.features['is_lldp'] = True
+            # Enhanced LLDP detection with both MAC and payload validation
+            dst_mac = self.features.get('dst_mac_addr', '').lower()
+            if dst_mac in ['01:80:c2:00:00:0e', '01:80:c2:00:00:03', '01:80:c2:00:00:00']:
                 
-                # LLDP TLV analysis (simplified)
+                # Enhanced LLDP TLV analysis
                 raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
-                self.features['lldp_tlvs'] = self._count_lldp_tlvs(raw_payload)
-                self.features['lldp_chassis_id'] = self._extract_lldp_chassis_id(raw_payload)
-                self.features['lldp_port_id'] = self._extract_lldp_port_id(raw_payload)
                 
+                # Validate LLDP structure
+                if self._validate_lldp_structure(raw_payload):
+                    self.features['is_lldp'] = True
+                    
+                    # Extract LLDP features
+                    tlv_data = self._parse_lldp_tlvs(raw_payload)
+                    self.features['lldp_tlvs'] = tlv_data['tlv_count']
+                    self.features['lldp_chassis_id_type'] = tlv_data.get('chassis_id_type', 0)
+                    self.features['lldp_chassis_id_len'] = tlv_data.get('chassis_id_len', 0)
+                    self.features['lldp_port_id_type'] = tlv_data.get('port_id_type', 0)
+                    self.features['lldp_port_id_len'] = tlv_data.get('port_id_len', 0)
+                    self.features['lldp_ttl'] = tlv_data.get('ttl', 0)
+                    self.features['lldp_system_name_len'] = tlv_data.get('system_name_len', 0)
+                    self.features['lldp_system_desc_len'] = tlv_data.get('system_desc_len', 0)
+                    self.features['lldp_port_desc_len'] = tlv_data.get('port_desc_len', 0)
+                    self.features['lldp_capabilities'] = tlv_data.get('capabilities', 0)
+                    self.features['lldp_mgmt_addr_count'] = tlv_data.get('mgmt_addr_count', 0)
+                    
+                    # Legacy compatibility
+                    self.features['lldp_chassis_id'] = tlv_data.get('chassis_id', 'unknown')
+                    self.features['lldp_port_id'] = tlv_data.get('port_id', 'unknown')
+                    
+                else:
+                    # MAC matches but payload doesn't look like LLDP, assume it's LLDP anyway
+                    self.features['is_lldp'] = True
+                    self._set_default_lldp_features()
+                    
             else:
                 self.features['is_lldp'] = False
                 self._set_default_lldp_features()
                 
-        except Exception:
-            self.features['is_lldp'] = False
+        except Exception as e:
+            # On error, still mark as LLDP if MAC matches, for compatibility
+            dst_mac = self.features.get('dst_mac_addr', '').lower()
+            self.features['is_lldp'] = dst_mac in ['01:80:c2:00:00:0e', '01:80:c2:00:00:03', '01:80:c2:00:00:00']
             self._set_default_lldp_features()
     
-    def _count_lldp_tlvs(self, payload: bytes) -> int:
-        """Count LLDP TLV entries."""
+    def _validate_lldp_structure(self, payload: bytes) -> bool:
+        """Validate that payload has proper LLDP structure."""
         try:
-            tlv_count = 0
+            if len(payload) < 6:  # Minimum LLDP: Chassis ID (2+) + Port ID (2+) + TTL (2+) + End (2)
+                return False
+            
+            # Check first TLV (should be Chassis ID = type 1)
+            first_tlv = int.from_bytes(payload[0:2], 'big')
+            first_type = (first_tlv >> 9) & 0x7F
+            first_length = first_tlv & 0x1FF
+            
+            # First TLV should be Chassis ID (1) and have reasonable length
+            if first_type != 1 or first_length == 0 or first_length > 255:
+                return False
+            
+            # Check second TLV (should be Port ID = type 2)
+            if len(payload) < 4 + first_length:
+                return False
+            
+            second_offset = 2 + first_length
+            if second_offset + 2 > len(payload):
+                return False
+                
+            second_tlv = int.from_bytes(payload[second_offset:second_offset+2], 'big')
+            second_type = (second_tlv >> 9) & 0x7F
+            second_length = second_tlv & 0x1FF
+            
+            # Second TLV should be Port ID (2) and have reasonable length
+            if second_type != 2 or second_length == 0 or second_length > 255:
+                return False
+                
+            return True
+        except Exception:
+            return False
+    
+    def _parse_lldp_tlvs(self, payload: bytes) -> dict:
+        """Parse LLDP TLVs and extract detailed information."""
+        tlv_data = {
+            'tlv_count': 0,
+            'chassis_id_type': 0,
+            'chassis_id_len': 0,
+            'chassis_id': 'unknown',
+            'port_id_type': 0,
+            'port_id_len': 0,
+            'port_id': 'unknown',
+            'ttl': 0,
+            'system_name_len': 0,
+            'system_desc_len': 0,
+            'port_desc_len': 0,
+            'capabilities': 0,
+            'mgmt_addr_count': 0
+        }
+        
+        try:
             offset = 0
             while offset < len(payload) - 2:
                 if offset + 2 > len(payload):
@@ -426,22 +584,44 @@ class LLDPPacket(BasePacket):
                 if offset + 2 + tlv_length > len(payload):
                     break
                 
-                tlv_count += 1
+                tlv_value = payload[offset+2:offset+2+tlv_length] if tlv_length > 0 else b''
+                
+                # Parse specific TLV types
+                if tlv_type == 1:  # Chassis ID
+                    if len(tlv_value) >= 1:
+                        tlv_data['chassis_id_type'] = tlv_value[0]
+                        tlv_data['chassis_id_len'] = tlv_length
+                        if len(tlv_value) > 1:
+                            tlv_data['chassis_id'] = tlv_value[1:].decode('utf-8', errors='ignore')[:50]
+                elif tlv_type == 2:  # Port ID
+                    if len(tlv_value) >= 1:
+                        tlv_data['port_id_type'] = tlv_value[0]
+                        tlv_data['port_id_len'] = tlv_length
+                        if len(tlv_value) > 1:
+                            tlv_data['port_id'] = tlv_value[1:].decode('utf-8', errors='ignore')[:50]
+                elif tlv_type == 3:  # TTL
+                    if len(tlv_value) >= 2:
+                        tlv_data['ttl'] = int.from_bytes(tlv_value[:2], 'big')
+                elif tlv_type == 4:  # Port Description
+                    tlv_data['port_desc_len'] = tlv_length
+                elif tlv_type == 5:  # System Name
+                    tlv_data['system_name_len'] = tlv_length
+                elif tlv_type == 6:  # System Description
+                    tlv_data['system_desc_len'] = tlv_length
+                elif tlv_type == 7:  # System Capabilities
+                    if len(tlv_value) >= 4:
+                        tlv_data['capabilities'] = int.from_bytes(tlv_value[:4], 'big')
+                elif tlv_type == 8:  # Management Address
+                    tlv_data['mgmt_addr_count'] += 1
+                
+                tlv_data['tlv_count'] += 1
                 offset += 2 + tlv_length
                 
-            return tlv_count
         except Exception:
-            return 0
+            pass
+        
+        return tlv_data
     
-    def _extract_lldp_chassis_id(self, payload: bytes) -> str:
-        """Extract LLDP chassis ID."""
-        # Simplified implementation
-        return 'unknown'
-    
-    def _extract_lldp_port_id(self, payload: bytes) -> str:
-        """Extract LLDP port ID."""
-        # Simplified implementation
-        return 'unknown'
     
     def _set_default_lldp_features(self):
         """Set default LLDP features."""
@@ -449,6 +629,16 @@ class LLDPPacket(BasePacket):
             'lldp_tlvs': 0,
             'lldp_chassis_id': 'unknown',
             'lldp_port_id': 'unknown',
+            'lldp_chassis_id_type': 0,
+            'lldp_chassis_id_len': 0,
+            'lldp_port_id_type': 0,
+            'lldp_port_id_len': 0,
+            'lldp_ttl': 0,
+            'lldp_system_name_len': 0,
+            'lldp_system_desc_len': 0,
+            'lldp_port_desc_len': 0,
+            'lldp_capabilities': 0,
+            'lldp_mgmt_addr_count': 0,
         }
         self.features.update(lldp_defaults)
 

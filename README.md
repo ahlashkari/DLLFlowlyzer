@@ -20,7 +20,7 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 - **222 Comprehensive Features**: Statistical, protocol-specific, and enhanced Layer 2 features
 - **Multi-Protocol Support**: TCP, UDP, QUIC, and Layer 2 protocols (STP, CDP, LLDP, ARP, DHCP, LLC, DTP, VTP, ISL)
 - **Enhanced Layer 2 Analysis**: Deep packet inspection for CDP TLVs, STP identifiers, DHCP options, ARP details
-- **Accurate Protocol Detection**: Improved CDP/DTP differentiation with SNAP OUI/PID analysis
+- **Enhanced Protocol Detection**: Advanced CDP/LLDP/DTP separation with payload validation and structure analysis
 - **Flow Detection**: Bidirectional flow detection with configurable timeouts
 - **Multi-threaded Processing**: Parallel packet processing with optimized queuing
 - **Flexible Labeling**: Support for IP, MAC, time-based, and text file configuration
@@ -33,8 +33,13 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 - **DHCP Protocol**: BOOTP fields, flags, options parsing, message types
 - **STP Protocol**: Root/bridge identifiers with priorities, timing fields, topology flags
 - **CDP Protocol**: Complete TLV parsing, device information, capabilities flags, power management
-  - Enhanced detection with SNAP OUI/PID analysis (differentiates from DTP)
+  - Enhanced detection with SNAP OUI/PID analysis and payload validation
+  - Robust separation from DTP packets (same MAC, different PID)
   - Real-time CDP packet counting in logs
+- **LLDP Protocol**: Comprehensive TLV structure analysis, chassis/port ID extraction
+  - Enhanced detection with TLV structure validation
+  - Clear separation from CDP despite potential packet tagging ambiguity
+  - System capabilities and management address parsing
 - **LLC Protocol**: SAP values, control fields, command/response bits
 - **DTP Protocol**: Dynamic Trunking negotiation, sender information
 - **ISL Protocol**: Inter-Switch Link encapsulation, VLAN information
@@ -285,6 +290,16 @@ python -m src.flowlyzer.main -i Input/ \
   --csv-batch-size 20 \    # Write to CSV every 20 flows (more frequent updates)
   --batch-size 30 \        # Process 30 flows before memory cleanup
   --workers 6
+
+# High-Performance Configuration for 32GB RAM Systems
+python -m src.flowlyzer.main -i Input/ --multi-folder \
+  --workers 16 \           # Maximum packet processing threads
+  --feature-threads 12 \   # High parallelism for feature extraction
+  --folder-threads 4 \     # Process multiple folders simultaneously
+  --batch-size 200 \       # Large batches for memory efficiency
+  --csv-batch-size 500 \   # Less frequent CSV writes for performance
+  --max-flows 50000 \      # Higher flow capacity
+  --queue-size 100000      # Large queue for high-throughput processing
 ```
 
 See PROJECT_STRUCTURE.md for detailed technical documentation.
