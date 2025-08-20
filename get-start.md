@@ -206,12 +206,12 @@ python -m src.flowlyzer.main -i Input/ --label-config labeling_config.json
 # Maximum threading with memory optimization
 python -m src.flowlyzer.main -i Input/ \
   --workers 12 --feature-threads 8 --max-flows 500000 \
-  --queue-size 200000 --batch-size 50
+  --queue-size 200000 --batch-size 50 --csv-batch-size 60
 
-# Multi-folder high performance with batching
+# Multi-folder high performance with custom CSV batching
 python -m src.flowlyzer.main -i Captures/ --multi-folder \
   --workers 8 --feature-threads 8 --folder-threads 3 \
-  --flow-timeout 600 --batch-size 40
+  --flow-timeout 600 --batch-size 40 --csv-batch-size 35
 ```
 
 ### Scenario 10: Memory-Conscious Processing
@@ -220,16 +220,16 @@ python -m src.flowlyzer.main -i Captures/ --multi-folder \
 # Conservative memory usage with small batches
 python -m src.flowlyzer.main -i Input/ \
   --workers 2 --feature-threads 2 --max-flows 50000 \
-  --queue-size 25000 --flow-timeout 300 --batch-size 15
+  --queue-size 25000 --flow-timeout 300 --batch-size 15 --csv-batch-size 12
 
 # Sequential multi-folder processing with memory optimization
 python -m src.flowlyzer.main -i Captures/ --multi-folder \
   --folder-threads 1 --workers 4 --feature-threads 4 \
-  --batch-size 20 --max-flows 5000
+  --batch-size 20 --csv-batch-size 18 --max-flows 5000
 
 # Ultra-conservative for very limited memory
 python -m src.flowlyzer.main -i Input/ \
-  --workers 1 --feature-threads 1 --batch-size 10 \
+  --workers 1 --feature-threads 1 --batch-size 10 --csv-batch-size 8 \
   --max-flows 1000 --queue-size 5000
 ```
 
@@ -277,19 +277,19 @@ python -m src.flowlyzer.main -i Evidence/Incident_20241201/ \
 ### Scenario 14: Memory-Optimized Multi-Folder Processing
 **Use Case**: Large multi-folder datasets with memory constraints
 ```bash
-# Balanced performance and memory usage
+# Balanced performance and memory usage with custom CSV batching
 python -m src.flowlyzer.main -i Captures/ --multi-folder \
-  --batch-size 30 --workers 4 --feature-threads 4 \
+  --batch-size 30 --csv-batch-size 25 --workers 4 --feature-threads 4 \
   --max-flows 10000
 
 # Conservative memory with frequent CSV updates
 python -m src.flowlyzer.main -i Captures/ --multi-folder \
-  --batch-size 15 --workers 2 --feature-threads 2 \
+  --batch-size 15 --csv-batch-size 12 --workers 2 --feature-threads 2 \
   --max-flows 5000 --folder-threads 1
 
-# Maximum memory optimization
+# Maximum memory optimization with very frequent CSV writes
 python -m src.flowlyzer.main -i Captures/ --multi-folder \
-  --batch-size 10 --workers 1 --feature-threads 1 \
+  --batch-size 10 --csv-batch-size 8 --workers 1 --feature-threads 1 \
   --max-flows 2000 --queue-size 10000
 ```
 
@@ -312,12 +312,16 @@ python -m src.flowlyzer.main -i Input/ --disable-batching \
 ```bash
 # Modern memory optimization (recommended approach):
 python -m src.flowlyzer.main -i Input/ \
-  --batch-size 15 --workers 2 --max-flows 5000
+  --batch-size 15 --csv-batch-size 12 --workers 2 --max-flows 5000
 
 # If you still encounter memory errors, use ultra-conservative settings:
 python -m src.flowlyzer.main -i LargeFile.pcap \
-  --batch-size 10 --workers 1 --feature-threads 1 \
+  --batch-size 10 --csv-batch-size 8 --workers 1 --feature-threads 1 \
   --max-flows 2000 --flow-timeout 300
+
+# Very frequent CSV updates for memory-constrained systems:
+python -m src.flowlyzer.main -i Input/ \
+  --csv-batch-size 5 --batch-size 10 --workers 1 --max-flows 1000
 
 # Legacy approach (disable optimizations):
 python -m src.flowlyzer.main -i Input/ --disable-batching \

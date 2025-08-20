@@ -114,14 +114,19 @@ class FlowManager:
             elif scapy_packet.haslayer('LLC'):
                 # Check for specific LLC-based protocols
                 if self._is_cdp_packet(scapy_packet):
+                    self.logger.debug(f"CDP packet detected at frame {frame_number}")
                     return CDPPacket(scapy_packet, frame_number)
                 elif self._is_lldp_packet(scapy_packet):
+                    self.logger.debug(f"LLDP packet detected at frame {frame_number}")
                     return LLDPPacket(scapy_packet, frame_number)
                 elif self._is_dtp_packet(scapy_packet):
+                    self.logger.debug(f"DTP packet detected at frame {frame_number}")
                     return DTPPacket(scapy_packet, frame_number)
                 elif self._is_vtp_packet(scapy_packet):
+                    self.logger.debug(f"VTP packet detected at frame {frame_number}")
                     return VTPPacket(scapy_packet, frame_number)
                 elif self._is_isl_packet(scapy_packet):
+                    self.logger.debug(f"ISL packet detected at frame {frame_number}")
                     return ISLPacket(scapy_packet, frame_number)
                 else:
                     return LLCPacket(scapy_packet, frame_number)
@@ -132,6 +137,7 @@ class FlowManager:
             
             # Check for CDP by MAC address
             elif self._is_cdp_packet(scapy_packet):
+                self.logger.debug(f"CDP packet detected by MAC at frame {frame_number}")
                 return CDPPacket(scapy_packet, frame_number)
             
             # Check for ISL by characteristics
@@ -155,9 +161,25 @@ class FlowManager:
         try:
             if scapy_packet.haslayer('Ether'):
                 dst_mac = str(scapy_packet['Ether'].dst).lower()
-                return dst_mac == '01:00:0c:cc:cc:cc'
+                if dst_mac == '01:00:0c:cc:cc:cc':
+                    # CDP uses the same MAC as DTP, need to check payload
+                    if scapy_packet.haslayer('LLC'):
+                        llc_layer = scapy_packet['LLC']
+                        # CDP typically has DSAP/SSAP = 0xAA (SNAP)
+                        if hasattr(llc_layer, 'dsap') and hasattr(llc_layer, 'ssap'):
+                            if llc_layer.dsap == 0xaa and llc_layer.ssap == 0xaa:
+                                # Check if it's CDP by looking at SNAP OUI and PID
+                                raw_payload = bytes(scapy_packet.payload) if scapy_packet.payload else b''
+                                # CDP has OUI 00:00:0c and PID 0x2000
+                                if len(raw_payload) >= 8:
+                                    # Look for CDP signature in payload
+                                    return raw_payload[3:6] == b'\x00\x00\x0c' and raw_payload[6:8] == b'\x20\x00'
+                    else:
+                        # If no LLC layer, assume it's CDP based on MAC
+                        return True
             return False
-        except Exception:
+        except Exception as e:
+            self.logger.debug(f"Error in CDP detection: {e}")
             return False
     
     def _is_lldp_packet(self, scapy_packet) -> bool:
@@ -175,9 +197,19 @@ class FlowManager:
         try:
             if scapy_packet.haslayer('Ether'):
                 dst_mac = str(scapy_packet['Ether'].dst).lower()
-                return dst_mac == '01:00:0c:cc:cc:cc' and scapy_packet.haslayer('LLC')
+                if dst_mac == '01:00:0c:cc:cc:cc' and scapy_packet.haslayer('LLC'):
+                    # Check if this is DTP and not CDP
+                    raw_payload = bytes(scapy_packet.payload) if scapy_packet.payload else b''
+                    if len(raw_payload) >= 8:
+                        # DTP has different SNAP PID than CDP
+                        # CDP: OUI 00:00:0c, PID 0x2000
+                        # DTP: OUI 00:00:0c, PID 0x2004
+                        return (raw_payload[3:6] == b'\x00\x00\x0c' and 
+                               raw_payload[6:8] == b'\x20\x04')
+                    return False
             return False
-        except Exception:
+        except Exception as e:
+            self.logger.debug(f"Error in DTP detection: {e}")
             return False
     
     def _is_vtp_packet(self, scapy_packet) -> bool:
@@ -347,9 +379,21 @@ class FlowManager:
         }
 
     def log_progress(self):
-        """Log current processing progress."""
+        """Log current processing progress with detailed protocol breakdown."""
         stats = self.get_statistics()
-        protocol_summary = ', '.join([f"{count} {proto}" for proto, count in stats['protocol_stats'].items()])
+        
+        # Create detailed protocol summary
+        protocol_items = []
+        for proto, count in sorted(stats['protocol_stats'].items()):
+            if count > 0:
+                protocol_items.append(f"{count} {proto}")
+        
+        protocol_summary = ', '.join(protocol_items) if protocol_items else 'no packets processed'
+        
+        # Special logging for CDP to debug detection
+        cdp_count = stats['protocol_stats'].get('CDP', 0)
+        if cdp_count > 0:
+            self.logger.info(f"CDP Detection: Found {cdp_count} CDP packets")
         
         self.logger.info(
             f"Processed {stats['total_packets']} packets: {protocol_summary} "

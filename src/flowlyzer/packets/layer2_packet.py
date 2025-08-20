@@ -14,6 +14,10 @@ class STPPacket(BasePacket):
         super().__init__(scapy_packet, frame_number)
         self._extract_stp_features()
     
+    def get_protocol_type(self) -> str:
+        """Override to ensure STP packets are correctly identified."""
+        return 'STP'
+    
     def _extract_stp_features(self):
         """Extract comprehensive STP-specific features."""
         try:
@@ -118,6 +122,10 @@ class CDPPacket(BasePacket):
     def __init__(self, scapy_packet: Packet, frame_number: int):
         super().__init__(scapy_packet, frame_number)
         self._extract_cdp_features()
+    
+    def get_protocol_type(self) -> str:
+        """Override to ensure CDP packets are correctly identified."""
+        return 'CDP'
     
     def _extract_cdp_features(self):
         """Extract comprehensive CDP-specific features."""
@@ -373,6 +381,10 @@ class LLDPPacket(BasePacket):
         super().__init__(scapy_packet, frame_number)
         self._extract_lldp_features()
     
+    def get_protocol_type(self) -> str:
+        """Override to ensure LLDP packets are correctly identified."""
+        return 'LLDP'
+    
     def _extract_lldp_features(self):
         """Extract LLDP-specific features."""
         try:
@@ -447,6 +459,10 @@ class ARPPacket(BasePacket):
     def __init__(self, scapy_packet: Packet, frame_number: int):
         super().__init__(scapy_packet, frame_number)
         self._extract_arp_features()
+    
+    def get_protocol_type(self) -> str:
+        """Override to ensure ARP packets are correctly identified."""
+        return 'ARP'
     
     def _extract_arp_features(self):
         """Extract comprehensive ARP-specific features."""

@@ -20,18 +20,21 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 - **222 Comprehensive Features**: Statistical, protocol-specific, and enhanced Layer 2 features
 - **Multi-Protocol Support**: TCP, UDP, QUIC, and Layer 2 protocols (STP, CDP, LLDP, ARP, DHCP, LLC, DTP, VTP, ISL)
 - **Enhanced Layer 2 Analysis**: Deep packet inspection for CDP TLVs, STP identifiers, DHCP options, ARP details
+- **Accurate Protocol Detection**: Improved CDP/DTP differentiation with SNAP OUI/PID analysis
 - **Flow Detection**: Bidirectional flow detection with configurable timeouts
 - **Multi-threaded Processing**: Parallel packet processing with optimized queuing
 - **Flexible Labeling**: Support for IP, MAC, time-based, and text file configuration
 - **CSV-Only Output**: Clean CSV exports with optional Layer 2/3 separation
 - **Visualization**: Comprehensive plotting and statistics generation
-- **Comprehensive Logging**: Detailed progress tracking and statistics
+- **Comprehensive Logging**: Detailed progress tracking and statistics with real-time protocol detection
 
 ### Enhanced Layer 2 Features
 - **ARP Protocol**: Hardware/protocol types, opcodes, address mappings
 - **DHCP Protocol**: BOOTP fields, flags, options parsing, message types
 - **STP Protocol**: Root/bridge identifiers with priorities, timing fields, topology flags
 - **CDP Protocol**: Complete TLV parsing, device information, capabilities flags, power management
+  - Enhanced detection with SNAP OUI/PID analysis (differentiates from DTP)
+  - Real-time CDP packet counting in logs
 - **LLC Protocol**: SAP values, control fields, command/response bits
 - **DTP Protocol**: Dynamic Trunking negotiation, sender information
 - **ISL Protocol**: Inter-Switch Link encapsulation, VLAN information
@@ -92,8 +95,11 @@ python -m src.flowlyzer.main -i Input/ --flow-timeout 600 --max-flows 50000 --wo
 # Large file processing with memory optimization
 python -m src.flowlyzer.main -i Input/ --queue-size 20000 --workers 12 --batch-size 50
 
-# Memory-conservative processing
-python -m src.flowlyzer.main -i Input/ --batch-size 20 --workers 2 --max-flows 5000
+# Memory-conservative processing with custom CSV batch size
+python -m src.flowlyzer.main -i Input/ --batch-size 20 --csv-batch-size 25 --workers 2 --max-flows 5000
+
+# Frequent CSV updates with smaller batches
+python -m src.flowlyzer.main -i Input/ --csv-batch-size 15 --batch-size 30
 
 # Disable batching for small datasets
 python -m src.flowlyzer.main -i Input/ --disable-batching
@@ -269,9 +275,16 @@ python -m src.flowlyzer.main -i Input/ \
 
 # Memory optimization options
 python -m src.flowlyzer.main -i Input/ \
-  --batch-size 50 \        # Larger batches for better performance
+  --batch-size 50 \        # Larger processing batches for better performance
+  --csv-batch-size 40 \    # Number of flows per CSV write operation
   --disable-batching \     # Disable batching for small datasets
   --workers 4              # Reduce workers to save memory
+
+# Fine-tune CSV writing frequency
+python -m src.flowlyzer.main -i Input/ \
+  --csv-batch-size 20 \    # Write to CSV every 20 flows (more frequent updates)
+  --batch-size 30 \        # Process 30 flows before memory cleanup
+  --workers 6
 ```
 
 See PROJECT_STRUCTURE.md for detailed technical documentation.

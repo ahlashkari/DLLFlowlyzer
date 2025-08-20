@@ -14,6 +14,10 @@ class LLCPacket(BasePacket):
         super().__init__(scapy_packet, frame_number)
         self._extract_llc_features()
     
+    def get_protocol_type(self) -> str:
+        """Override to ensure LLC packets are correctly identified."""
+        return 'LLC'
+    
     def _extract_llc_features(self):
         """Extract comprehensive LLC-specific features."""
         try:
@@ -83,6 +87,10 @@ class VTPPacket(BasePacket):
         super().__init__(scapy_packet, frame_number)
         self._extract_vtp_features()
     
+    def get_protocol_type(self) -> str:
+        """Override to ensure VTP packets are correctly identified."""
+        return 'VTP'
+    
     def _extract_vtp_features(self):
         """Extract VTP-specific features."""
         try:
@@ -124,6 +132,10 @@ class DTPPacket(BasePacket):
     def __init__(self, scapy_packet: Packet, frame_number: int):
         super().__init__(scapy_packet, frame_number)
         self._extract_dtp_features()
+    
+    def get_protocol_type(self) -> str:
+        """Override to ensure DTP packets are correctly identified."""
+        return 'DTP'
     
     def _extract_dtp_features(self):
         """Extract comprehensive DTP-specific features."""
@@ -225,6 +237,10 @@ class ISLPacket(BasePacket):
     def __init__(self, scapy_packet: Packet, frame_number: int):
         super().__init__(scapy_packet, frame_number)
         self._extract_isl_features()
+    
+    def get_protocol_type(self) -> str:
+        """Override to ensure ISL packets are correctly identified."""
+        return 'ISL'
     
     def _extract_isl_features(self):
         """Extract comprehensive ISL-specific features."""

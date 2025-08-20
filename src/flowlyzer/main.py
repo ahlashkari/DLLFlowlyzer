@@ -122,6 +122,7 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
     )
     
     BATCH_SIZE = processing_config.get('batch_size', 30)  # Process flows in configurable batches
+    CSV_BATCH_SIZE = processing_config.get('csv_batch_size', 30)  # Number of flows per CSV batch
     
     try:
         for file_index, pcap_file in enumerate(pcap_files, 1):
@@ -136,7 +137,7 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                         
                         # Process batches periodically
                         if frame_number % 5000 == 0:  # Check more frequently
-                            batch_flows = flow_manager.get_batch_completed_flows(BATCH_SIZE)
+                            batch_flows = flow_manager.get_batch_completed_flows(CSV_BATCH_SIZE)
                             if batch_flows:
                                 total_flows_processed += process_flow_batch(
                                     batch_flows, feature_extractor, flow_labeler, 
@@ -165,8 +166,8 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                                 logger.logger.critical("Critical memory usage - performing aggressive cleanup")
                                 perform_aggressive_cleanup(flow_manager, logger, memory_monitor)
                                 
-                                # Process completed flows immediately
-                                emergency_batch = flow_manager.get_batch_completed_flows(BATCH_SIZE * 3)
+                                # Process completed flows immediately using larger CSV batches
+                                emergency_batch = flow_manager.get_batch_completed_flows(CSV_BATCH_SIZE * 3)
                                 if emergency_batch:
                                     total_flows_processed += process_flow_batch(
                                         emergency_batch, feature_extractor, flow_labeler,
@@ -177,8 +178,8 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                                 logger.logger.warning("Memory warning - performing standard cleanup")
                                 memory_monitor.force_garbage_collection()
                                 
-                                # Process some completed flows
-                                warning_batch = flow_manager.get_batch_completed_flows(BATCH_SIZE)
+                                # Process some completed flows using CSV batch size
+                                warning_batch = flow_manager.get_batch_completed_flows(CSV_BATCH_SIZE)
                                 if warning_batch:
                                     total_flows_processed += process_flow_batch(
                                         warning_batch, feature_extractor, flow_labeler,
@@ -189,8 +190,8 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                         if frame_number % 20000 == 0:
                             flow_manager.force_flow_completion(max_active_flows=5000)
                             
-                            # Process any flows that were just completed
-                            cleanup_batch = flow_manager.get_batch_completed_flows(BATCH_SIZE * 2)
+                            # Process any flows that were just completed using CSV batch size
+                            cleanup_batch = flow_manager.get_batch_completed_flows(CSV_BATCH_SIZE * 2)
                             if cleanup_batch:
                                 total_flows_processed += process_flow_batch(
                                     cleanup_batch, feature_extractor, flow_labeler,
@@ -221,6 +222,7 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                 remaining_flows, feature_extractor, flow_labeler,
                 csv_exporter, batch_files, processing_config, logger
             )
+            logger.logger.info(f"Processed final batch of {len(remaining_flows)} flows")
     
     final_stats = flow_manager.get_statistics()
     final_stats['total_flows_exported'] = total_flows_processed
