@@ -89,8 +89,14 @@ python -m src.flowlyzer.main -i Input/ --label-time "10:00 AM-11:00 AM=DHCP Star
 # Custom processing parameters
 python -m src.flowlyzer.main -i Input/ --flow-timeout 600 --max-flows 50000 --workers 8
 
-# Large file processing
-python -m src.flowlyzer.main -i Input/ --queue-size 20000 --workers 12
+# Large file processing with memory optimization
+python -m src.flowlyzer.main -i Input/ --queue-size 20000 --workers 12 --batch-size 50
+
+# Memory-conservative processing
+python -m src.flowlyzer.main -i Input/ --batch-size 20 --workers 2 --max-flows 5000
+
+# Disable batching for small datasets
+python -m src.flowlyzer.main -i Input/ --disable-batching
 ```
 
 ## Text File Labeling Format
@@ -243,9 +249,13 @@ Day3 (No labeling.txt):
   - Packet processing: Configurable worker threads (default: 4)
   - Feature extraction: Parallel feature computation threads (default: 4) 
   - Multi-folder: Optional parallel folder processing (default: 1)
-- **Memory Efficient**: Packet queuing system prevents memory exhaustion
-- **Scalable**: Handles large PCAP files and multi-file datasets
-- **Flow Management**: Automatic timeout and cleanup mechanisms
+- **Memory Optimized**: 
+  - **Batched Processing**: Process flows in configurable batches (default: 30)
+  - **Automatic Memory Cleanup**: Clear packet data after feature extraction
+  - **Memory Monitoring**: Real-time memory usage tracking with automatic cleanup
+  - **Pressure Detection**: Automatic flow completion when memory thresholds exceeded
+- **Scalable**: Handles large PCAP files and multi-file datasets with optimized memory usage
+- **Flow Management**: Automatic timeout and cleanup mechanisms with memory-aware batching
 
 ### Threading Configuration
 ```bash
@@ -253,7 +263,15 @@ Day3 (No labeling.txt):
 python -m src.flowlyzer.main -i Input/ \
   --workers 8 \            # Packet processing threads
   --feature-threads 6 \    # Feature extraction threads
-  --folder-threads 2       # Parallel folder processing (multi-folder mode only)
+  --folder-threads 2 \     # Parallel folder processing (multi-folder mode only)
+  --batch-size 30 \        # Flows per batch for memory optimization
+  --max-flows 10000        # Limit concurrent flows
+
+# Memory optimization options
+python -m src.flowlyzer.main -i Input/ \
+  --batch-size 50 \        # Larger batches for better performance
+  --disable-batching \     # Disable batching for small datasets
+  --workers 4              # Reduce workers to save memory
 ```
 
 See PROJECT_STRUCTURE.md for detailed technical documentation.

@@ -262,6 +262,90 @@ class FlowManager:
             'flow_stats': dict(self.flow_stats),
         }
     
+    def get_batch_completed_flows(self, batch_size: int = 30) -> List[Flow]:
+        """
+        Get a batch of completed flows and remove them from memory.
+        
+        Args:
+            batch_size: Number of flows to return in batch
+            
+        Returns:
+            List of completed flows (up to batch_size)
+        """
+        if len(self.completed_flows) >= batch_size:
+            batch_flows = self.completed_flows[:batch_size]
+            self.completed_flows = self.completed_flows[batch_size:]
+            self.logger.info(f"Retrieved batch of {len(batch_flows)} flows, {len(self.completed_flows)} remaining")
+            return batch_flows
+        elif self.completed_flows:
+            # Return all remaining flows if less than batch_size
+            batch_flows = self.completed_flows.copy()
+            self.completed_flows.clear()
+            self.logger.info(f"Retrieved final batch of {len(batch_flows)} flows")
+            return batch_flows
+        else:
+            return []
+    
+    def clear_packet_data(self, flows: List[Flow]):
+        """
+        Clear packet data from flows to free memory while keeping flow features.
+        
+        Args:
+            flows: List of flows to clear packet data from
+        """
+        for flow in flows:
+            if hasattr(flow, 'packets') and flow.packets:
+                # Ensure features are cached before clearing packets
+                flow.get_features()  # This caches the features
+                # Clear packet data to free memory
+                flow.packets.clear()
+        
+        self.logger.debug(f"Cleared packet data from {len(flows)} flows")
+    
+    def force_flow_completion(self, max_active_flows: int = 100):
+        """
+        Force completion of oldest active flows when we need to free memory.
+        
+        Args:
+            max_active_flows: Maximum number of active flows to keep
+        """
+        if len(self.active_flows) > max_active_flows:
+            # Sort by last activity and force completion of oldest flows
+            sorted_flows = sorted(
+                self.active_flows.items(),
+                key=lambda x: x[1].last_activity
+            )
+            
+            flows_to_complete = len(self.active_flows) - max_active_flows
+            for i in range(flows_to_complete):
+                flow_key = sorted_flows[i][0]
+                self._close_flow(flow_key)
+                self.flow_stats['force_completed_for_memory'] += 1
+            
+            self.logger.info(f"Force completed {flows_to_complete} flows to manage memory")
+    
+    def get_memory_usage_estimate(self) -> dict:
+        """
+        Get estimated memory usage of flows.
+        
+        Returns:
+            Dictionary with memory usage estimates
+        """
+        active_flows_mem = len(self.active_flows) * 1024  # Rough estimate
+        completed_flows_mem = len(self.completed_flows) * 1024
+        
+        # More detailed estimation based on packets
+        total_packets = sum(len(flow.packets) for flow in self.active_flows.values())
+        total_packets += sum(len(flow.packets) for flow in self.completed_flows)
+        packet_mem = total_packets * 500  # Rough estimate per packet
+        
+        return {
+            'active_flows': len(self.active_flows),
+            'completed_flows': len(self.completed_flows),
+            'total_packets_in_memory': total_packets,
+            'estimated_memory_mb': (active_flows_mem + completed_flows_mem + packet_mem) / 1024 / 1024
+        }
+
     def log_progress(self):
         """Log current processing progress."""
         stats = self.get_statistics()

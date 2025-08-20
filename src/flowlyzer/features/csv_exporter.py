@@ -202,6 +202,110 @@ class CSVExporter:
             self.logger.error(f"Error creating feature summary: {e}")
             raise
     
+    def append_to_csv(self, flows_df: pd.DataFrame, csv_file_path: str) -> bool:
+        """
+        Append flows to an existing CSV file.
+        
+        Args:
+            flows_df: DataFrame with flow features to append
+            csv_file_path: Path to existing CSV file
+            
+        Returns:
+            True if append was successful
+        """
+        try:
+            if flows_df.empty:
+                self.logger.warning("No flows to append")
+                return True
+            
+            if os.path.exists(csv_file_path):
+                # Read existing CSV to ensure column compatibility
+                existing_df = pd.read_csv(csv_file_path, nrows=0)  # Read only header
+                
+                # Ensure columns match
+                if set(flows_df.columns) != set(existing_df.columns):
+                    # Reorder new dataframe columns to match existing
+                    flows_df = flows_df.reindex(columns=existing_df.columns, fill_value=0)
+                
+                # Append to existing file
+                flows_df.to_csv(csv_file_path, mode='a', header=False, index=False)
+                self.logger.info(f"Appended {len(flows_df)} flows to {csv_file_path}")
+            else:
+                # Create new file if it doesn't exist
+                flows_df.to_csv(csv_file_path, index=False)
+                self.logger.info(f"Created new CSV with {len(flows_df)} flows: {csv_file_path}")
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error appending to CSV {csv_file_path}: {e}")
+            return False
+    
+    def export_flows_batch(self, flows_df: pd.DataFrame, 
+                          batch_files: dict,
+                          separate_layers: bool = False) -> dict:
+        """
+        Export flows to existing batch CSV files or create new ones.
+        
+        Args:
+            flows_df: DataFrame with flow features
+            batch_files: Dictionary with existing file paths {'combined': path, 'layer2': path, 'layer3': path}
+            separate_layers: Whether to separate layers
+            
+        Returns:
+            Dictionary with updated file paths
+        """
+        try:
+            if flows_df.empty:
+                return batch_files
+            
+            # Update combined file
+            combined_file = batch_files.get('combined')
+            if combined_file:
+                self.append_to_csv(flows_df, combined_file)
+            
+            # Handle layer separation if enabled
+            if separate_layers:
+                layer2_df, layer3_df = self.feature_extractor.separate_layer2_layer3(flows_df)
+                
+                if not layer2_df.empty and batch_files.get('layer2'):
+                    self.append_to_csv(layer2_df, batch_files['layer2'])
+                
+                if not layer3_df.empty and batch_files.get('layer3'):
+                    self.append_to_csv(layer3_df, batch_files['layer3'])
+            
+            return batch_files
+            
+        except Exception as e:
+            self.logger.error(f"Error in batch export: {e}")
+            raise
+    
+    def create_batch_files(self, base_filename: str, separate_layers: bool = False) -> dict:
+        """
+        Create initial batch CSV files with timestamp.
+        
+        Args:
+            base_filename: Base filename for CSV files
+            separate_layers: Whether to create separate layer files
+            
+        Returns:
+            Dictionary with file paths {'combined': path, 'layer2': path, 'layer3': path}
+        """
+        timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+        
+        batch_files = {
+            'combined': str(self.output_dir / f"{base_filename}_combined_{timestamp}.csv")
+        }
+        
+        if separate_layers:
+            batch_files['layer2'] = str(self.output_dir / f"{base_filename}_layer2_{timestamp}.csv")
+            batch_files['layer3'] = str(self.output_dir / f"{base_filename}_layer3_{timestamp}.csv")
+        else:
+            batch_files['layer2'] = None
+            batch_files['layer3'] = None
+        
+        return batch_files
+
     def validate_export(self, file_path: str) -> bool:
         """
         Validate exported CSV file.

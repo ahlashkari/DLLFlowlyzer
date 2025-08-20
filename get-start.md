@@ -203,28 +203,34 @@ python -m src.flowlyzer.main -i Input/ --label-config labeling_config.json
 ### Scenario 9: High-Performance Processing
 **Use Case**: Maximum performance for large datasets
 ```bash
-# Maximum threading
+# Maximum threading with memory optimization
 python -m src.flowlyzer.main -i Input/ \
   --workers 12 --feature-threads 8 --max-flows 500000 \
-  --queue-size 200000
+  --queue-size 200000 --batch-size 50
 
-# Multi-folder high performance
+# Multi-folder high performance with batching
 python -m src.flowlyzer.main -i Captures/ --multi-folder \
   --workers 8 --feature-threads 8 --folder-threads 3 \
-  --flow-timeout 600
+  --flow-timeout 600 --batch-size 40
 ```
 
 ### Scenario 10: Memory-Conscious Processing
 **Use Case**: Limited memory environments
 ```bash
-# Conservative memory usage
+# Conservative memory usage with small batches
 python -m src.flowlyzer.main -i Input/ \
   --workers 2 --feature-threads 2 --max-flows 50000 \
-  --queue-size 25000 --flow-timeout 300
+  --queue-size 25000 --flow-timeout 300 --batch-size 15
 
-# Sequential multi-folder processing
+# Sequential multi-folder processing with memory optimization
 python -m src.flowlyzer.main -i Captures/ --multi-folder \
-  --folder-threads 1 --workers 4 --feature-threads 4
+  --folder-threads 1 --workers 4 --feature-threads 4 \
+  --batch-size 20 --max-flows 5000
+
+# Ultra-conservative for very limited memory
+python -m src.flowlyzer.main -i Input/ \
+  --workers 1 --feature-threads 1 --batch-size 10 \
+  --max-flows 1000 --queue-size 5000
 ```
 
 ---
@@ -268,17 +274,57 @@ python -m src.flowlyzer.main -i Evidence/Incident_20241201/ \
 
 ---
 
+### Scenario 14: Memory-Optimized Multi-Folder Processing
+**Use Case**: Large multi-folder datasets with memory constraints
+```bash
+# Balanced performance and memory usage
+python -m src.flowlyzer.main -i Captures/ --multi-folder \
+  --batch-size 30 --workers 4 --feature-threads 4 \
+  --max-flows 10000
+
+# Conservative memory with frequent CSV updates
+python -m src.flowlyzer.main -i Captures/ --multi-folder \
+  --batch-size 15 --workers 2 --feature-threads 2 \
+  --max-flows 5000 --folder-threads 1
+
+# Maximum memory optimization
+python -m src.flowlyzer.main -i Captures/ --multi-folder \
+  --batch-size 10 --workers 1 --feature-threads 1 \
+  --max-flows 2000 --queue-size 10000
+```
+
+### Scenario 15: Disable Batching for Small Datasets
+**Use Case**: Small PCAP files where batching overhead isn't worth it
+```bash
+# Disable batching for small files
+python -m src.flowlyzer.main -i Input/small_capture.pcap --disable-batching
+
+# Traditional processing (pre-optimization behavior)
+python -m src.flowlyzer.main -i Input/ --disable-batching \
+  --separate-layers
+```
+
+---
+
 ## Troubleshooting Common Issues
 
 ### Memory Issues
 ```bash
-# If you encounter memory errors, reduce threading:
+# Modern memory optimization (recommended approach):
 python -m src.flowlyzer.main -i Input/ \
+  --batch-size 15 --workers 2 --max-flows 5000
+
+# If you still encounter memory errors, use ultra-conservative settings:
+python -m src.flowlyzer.main -i LargeFile.pcap \
+  --batch-size 10 --workers 1 --feature-threads 1 \
+  --max-flows 2000 --flow-timeout 300
+
+# Legacy approach (disable optimizations):
+python -m src.flowlyzer.main -i Input/ --disable-batching \
   --workers 2 --feature-threads 2 --max-flows 10000
 
-# For very large files, use conservative settings:
-python -m src.flowlyzer.main -i LargeFile.pcap \
-  --workers 1 --feature-threads 1 --flow-timeout 300
+# Monitor memory usage in debug mode:
+python -m src.flowlyzer.main -i Input/ --log-level DEBUG
 ```
 
 ### Permission Issues

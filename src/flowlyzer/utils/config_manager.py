@@ -90,6 +90,8 @@ Examples:
         parser.add_argument('--workers', type=int, default=4, help='Number of worker threads for packet processing')
         parser.add_argument('--feature-threads', type=int, default=4, help='Number of threads for feature extraction')
         parser.add_argument('--folder-threads', type=int, default=1, help='Number of threads for parallel folder processing')
+        parser.add_argument('--batch-size', type=int, default=30, help='Number of flows to process in each batch for memory optimization')
+        parser.add_argument('--disable-batching', action='store_true', help='Disable batched processing and CSV creation')
         parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], default='INFO', help='Logging level')
         parser.add_argument('--quiet', action='store_true', help='Suppress progress logging')
         parser.add_argument('--config', default='config.ini', help='Configuration file path')
@@ -281,6 +283,14 @@ Examples:
                 config['folder_threads'] = self.args.folder_threads
             else:
                 config['folder_threads'] = 1
+            if hasattr(self.args, 'batch_size') and self.args.batch_size != 30:
+                config['batch_size'] = self.args.batch_size
+            else:
+                config['batch_size'] = 30
+            if hasattr(self.args, 'disable_batching') and self.args.disable_batching:
+                config['enable_batching'] = False
+            else:
+                config['enable_batching'] = True
             if self.args.separate_layers:
                 config['separate_l2_l3'] = True
             if hasattr(self.args, 'multi_folder') and self.args.multi_folder:
