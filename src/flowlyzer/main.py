@@ -477,8 +477,8 @@ def process_multi_folders(config_manager, processing_config: dict,
             )
         
         total_time = time.time() - overall_start_time
-        total_packets = sum(r['total_packets'] for r in all_results)
-        total_flows = sum(len(r['flows_df']) for r in all_results)
+        total_packets = sum(r.get('total_packets', 0) for r in all_results if r)
+        total_flows = sum(len(r.get('flows_df', [])) for r in all_results if r and 'flows_df' in r)
         
         logger.logger.info(f"Multi-folder processing completed!")
         logger.logger.info(f"Processed {total_folders} folders in {total_time:.2f}s")

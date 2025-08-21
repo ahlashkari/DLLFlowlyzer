@@ -279,7 +279,8 @@ class FlowManager:
         current_time = time.time()
         timed_out_flows = []
         
-        for flow_key, flow in self.active_flows.items():
+        # Create a copy of the items to avoid "dictionary changed size during iteration"
+        for flow_key, flow in list(self.active_flows.items()):
             if flow.is_timeout(current_time, self.flow_timeout):
                 timed_out_flows.append(flow_key)
         
@@ -305,6 +306,7 @@ class FlowManager:
     
     def finalize_all_flows(self):
         """Close all remaining active flows."""
+        # Create a copy of the keys to avoid "dictionary changed size during iteration"
         active_flow_keys = list(self.active_flows.keys())
         for flow_key in active_flow_keys:
             self._close_flow(flow_key)

@@ -7,6 +7,7 @@ Comprehensive DataLink Layer Network Flow Analyzer for extracting 200+ features 
 1. Install dependencies:
 ```bash
 pip install -r requirements.txt
+pip install pyshark  # For enhanced CDP packet analysis
 ```
 
 2. Run analysis:
@@ -21,6 +22,7 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 - **Multi-Protocol Support**: TCP, UDP, QUIC, and Layer 2 protocols (STP, CDP, LLDP, ARP, DHCP, LLC, DTP, VTP, ISL)
 - **Enhanced Layer 2 Analysis**: Deep packet inspection for CDP TLVs, STP identifiers, DHCP options, ARP details
 - **Enhanced Protocol Detection**: Advanced CDP/LLDP/DTP separation with payload validation and structure analysis
+- **PyShark-Enhanced CDP Analysis**: Dual-mode CDP extraction using PyShark with native fallback for comprehensive feature extraction
 - **Flow Detection**: Bidirectional flow detection with configurable timeouts
 - **Multi-threaded Processing**: Parallel packet processing with optimized queuing
 - **Flexible Labeling**: Support for IP, MAC, time-based, and text file configuration
@@ -302,4 +304,23 @@ python -m src.flowlyzer.main -i Input/ --multi-folder \
   --queue-size 100000      # Large queue for high-throughput processing
 ```
 
+## Recent Improvements (2025)
+
+### Critical Bug Fixes
+- **Fixed Dictionary Iteration Error**: Resolved runtime crashes during flow cleanup that caused incomplete processing
+- **Enhanced Multi-folder Error Handling**: Improved resilience when processing multiple directories
+- **Better Data Quality**: Replace zero values with NaN for missing packet data to improve ML model accuracy
+
+### Enhanced CDP Packet Analysis
+- **PyShark Integration**: Dual-mode CDP extraction using PyShark with native fallback
+- **Comprehensive Feature Extraction**: Enhanced TLV parsing for device info, capabilities, VLAN data, and power management
+- **Improved Protocol Detection**: Better separation between CDP, DTP, and LLDP packets
+- **Automatic Fallback**: Gracefully handles missing PyShark dependency
+
+### Performance and Reliability
+- **Robust Error Handling**: Processing continues even when individual files fail
+- **Memory Optimization**: Better handling of large datasets with NaN values
+- **Enhanced Logging**: More detailed CDP detection and protocol statistics
+
+See `BUG_FIXES_IMPROVEMENTS_2025.md` for detailed technical information about recent improvements.
 See PROJECT_STRUCTURE.md for detailed technical documentation.

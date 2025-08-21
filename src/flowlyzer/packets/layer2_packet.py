@@ -128,11 +128,15 @@ class CDPPacket(BasePacket):
         return 'CDP'
     
     def _extract_cdp_features(self):
-        """Extract comprehensive CDP-specific features with enhanced validation."""
+        """Extract comprehensive CDP-specific features with enhanced validation using both native and pyshark analysis."""
         try:
             # Enhanced CDP detection - must match MAC and validate payload structure
             dst_mac = self.features.get('dst_mac_addr', '').lower()
             if dst_mac == '01:00:0c:cc:cc:cc':
+                
+                # Try pyshark-enhanced extraction first
+                if self._try_pyshark_cdp_extraction():
+                    return
                 
                 # Validate CDP structure and extract features
                 raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
@@ -454,6 +458,131 @@ class CDPPacket(BasePacket):
             'cdp_spare_poe_tlv_pse_spare_pair_poe': 0,
         }
         self.features.update(cdp_defaults)
+    
+    def _try_pyshark_cdp_extraction(self) -> bool:
+        """
+        Try to extract CDP features using pyshark for enhanced analysis.
+        Returns True if successful, False otherwise.
+        """
+        try:
+            import pyshark
+            import io
+            import tempfile
+            import os
+            from scapy.all import wrpcap
+            
+            # Create a temporary pcap file with this single packet
+            with tempfile.NamedTemporaryFile(suffix='.pcap', delete=False) as tmp_file:
+                tmp_path = tmp_file.name
+                wrpcap(tmp_path, self.packet)
+            
+            try:
+                # Use pyshark to analyze the packet
+                cap = pyshark.FileCapture(tmp_path, display_filter='cdp')
+                
+                for pkt in cap:
+                    if hasattr(pkt, 'cdp'):
+                        cdp_layer = pkt.cdp
+                        
+                        # Extract enhanced CDP features using pyshark
+                        # Basic CDP header
+                        if hasattr(cdp_layer, 'version'):
+                            self.features['cdp_version'] = int(cdp_layer.version)
+                        if hasattr(cdp_layer, 'ttl'):
+                            self.features['cdp_ttl'] = int(cdp_layer.ttl)
+                        if hasattr(cdp_layer, 'checksum'):
+                            self.features['cdp_checksum_status'] = int(cdp_layer.checksum, 16) if isinstance(cdp_layer.checksum, str) else int(cdp_layer.checksum)
+                        
+                        # Device ID
+                        if hasattr(cdp_layer, 'deviceid'):
+                            device_id = str(cdp_layer.deviceid)
+                            self.features['cdp_device_id_tlv_len'] = len(device_id)
+                        
+                        # Platform
+                        if hasattr(cdp_layer, 'platform'):
+                            platform = str(cdp_layer.platform)
+                            self.features['cdp_platform_tlv_len'] = len(platform)
+                            self.features['cdp_platform'] = platform
+                        
+                        # Software version
+                        if hasattr(cdp_layer, 'software'):
+                            software = str(cdp_layer.software)
+                            self.features['cdp_software_version_tlv_len'] = len(software)
+                        
+                        # Port ID
+                        if hasattr(cdp_layer, 'portid'):
+                            port_id = str(cdp_layer.portid)
+                            self.features['cdp_port_id_tlv_len'] = len(port_id)
+                        
+                        # Capabilities
+                        if hasattr(cdp_layer, 'capabilities_router'):
+                            self.features['cdp_capabilities_router'] = cdp_layer.capabilities_router == '1'
+                        if hasattr(cdp_layer, 'capabilities_trans_bridge'):
+                            self.features['cdp_capabilities_trans_bridge'] = cdp_layer.capabilities_trans_bridge == '1'
+                        if hasattr(cdp_layer, 'capabilities_src_bridge'):
+                            self.features['cdp_capabilities_src_bridge'] = cdp_layer.capabilities_src_bridge == '1'
+                        if hasattr(cdp_layer, 'capabilities_switch'):
+                            self.features['cdp_capabilities_switch'] = cdp_layer.capabilities_switch == '1'
+                        if hasattr(cdp_layer, 'capabilities_host'):
+                            self.features['cdp_capabilities_host'] = cdp_layer.capabilities_host == '1'
+                        if hasattr(cdp_layer, 'capabilities_igmp'):
+                            self.features['cdp_capabilities_igmp'] = cdp_layer.capabilities_igmp == '1'
+                        if hasattr(cdp_layer, 'capabilities_repeater'):
+                            self.features['cdp_capabilities_repeater'] = cdp_layer.capabilities_repeater == '1'
+                        if hasattr(cdp_layer, 'capabilities_voip_phone'):
+                            self.features['cdp_capabilities_voip_phone'] = cdp_layer.capabilities_voip_phone == '1'
+                        
+                        # VLAN information
+                        if hasattr(cdp_layer, 'nativevlan'):
+                            self.features['cdp_vlan_native_native_vlan'] = int(cdp_layer.nativevlan)
+                            self.features['cdp_vlan_native_tlv_len'] = 4  # Native VLAN TLV is typically 4 bytes
+                        
+                        # Duplex
+                        if hasattr(cdp_layer, 'duplex'):
+                            self.features['cdp_duplex'] = 1 if 'full' in str(cdp_layer.duplex).lower() else 0
+                            self.features['cdp_duplex_tlv_len'] = 1
+                        
+                        # Management address
+                        if hasattr(cdp_layer, 'mgmtaddr'):
+                            addr_str = str(cdp_layer.mgmtaddr)
+                            self.features['cdp_management_addresses_sum_len'] = len(addr_str)
+                            self.features['cdp_addresses_count'] = 1
+                        
+                        # Power information
+                        if hasattr(cdp_layer, 'power'):
+                            try:
+                                power_val = int(cdp_layer.power)
+                                self.features['cdp_power_sum'] = power_val
+                                self.features['cdp_power_tlv_len'] = 4
+                            except ValueError:
+                                pass
+                        
+                        # Count TLVs by checking available CDP attributes
+                        tlv_count = 0
+                        for attr in dir(cdp_layer):
+                            if not attr.startswith('_') and hasattr(cdp_layer, attr):
+                                tlv_count += 1
+                        self.features['cdp_tlvs'] = tlv_count
+                        
+                        cap.close()
+                        return True
+                        
+                cap.close()
+                return False
+                
+            finally:
+                # Clean up temporary file
+                try:
+                    os.unlink(tmp_path)
+                except:
+                    pass
+            
+        except ImportError:
+            # pyshark not available, fall back to native extraction
+            return False
+        except Exception as e:
+            # Any error in pyshark processing, fall back to native extraction
+            return False
 
 
 class LLDPPacket(BasePacket):
