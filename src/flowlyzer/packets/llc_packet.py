@@ -51,7 +51,7 @@ class LLCPacket(BasePacket):
                     self.features['llc_control_ftype'] = 2  # Unnumbered frame
                     # U-frame modifier
                     self.features['llc_control_u_modifier'] = (ctrl >> 2) & 0x1F
-                
+                null
                 self.features['is_llc'] = True
                 
             else:
