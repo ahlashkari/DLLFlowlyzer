@@ -111,16 +111,16 @@ class Flow:
             frame_lengths = [p.get_features().get('frame_len', 0) for p in self.packets]
             
             features['sum_frame_len'] = sum(frame_lengths)
-            features['mean_frame_len'] = np.mean(frame_lengths) if frame_lengths else 0
-            features['max_frame_len'] = max(frame_lengths) if frame_lengths else 0
-            features['min_frame_len'] = min(frame_lengths) if frame_lengths else 0
-            features['median_frame_len'] = np.median(frame_lengths) if frame_lengths else 0
-            features['std_frame_len'] = np.std(frame_lengths) if len(frame_lengths) > 1 else 0
-            features['norm_frame_len'] = features['std_frame_len'] / features['mean_frame_len'] if features['mean_frame_len'] > 0 else 0
+            features['mean_frame_len'] = np.mean(frame_lengths) if frame_lengths else np.nan
+            features['max_frame_len'] = max(frame_lengths) if frame_lengths else np.nan
+            features['min_frame_len'] = min(frame_lengths) if frame_lengths else np.nan
+            features['median_frame_len'] = np.median(frame_lengths) if frame_lengths else np.nan
+            features['std_frame_len'] = np.std(frame_lengths) if len(frame_lengths) > 1 else np.nan
+            features['norm_frame_len'] = features['std_frame_len'] / features['mean_frame_len'] if features['mean_frame_len'] > 0 else np.nan
             
             # Frame rate
             duration = self.get_duration()
-            features['sum_frame_len_div_time'] = features['sum_frame_len'] / duration if duration > 0 else 0
+            features['sum_frame_len_div_time'] = features['sum_frame_len'] / duration if duration > 0 else np.nan
             
             # Marked and ignored frames
             marked_count = sum(1 for p in self.packets if p.is_marked())
@@ -128,8 +128,8 @@ class Flow:
             
             features['num_frame_marked'] = marked_count
             features['num_frame_ignored'] = ignored_count
-            features['percent_frame_marked'] = (marked_count / len(self.packets)) * 100 if self.packets else 0
-            features['percent_frame_ignored'] = (ignored_count / len(self.packets)) * 100 if self.packets else 0
+            features['percent_frame_marked'] = (marked_count / len(self.packets)) * 100 if self.packets else np.nan
+            features['percent_frame_ignored'] = (ignored_count / len(self.packets)) * 100 if self.packets else np.nan
             
         except Exception:
             self._set_default_frame_statistics(features)
@@ -158,8 +158,8 @@ class Flow:
                 features['max_frames_src_dst'] = max(src_to_dst)
                 features['min_frames_src_dst'] = min(src_to_dst)
                 features['median_frames_src_dst'] = np.median(src_to_dst)
-                features['std_frames_src_dst'] = np.std(src_to_dst) if len(src_to_dst) > 1 else 0
-                features['norm_frames_src_dst'] = features['std_frames_src_dst'] / features['mean_frames_src_dst'] if features['mean_frames_src_dst'] > 0 else 0
+                features['std_frames_src_dst'] = np.std(src_to_dst) if len(src_to_dst) > 1 else np.nan
+                features['norm_frames_src_dst'] = features['std_frames_src_dst'] / features['mean_frames_src_dst'] if features['mean_frames_src_dst'] > 0 else np.nan
             else:
                 self._set_default_directional_features(features, 'src_dst')
             
@@ -170,8 +170,8 @@ class Flow:
                 features['max_frames_dst_src'] = max(dst_to_src)
                 features['min_frames_dst_src'] = min(dst_to_src)
                 features['median_frames_dst_src'] = np.median(dst_to_src)
-                features['std_frames_dst_src'] = np.std(dst_to_src) if len(dst_to_src) > 1 else 0
-                features['norm_frames_dst_src'] = features['std_frames_dst_src'] / features['mean_frames_dst_src'] if features['mean_frames_dst_src'] > 0 else 0
+                features['std_frames_dst_src'] = np.std(dst_to_src) if len(dst_to_src) > 1 else np.nan
+                features['norm_frames_dst_src'] = features['std_frames_dst_src'] / features['mean_frames_dst_src'] if features['mean_frames_dst_src'] > 0 else np.nan
             else:
                 self._set_default_directional_features(features, 'dst_src')
                 
@@ -213,23 +213,23 @@ class Flow:
             
             # LLC statistics
             features['num_llc_frame'] = llc_count
-            features['percent_llc_frame'] = (llc_count / len(self.packets)) * 100 if self.packets else 0
+            features['percent_llc_frame'] = (llc_count / len(self.packets)) * 100 if self.packets else np.nan
             
             # STP statistics
             features['num_stp_frame'] = stp_count
-            features['percent_stp_frame'] = (stp_count / len(self.packets)) * 100 if self.packets else 0
+            features['percent_stp_frame'] = (stp_count / len(self.packets)) * 100 if self.packets else np.nan
             
             # ARP statistics
             features['num_arp_frame'] = arp_count
-            features['percent_arp_frame'] = (arp_count / len(self.packets)) * 100 if self.packets else 0
+            features['percent_arp_frame'] = (arp_count / len(self.packets)) * 100 if self.packets else np.nan
             
             # DHCP statistics
             features['num_dhcp_frame'] = dhcp_count
-            features['percent_dhcp_frame'] = (dhcp_count / len(self.packets)) * 100 if self.packets else 0
+            features['percent_dhcp_frame'] = (dhcp_count / len(self.packets)) * 100 if self.packets else np.nan
             
             # CDP statistics
             features['num_cdp_frame'] = cdp_count
-            features['percent_cdp_frame'] = (cdp_count / len(self.packets)) * 100 if self.packets else 0
+            features['percent_cdp_frame'] = (cdp_count / len(self.packets)) * 100 if self.packets else np.nan
             
             # Extract protocol-specific aggregated features
             self._extract_stp_aggregated_features(features)
@@ -251,19 +251,19 @@ class Flow:
                 tcack_flags = [p.get_features().get('stp_flags_tcack', False) for p in stp_packets]
                 
                 features['sum_stp_msg_age'] = sum(msg_ages)
-                features['mean_stp_msg_age'] = np.mean(msg_ages) if msg_ages else 0
-                features['max_stp_msg_age'] = max(msg_ages) if msg_ages else 0
-                features['min_stp_msg_age'] = min(msg_ages) if msg_ages else 0
-                features['median_stp_msg_age'] = np.median(msg_ages) if msg_ages else 0
-                features['std_stp_msg_age'] = np.std(msg_ages) if len(msg_ages) > 1 else 0
-                features['norm_stp_msg_age'] = features['std_stp_msg_age'] / features['mean_stp_msg_age'] if features['mean_stp_msg_age'] > 0 else 0
+                features['mean_stp_msg_age'] = np.mean(msg_ages) if msg_ages else np.nan
+                features['max_stp_msg_age'] = max(msg_ages) if msg_ages else np.nan
+                features['min_stp_msg_age'] = min(msg_ages) if msg_ages else np.nan
+                features['median_stp_msg_age'] = np.median(msg_ages) if msg_ages else np.nan
+                features['std_stp_msg_age'] = np.std(msg_ages) if len(msg_ages) > 1 else np.nan
+                features['norm_stp_msg_age'] = features['std_stp_msg_age'] / features['mean_stp_msg_age'] if features['mean_stp_msg_age'] > 0 else np.nan
                 
                 features['sum_stp_forward'] = sum(forward_delays)
-                features['mean_stp_forward'] = np.mean(forward_delays) if forward_delays else 0
-                features['max_stp_forward'] = max(forward_delays) if forward_delays else 0
-                features['min_stp_forward'] = min(forward_delays) if forward_delays else 0
-                features['median_stp_forward'] = np.median(forward_delays) if forward_delays else 0
-                features['std_stp_forward'] = np.std(forward_delays) if len(forward_delays) > 1 else 0
+                features['mean_stp_forward'] = np.mean(forward_delays) if forward_delays else np.nan
+                features['max_stp_forward'] = max(forward_delays) if forward_delays else np.nan
+                features['min_stp_forward'] = min(forward_delays) if forward_delays else np.nan
+                features['median_stp_forward'] = np.median(forward_delays) if forward_delays else np.nan
+                features['std_stp_forward'] = np.std(forward_delays) if len(forward_delays) > 1 else np.nan
                 
                 # Flag counts
                 features['count_stp_flags_tc_1'] = sum(tc_flags)
@@ -289,22 +289,22 @@ class Flow:
                 power_sums = [p.get_features().get('cdp_power_sum', 0) for p in cdp_packets]
                 
                 features['sum_cdp_addresses_count'] = sum(addresses_counts)
-                features['mean_cdp_addresses_count'] = np.mean(addresses_counts) if addresses_counts else 0
-                features['max_cdp_addresses_count'] = max(addresses_counts) if addresses_counts else 0
-                features['min_cdp_addresses_count'] = min(addresses_counts) if addresses_counts else 0
-                features['median_cdp_addresses_count'] = np.median(addresses_counts) if addresses_counts else 0
-                features['std_cdp_addresses_count'] = np.std(addresses_counts) if len(addresses_counts) > 1 else 0
-                features['norm_cdp_addresses_count'] = features['std_cdp_addresses_count'] / features['mean_cdp_addresses_count'] if features['mean_cdp_addresses_count'] > 0 else 0
+                features['mean_cdp_addresses_count'] = np.mean(addresses_counts) if addresses_counts else np.nan
+                features['max_cdp_addresses_count'] = max(addresses_counts) if addresses_counts else np.nan
+                features['min_cdp_addresses_count'] = min(addresses_counts) if addresses_counts else np.nan
+                features['median_cdp_addresses_count'] = np.median(addresses_counts) if addresses_counts else np.nan
+                features['std_cdp_addresses_count'] = np.std(addresses_counts) if len(addresses_counts) > 1 else np.nan
+                features['norm_cdp_addresses_count'] = features['std_cdp_addresses_count'] / features['mean_cdp_addresses_count'] if features['mean_cdp_addresses_count'] > 0 else np.nan
                 
                 features['sum_cdp_tlvs'] = sum(tlv_counts)
                 features['sum_cdp_capabilities'] = sum(capabilities)
                 
-                features['mean_cdp_power_sum'] = np.mean(power_sums) if power_sums else 0
-                features['max_cdp_power_sum'] = max(power_sums) if power_sums else 0
-                features['min_cdp_power_sum'] = min(power_sums) if power_sums else 0
-                features['median_cdp_power_sum'] = np.median(power_sums) if power_sums else 0
-                features['std_cdp_power_sum'] = np.std(power_sums) if len(power_sums) > 1 else 0
-                features['norm_cdp_power_sum'] = features['std_cdp_power_sum'] / features['mean_cdp_power_sum'] if features['mean_cdp_power_sum'] > 0 else 0
+                features['mean_cdp_power_sum'] = np.mean(power_sums) if power_sums else np.nan
+                features['max_cdp_power_sum'] = max(power_sums) if power_sums else np.nan
+                features['min_cdp_power_sum'] = min(power_sums) if power_sums else np.nan
+                features['median_cdp_power_sum'] = np.median(power_sums) if power_sums else np.nan
+                features['std_cdp_power_sum'] = np.std(power_sums) if len(power_sums) > 1 else np.nan
+                features['norm_cdp_power_sum'] = features['std_cdp_power_sum'] / features['mean_cdp_power_sum'] if features['mean_cdp_power_sum'] > 0 else np.nan
                 
             else:
                 self._set_default_cdp_aggregated_features(features)
@@ -324,25 +324,25 @@ class Flow:
                 dsap_crs = [p.get_features().get('llc_dsap_cr', False) for p in llc_packets]
                 
                 # SSAP SAP statistics
-                features['mean_llc_ssap_sap'] = np.mean(ssap_saps) if ssap_saps else 0
-                features['max_llc_ssap_sap'] = max(ssap_saps) if ssap_saps else 0
-                features['min_llc_ssap_sap'] = min(ssap_saps) if ssap_saps else 0
-                features['median_llc_ssap_sap'] = np.median(ssap_saps) if ssap_saps else 0
-                features['std_llc_ssap_sap'] = np.std(ssap_saps) if len(ssap_saps) > 1 else 0
-                features['norm_llc_ssap_sap'] = features['std_llc_ssap_sap'] / features['mean_llc_ssap_sap'] if features['mean_llc_ssap_sap'] > 0 else 0
+                features['mean_llc_ssap_sap'] = np.mean(ssap_saps) if ssap_saps else np.nan
+                features['max_llc_ssap_sap'] = max(ssap_saps) if ssap_saps else np.nan
+                features['min_llc_ssap_sap'] = min(ssap_saps) if ssap_saps else np.nan
+                features['median_llc_ssap_sap'] = np.median(ssap_saps) if ssap_saps else np.nan
+                features['std_llc_ssap_sap'] = np.std(ssap_saps) if len(ssap_saps) > 1 else np.nan
+                features['norm_llc_ssap_sap'] = features['std_llc_ssap_sap'] / features['mean_llc_ssap_sap'] if features['mean_llc_ssap_sap'] > 0 else np.nan
                 
                 # DSAP SAP statistics
                 features['sum_llc_dsap_sap'] = sum(dsap_saps)
-                features['mean_llc_dsap_sap'] = np.mean(dsap_saps) if dsap_saps else 0
-                features['max_llc_dsap_sap'] = max(dsap_saps) if dsap_saps else 0
-                features['min_llc_dsap_sap'] = min(dsap_saps) if dsap_saps else 0
-                features['median_llc_dsap_sap'] = np.median(dsap_saps) if dsap_saps else 0
-                features['std_llc_dsap_sap'] = np.std(dsap_saps) if len(dsap_saps) > 1 else 0
-                features['norm_llc_dsap_sap'] = features['std_llc_dsap_sap'] / features['mean_llc_dsap_sap'] if features['mean_llc_dsap_sap'] > 0 else 0
+                features['mean_llc_dsap_sap'] = np.mean(dsap_saps) if dsap_saps else np.nan
+                features['max_llc_dsap_sap'] = max(dsap_saps) if dsap_saps else np.nan
+                features['min_llc_dsap_sap'] = min(dsap_saps) if dsap_saps else np.nan
+                features['median_llc_dsap_sap'] = np.median(dsap_saps) if dsap_saps else np.nan
+                features['std_llc_dsap_sap'] = np.std(dsap_saps) if len(dsap_saps) > 1 else np.nan
+                features['norm_llc_dsap_sap'] = features['std_llc_dsap_sap'] / features['mean_llc_dsap_sap'] if features['mean_llc_dsap_sap'] > 0 else np.nan
                 
                 # Command/Response bit averages
-                features['mean_llc_ssap_cr'] = np.mean([1 if cr else 0 for cr in ssap_crs]) if ssap_crs else 0
-                features['mean_llc_dsap_cr'] = np.mean([1 if cr else 0 for cr in dsap_crs]) if dsap_crs else 0
+                features['mean_llc_ssap_cr'] = np.mean([1 if cr else 0 for cr in ssap_crs]) if ssap_crs else np.nan
+                features['mean_llc_dsap_cr'] = np.mean([1 if cr else 0 for cr in dsap_crs]) if dsap_crs else np.nan
                 
             else:
                 self._set_default_llc_aggregated_features(features)
@@ -358,38 +358,38 @@ class Flow:
                 timestamps = [p.timestamp for p in self.packets]
                 inter_arrival_times = [timestamps[i+1] - timestamps[i] for i in range(len(timestamps)-1)]
                 
-                features['mean_inter_arrival_time'] = np.mean(inter_arrival_times) if inter_arrival_times else 0
-                features['std_inter_arrival_time'] = np.std(inter_arrival_times) if len(inter_arrival_times) > 1 else 0
-                features['max_inter_arrival_time'] = max(inter_arrival_times) if inter_arrival_times else 0
-                features['min_inter_arrival_time'] = min(inter_arrival_times) if inter_arrival_times else 0
+                features['mean_inter_arrival_time'] = np.mean(inter_arrival_times) if inter_arrival_times else np.nan
+                features['std_inter_arrival_time'] = np.std(inter_arrival_times) if len(inter_arrival_times) > 1 else np.nan
+                features['max_inter_arrival_time'] = max(inter_arrival_times) if inter_arrival_times else np.nan
+                features['min_inter_arrival_time'] = min(inter_arrival_times) if inter_arrival_times else np.nan
                 
             else:
-                features['mean_inter_arrival_time'] = 0
-                features['std_inter_arrival_time'] = 0
-                features['max_inter_arrival_time'] = 0
-                features['min_inter_arrival_time'] = 0
+                features['mean_inter_arrival_time'] = np.nan
+                features['std_inter_arrival_time'] = np.nan
+                features['max_inter_arrival_time'] = np.nan
+                features['min_inter_arrival_time'] = np.nan
                 
         except Exception:
-            features['mean_inter_arrival_time'] = 0
-            features['std_inter_arrival_time'] = 0
-            features['max_inter_arrival_time'] = 0
-            features['min_inter_arrival_time'] = 0
+            features['mean_inter_arrival_time'] = np.nan
+            features['std_inter_arrival_time'] = np.nan
+            features['max_inter_arrival_time'] = np.nan
+            features['min_inter_arrival_time'] = np.nan
     
     def _set_default_frame_statistics(self, features: Dict[str, Any]):
         """Set default frame statistics."""
         frame_defaults = {
             'sum_frame_len': 0,
-            'mean_frame_len': 0,
-            'max_frame_len': 0,
-            'min_frame_len': 0,
-            'median_frame_len': 0,
-            'std_frame_len': 0,
-            'norm_frame_len': 0,
-            'sum_frame_len_div_time': 0,
+            'mean_frame_len': np.nan,
+            'max_frame_len': np.nan,
+            'min_frame_len': np.nan,
+            'median_frame_len': np.nan,
+            'std_frame_len': np.nan,
+            'norm_frame_len': np.nan,
+            'sum_frame_len_div_time': np.nan,
             'num_frame_marked': 0,
             'num_frame_ignored': 0,
-            'percent_frame_marked': 0,
-            'percent_frame_ignored': 0,
+            'percent_frame_marked': np.nan,
+            'percent_frame_ignored': np.nan,
         }
         features.update(frame_defaults)
     
@@ -397,12 +397,12 @@ class Flow:
         """Set default directional features."""
         directional_defaults = {
             f'sum_frames_{direction}': 0,
-            f'mean_frames_{direction}': 0,
-            f'max_frames_{direction}': 0,
-            f'min_frames_{direction}': 0,
-            f'median_frames_{direction}': 0,
-            f'std_frames_{direction}': 0,
-            f'norm_frames_{direction}': 0,
+            f'mean_frames_{direction}': np.nan,
+            f'max_frames_{direction}': np.nan,
+            f'min_frames_{direction}': np.nan,
+            f'median_frames_{direction}': np.nan,
+            f'std_frames_{direction}': np.nan,
+            f'norm_frames_{direction}': np.nan,
         }
         features.update(directional_defaults)
     
@@ -410,15 +410,15 @@ class Flow:
         """Set default protocol statistics."""
         protocol_defaults = {
             'num_llc_frame': 0,
-            'percent_llc_frame': 0,
+            'percent_llc_frame': np.nan,
             'num_stp_frame': 0,
-            'percent_stp_frame': 0,
+            'percent_stp_frame': np.nan,
             'num_arp_frame': 0,
-            'percent_arp_frame': 0,
+            'percent_arp_frame': np.nan,
             'num_dhcp_frame': 0,
-            'percent_dhcp_frame': 0,
+            'percent_dhcp_frame': np.nan,
             'num_cdp_frame': 0,
-            'percent_cdp_frame': 0,
+            'percent_cdp_frame': np.nan,
         }
         features.update(protocol_defaults)
         self._set_default_stp_aggregated_features(features)
