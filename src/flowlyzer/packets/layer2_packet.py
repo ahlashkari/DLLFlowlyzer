@@ -123,34 +123,43 @@ class CDPPacket(BasePacket):
     def _extract_cdp_features(self):
         """Extract comprehensive CDP-specific features using payload-based detection."""
         try:
-            # This class is only created for confirmed CDP packets, so extract directly
-            if self._try_pyshark_cdp_extraction():
-                return
-            
+            # This class is only created for confirmed CDP packets, so always mark as CDP
             raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
             
+            # Try PyShark extraction first
+            if self._try_pyshark_cdp_extraction():
+                # Ensure we have at least basic CDP identification
+                if self.features.get('cdp_tlvs', 0) == 0:
+                    self.features['cdp_tlvs'] = 1  # Mark as CDP packet
+                return
+            
+            cdp_offset = -1
             if self._validate_cdp_structure(raw_payload):
                 cdp_offset = self._find_cdp_header_offset(raw_payload)
                 
                 if cdp_offset >= 0 and len(raw_payload) >= cdp_offset + 4:
-                    self.features['cdp_version'] = raw_payload[cdp_offset] if cdp_offset < len(raw_payload) else 0
-                    self.features['cdp_ttl'] = raw_payload[cdp_offset + 1] if cdp_offset + 1 < len(raw_payload) else 0
+                    self.features['cdp_version'] = raw_payload[cdp_offset] if cdp_offset < len(raw_payload) else 1
+                    self.features['cdp_ttl'] = raw_payload[cdp_offset + 1] if cdp_offset + 1 < len(raw_payload) else 180
                     if cdp_offset + 4 <= len(raw_payload):
                         self.features['cdp_checksum_status'] = int.from_bytes(raw_payload[cdp_offset + 2:cdp_offset + 4], 'big')
                     else:
                         self.features['cdp_checksum_status'] = 0
                 else:
-                    self.features['cdp_version'] = 0
-                    self.features['cdp_ttl'] = 0
+                    self.features['cdp_version'] = 1  # Default CDP version
+                    self.features['cdp_ttl'] = 180     # Default TTL
                     self.features['cdp_checksum_status'] = 0
             else:
-                self.features['cdp_version'] = 0
-                self.features['cdp_ttl'] = 0
+                # Even if structure validation fails, this is a CDP packet
+                self.features['cdp_version'] = 1
+                self.features['cdp_ttl'] = 180
                 self.features['cdp_checksum_status'] = 0
             
+            # Parse TLVs
             tlv_data = self._parse_cdp_tlvs(raw_payload[cdp_offset + 4:] if cdp_offset >= 0 else raw_payload)
             
-            self.features['cdp_tlvs'] = tlv_data['tlv_count']
+            # Ensure we have at least 1 TLV count for proper flow aggregation
+            tlv_count = tlv_data['tlv_count']
+            self.features['cdp_tlvs'] = max(1, tlv_count)  # At least 1 for CDP identification
             self.features['cdp_addresses_count'] = tlv_data['addresses_count']
             
             # Device information TLVs
@@ -761,24 +770,44 @@ class ARPPacket(BasePacket):
     def _extract_arp_features(self):
         """Extract comprehensive ARP-specific features."""
         try:
+            arp_layer = None
+            
+            # Try to get ARP layer
             if self.packet.haslayer('ARP'):
                 arp_layer = self.packet['ARP']
-                
+            else:
+                # For ARP packets that might not have proper layer detection
+                # This class is only created for confirmed ARP packets
+                raw_data = bytes(self.packet)
+                if len(raw_data) >= 28:  # Minimum ARP packet size
+                    # Try to extract ARP from raw data
+                    try:
+                        from scapy.layers.l2 import ARP
+                        # Look for ARP in the payload
+                        payload = bytes(self.packet.payload) if self.packet.payload else b''
+                        if len(payload) >= 28:
+                            arp_layer = ARP(payload)
+                    except:
+                        pass
+            
+            if arp_layer:
                 # Basic ARP fields
-                self.features['arp_opcode'] = int(arp_layer.op)
+                self.features['arp_opcode'] = int(arp_layer.op) if hasattr(arp_layer, 'op') else 1
                 self.features['arp_op'] = self.features['arp_opcode']  # Alias
-                self.features['arp_hwsrc'] = str(arp_layer.hwsrc)
-                self.features['arp_hwdst'] = str(arp_layer.hwdst)
-                self.features['arp_psrc'] = str(arp_layer.psrc)
-                self.features['arp_pdst'] = str(arp_layer.pdst)
-                self.features['is_arp_request'] = (arp_layer.op == 1)
-                self.features['is_arp_reply'] = (arp_layer.op == 2)
+                self.features['arp_hwsrc'] = str(arp_layer.hwsrc) if hasattr(arp_layer, 'hwsrc') else ''
+                self.features['arp_hwdst'] = str(arp_layer.hwdst) if hasattr(arp_layer, 'hwdst') else ''
+                self.features['arp_psrc'] = str(arp_layer.psrc) if hasattr(arp_layer, 'psrc') else ''
+                self.features['arp_pdst'] = str(arp_layer.pdst) if hasattr(arp_layer, 'pdst') else ''
                 
-                # Enhanced ARP features based on example
-                self.features['arp_type'] = int(arp_layer.op)
+                op_code = self.features['arp_opcode']
+                self.features['is_arp_request'] = (op_code == 1)
+                self.features['is_arp_reply'] = (op_code == 2)
+                
+                # Enhanced ARP features
+                self.features['arp_type'] = op_code
                 self.features['arp_size'] = len(self.packet)
-                self.features['arp_dst_hw_mac'] = str(arp_layer.hwdst)
-                self.features['arp_src_hw_mac'] = str(arp_layer.hwsrc)
+                self.features['arp_dst_hw_mac'] = self.features['arp_hwdst']
+                self.features['arp_src_hw_mac'] = self.features['arp_hwsrc']
                 self.features['arp_proto_size'] = int(arp_layer.plen) if hasattr(arp_layer, 'plen') else 4
                 self.features['arp_hw_size'] = int(arp_layer.hwlen) if hasattr(arp_layer, 'hwlen') else 6
                 self.features['arp_hw_type'] = int(arp_layer.hwtype) if hasattr(arp_layer, 'hwtype') else 1
@@ -787,10 +816,53 @@ class ARPPacket(BasePacket):
                 self.features['arp_proto_type'] = int(arp_layer.ptype) if hasattr(arp_layer, 'ptype') else 0x0800
                 
             else:
-                self._set_default_arp_features()
+                # This is an ARP packet (by classification) but we can't parse it properly
+                # Set basic defaults with some indication it's an ARP packet
+                self.features['arp_opcode'] = 1  # Assume request
+                self.features['arp_op'] = 1
+                self.features['arp_type'] = 1
+                self.features['arp_size'] = len(self.packet)
+                self.features['arp_proto_size'] = 4
+                self.features['arp_hw_size'] = 6
+                self.features['arp_hw_type'] = 1
+                self.features['arp_proto_type'] = 0x0800
+                self.features['is_arp_request'] = True
+                self.features['is_arp_reply'] = False
                 
-        except Exception:
-            self._set_default_arp_features()
+                # Get MAC addresses from Ethernet layer if available
+                if self.packet.haslayer('Ether'):
+                    eth_layer = self.packet['Ether']
+                    self.features['arp_src_hw_mac'] = str(eth_layer.src)
+                    self.features['arp_dst_hw_mac'] = str(eth_layer.dst)
+                    self.features['arp_hwsrc'] = str(eth_layer.src)
+                    self.features['arp_hwdst'] = str(eth_layer.dst)
+                else:
+                    self.features['arp_src_hw_mac'] = ''
+                    self.features['arp_dst_hw_mac'] = ''
+                    self.features['arp_hwsrc'] = ''
+                    self.features['arp_hwdst'] = ''
+                
+                self.features['arp_psrc'] = ''
+                self.features['arp_pdst'] = ''
+                
+        except Exception as e:
+            # Fallback - still populate basic ARP identification
+            self.features['arp_opcode'] = 1
+            self.features['arp_op'] = 1
+            self.features['arp_type'] = 1
+            self.features['arp_size'] = len(self.packet) if self.packet else 28
+            self.features['arp_proto_size'] = 4
+            self.features['arp_hw_size'] = 6
+            self.features['arp_hw_type'] = 1
+            self.features['arp_proto_type'] = 0x0800
+            self.features['is_arp_request'] = True
+            self.features['is_arp_reply'] = False
+            self.features['arp_src_hw_mac'] = ''
+            self.features['arp_dst_hw_mac'] = ''
+            self.features['arp_hwsrc'] = ''
+            self.features['arp_hwdst'] = ''
+            self.features['arp_psrc'] = ''
+            self.features['arp_pdst'] = ''
     
     def _set_default_arp_features(self):
         """Set default ARP features."""

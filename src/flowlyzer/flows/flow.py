@@ -529,24 +529,27 @@ class Flow:
         else:
             features['l2_protocol_diversity'] = 0
         
-        # Statistical variance ratios
+        # Protocol count ratios (replacing std ratios)
         try:
-            # Collect various feature values for standard deviation calculations
-            frame_lens = [packet.get_features().get('frame_len', 0) for packet in self.packets]
-            stp_ages = [packet.get_features().get('stp_msg_age', 0) for packet in self.packets if packet.get_features().get('stp_msg_age', 0) > 0]
-            arp_opcodes = [packet.get_features().get('arp_opcode', 0) for packet in self.packets if packet.get_features().get('arp_opcode', 0) > 0]
+            # Recent protocol activity ratios using actual counts
+            features['stp_over_arp_count_ratio'] = stp_count / (arp_count + 1e-8)
+            features['arp_over_stp_count_ratio'] = arp_count / (stp_count + 1e-8)
             
-            std_frame_len = np.std(frame_lens) if frame_lens else 0
-            std_stp_ages = np.std(stp_ages) if len(stp_ages) > 1 else 0
-            std_arp_opcodes = np.std(arp_opcodes) if len(arp_opcodes) > 1 else 0
+            # CDP vs ARP activity ratio
+            features['cdp_over_arp_count_ratio'] = cdp_count / (arp_count + 1e-8)
+            features['arp_over_cdp_count_ratio'] = arp_count / (cdp_count + 1e-8)
             
-            # STD ratios
-            features['std_stp_over_std_arp'] = std_stp_ages / (std_arp_opcodes + 1e-8)
-            features['std_frame_len_over_std_stp'] = std_frame_len / (std_stp_ages + 1e-8)
+            # STP vs DHCP activity ratio
+            features['stp_over_dhcp_count_ratio'] = stp_count / (dhcp_count + 1e-8)
+            features['dhcp_over_stp_count_ratio'] = dhcp_count / (stp_count + 1e-8)
             
         except Exception:
-            features['std_stp_over_std_arp'] = 0
-            features['std_frame_len_over_std_stp'] = 0
+            features['stp_over_arp_count_ratio'] = 0
+            features['arp_over_stp_count_ratio'] = 0
+            features['cdp_over_arp_count_ratio'] = 0
+            features['arp_over_cdp_count_ratio'] = 0
+            features['stp_over_dhcp_count_ratio'] = 0
+            features['dhcp_over_stp_count_ratio'] = 0
         
         # Protocol concentration metrics
         features['stp_concentration'] = (stp_count / total_packets) ** 2 if total_packets > 0 else 0

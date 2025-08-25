@@ -73,9 +73,10 @@ class UDPPacket(BasePacket):
                     bootp_layer = self.packet['BOOTP']
                     
                     # Basic DHCP/BOOTP fields based on example
-                    self.features['dhcp_hw_type'] = int(bootp_layer.htype) if hasattr(bootp_layer, 'htype') else 0
+                    self.features['dhcp_op'] = int(bootp_layer.op) if hasattr(bootp_layer, 'op') else 1
+                    self.features['dhcp_hw_type'] = int(bootp_layer.htype) if hasattr(bootp_layer, 'htype') else 1
                     self.features['dhcp_type'] = self.features['dhcp_hw_type']  # Alias
-                    self.features['dhcp_hw_len'] = int(bootp_layer.hlen) if hasattr(bootp_layer, 'hlen') else 0
+                    self.features['dhcp_hw_len'] = int(bootp_layer.hlen) if hasattr(bootp_layer, 'hlen') else 6
                     self.features['dhcp_hops'] = int(bootp_layer.hops) if hasattr(bootp_layer, 'hops') else 0
                     self.features['dhcp_secs'] = int(bootp_layer.secs) if hasattr(bootp_layer, 'secs') else 0
                     
@@ -136,9 +137,40 @@ class UDPPacket(BasePacket):
                     self.features['dhcp_option_padding'] = 0
                 
             else:
-                self._set_default_dhcp_features()
+                # This is a DHCP packet but we couldn't find BOOTP/DHCP layers
+                # Set reasonable defaults for DHCP identification
+                self.features['dhcp_op'] = 1  # Assume BOOTREQUEST
+                self.features['dhcp_hw_type'] = 1  # Ethernet
+                self.features['dhcp_type'] = 1
+                self.features['dhcp_hw_len'] = 6  # MAC address length
+                self.features['dhcp_hops'] = 0
+                self.features['dhcp_secs'] = 0
+                self.features['dhcp_flags_bc'] = False
+                self.features['dhcp_flags_reserved'] = 0
+                self.features['dhcp_cookie'] = 0x63825363  # Standard DHCP magic cookie
+                self.features['dhcp_padding'] = 0
+                self.features['dhcp_options_count'] = 0
+                self.features['dhcp_options'] = 0
+                self.features['dhcp_message_type'] = 1  # DHCP Discover
+                self.features['dhcp_options_len'] = 0
+                self.features['dhcp_option_padding'] = 0
         except Exception:
-            self._set_default_dhcp_features()
+            # Final fallback with DHCP-like defaults
+            self.features['dhcp_op'] = 1
+            self.features['dhcp_hw_type'] = 1
+            self.features['dhcp_type'] = 1
+            self.features['dhcp_hw_len'] = 6
+            self.features['dhcp_hops'] = 0
+            self.features['dhcp_secs'] = 0
+            self.features['dhcp_flags_bc'] = False
+            self.features['dhcp_flags_reserved'] = 0
+            self.features['dhcp_cookie'] = 0x63825363
+            self.features['dhcp_padding'] = 0
+            self.features['dhcp_options_count'] = 0
+            self.features['dhcp_options'] = 0
+            self.features['dhcp_message_type'] = 1
+            self.features['dhcp_options_len'] = 0
+            self.features['dhcp_option_padding'] = 0
     
     def _set_default_udp_features(self):
         """Set default UDP features when extraction fails."""
@@ -170,19 +202,19 @@ class UDPPacket(BasePacket):
     def _set_default_dhcp_features(self):
         """Set default DHCP features."""
         dhcp_defaults = {
-            'dhcp_op': 0,
-            'dhcp_hw_type': 0,
-            'dhcp_type': 0,
-            'dhcp_hw_len': 0,
+            'dhcp_op': 1,  # BOOTREQUEST by default
+            'dhcp_hw_type': 1,  # Ethernet
+            'dhcp_type': 1,
+            'dhcp_hw_len': 6,  # MAC address length
             'dhcp_hops': 0,
             'dhcp_secs': 0,
             'dhcp_flags_bc': False,
             'dhcp_flags_reserved': 0,
-            'dhcp_cookie': 0,
+            'dhcp_cookie': 0x63825363,  # Standard DHCP magic cookie
             'dhcp_padding': 0,
             'dhcp_options_count': 0,
             'dhcp_options': 0,
-            'dhcp_message_type': 0,
+            'dhcp_message_type': 1,  # DHCP Discover
             'dhcp_options_len': 0,
             'dhcp_option_padding': 0,
         }

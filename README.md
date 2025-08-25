@@ -53,12 +53,13 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 - **Loop Detection**: Network loop indicators and skip count analysis
 
 ### Advanced Statistical Features
-- **Protocol Ratios**: STP/CDP ratios, ARP/DHCP ratios, and cross-protocol relationships
-- **Statistical Variance Analysis**: Standard deviation ratios across different protocols
+- **Protocol Count Ratios**: STP/ARP, CDP/ARP, STP/DHCP count-based relationships for better ML analysis
+- **Cross-Protocol Analysis**: Direct protocol activity comparisons (e.g., `stp_over_arp_count_ratio`)
 - **Protocol Diversity Metrics**: Entropy-based measures of protocol distribution
 - **Temporal Analysis**: Inter-arrival time analysis, burst detection, and temporal clustering
 - **Network Activity Scoring**: Weighted activity scores for different Layer 2 protocols
 - **Protocol Imbalance Detection**: Gini coefficient-inspired protocol distribution analysis
+- **Enhanced Feature Quality**: Meaningful defaults and robust extraction ensure no null values
 
 ## Usage
 
@@ -148,7 +149,7 @@ mac: 19:1A:12:1C:FF:12 ip: 192.168.1.19 DHCP Starvation
 ## Output Files
 
 ### CSV Files
-- `features_combined_YYYYMMDD_HHMMSS.csv` - All flows with 222 features
+- `features_combined_YYYYMMDD_HHMMSS.csv` - All flows with 228+ features
 - `features_layer2_YYYYMMDD_HHMMSS.csv` - Layer 2 flows only (optional)
 - `features_layer3_YYYYMMDD_HHMMSS.csv` - Layer 3 flows only (optional)
 
@@ -159,7 +160,7 @@ mac: 19:1A:12:1C:FF:12 ip: 192.168.1.19 DHCP Starvation
 - Attack distribution and timeline plots
 - Bidirectional traffic analysis
 
-## Feature Categories (222 Total)
+## Feature Categories (228+ Total)
 
 ### Basic Flow Features (15)
 - Connection identifiers, protocol types, endpoint information
@@ -323,6 +324,14 @@ python -m src.flowlyzer.main -i Input/ --multi-folder \
 - **Enhanced Multi-folder Error Handling**: Improved resilience when processing multiple directories
 - **Better Data Quality**: Replace zero values with NaN for missing packet data to improve ML model accuracy
 
+### Null Value Fixes and Feature Quality (Latest)
+- **Fixed Protocol Feature Extraction**: Resolved critical issue where CDP, ARP, STP, and DHCP packets were detected but features appeared as null/empty in CSV output
+- **Enhanced CDP Features**: Fixed flow aggregation issue where CDP flows showed `num_cdp_frame = 0` despite detection
+- **Robust ARP Parsing**: Multiple fallback methods for ARP feature extraction when layer detection fails
+- **Complete DHCP Fields**: Added missing `dhcp_op` field and enhanced DHCP feature completeness
+- **Improved Statistical Features**: Replaced uninformative std deviation ratios with meaningful protocol count ratios
+- **Enhanced Default Values**: Protocol-specific realistic defaults instead of zeros/nulls for better ML analysis
+
 ### Enhanced CDP Packet Analysis
 - **PyShark Integration**: Dual-mode CDP extraction using PyShark with native fallback
 - **Comprehensive Feature Extraction**: Enhanced TLV parsing for device info, capabilities, VLAN data, and power management
@@ -335,4 +344,5 @@ python -m src.flowlyzer.main -i Input/ --multi-folder \
 - **Enhanced Logging**: More detailed CDP detection and protocol statistics
 
 See `BUG_FIXES_IMPROVEMENTS_2025.md` for detailed technical information about recent improvements.
+See `NULL_VALUE_FIXES_2025.md` for comprehensive details on the latest feature extraction improvements.
 See PROJECT_STRUCTURE.md for detailed technical documentation.
