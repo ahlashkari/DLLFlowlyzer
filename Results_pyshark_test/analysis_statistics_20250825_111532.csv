@@ -1,0 +1,45 @@
+Statistic,Value
+Total Flows,4278.0
+Total Packets,128622.0
+UDP Packets,76084.0
+TCP Packets,50795.0
+IPv6 Packets,482.0
+ARP Packets,404.0
+STP Packets,440.0
+ETH_0x8899 Packets,195.0
+LLDP Packets,47.0
+ICMP Packets,2.0
+IPv4 Packets,149.0
+CDP Packets,24.0
+num_frame_mean,30.065684899485742
+num_frame_std,257.6963931380546
+num_frame_max,7555.0
+num_frame_min,1.0
+sum_frame_len_mean,22894.42660121552
+sum_frame_len_std,245866.94811488304
+sum_frame_len_max,7076102.0
+sum_frame_len_min,60.0
+time_delta_mean,0.8911792500211904
+time_delta_std,2.93947897936622
+time_delta_max,23.99615502357483
+time_delta_min,-0.5652010440826416
+mean_frame_len_mean,156.92553653990322
+mean_frame_len_std,176.66587284534594
+mean_frame_len_max,1294.0
+mean_frame_len_min,60.0
+num_stp_frame_total_packets,440.0
+num_stp_frame_flows_count,12.0
+num_cdp_frame_total_packets,24.0
+num_cdp_frame_flows_count,4.0
+num_arp_frame_total_packets,404.0
+num_arp_frame_flows_count,86.0
+num_dhcp_frame_total_packets,38.0
+num_dhcp_frame_flows_count,13.0
+num_llc_frame_total_packets,0.0
+num_llc_frame_flows_count,0.0
+num_dtp_frame_total_packets,0.0
+num_dtp_frame_flows_count,0.0
+num_isl_frame_total_packets,0.0
+num_isl_frame_flows_count,0.0
+label_Benign_count,4278.0
+label_Benign_percentage,100.0

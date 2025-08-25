@@ -244,6 +244,9 @@ class Flow:
             self._extract_stp_aggregated_features(features)
             self._extract_cdp_aggregated_features(features)
             self._extract_llc_aggregated_features(features)
+            self._extract_arp_aggregated_features(features)
+            self._extract_dhcp_aggregated_features(features)
+            self._extract_dtp_aggregated_features(features)
             
         except Exception:
             self._set_default_protocol_statistics(features)
@@ -358,6 +361,143 @@ class Flow:
                 
         except Exception:
             self._set_default_llc_aggregated_features(features)
+    
+    def _extract_arp_aggregated_features(self, features: Dict[str, Any]):
+        """Extract aggregated ARP features across all ARP packets in flow."""
+        try:
+            arp_packets = [p for p in self.packets if p.get_protocol_type() == 'ARP']
+            
+            if arp_packets:
+                # Extract ARP-specific features for aggregation
+                hw_types = [p.get_features().get('arp_hardware_type', 1) for p in arp_packets]
+                proto_types = [p.get_features().get('arp_protocol_type', 2048) for p in arp_packets]
+                opcodes = [p.get_features().get('arp_opcode', 1) for p in arp_packets]
+                hw_sizes = [p.get_features().get('arp_hardware_size', 6) for p in arp_packets]
+                proto_sizes = [p.get_features().get('arp_protocol_size', 4) for p in arp_packets]
+                packet_sizes = [p.get_features().get('arp_packet_size', 0) for p in arp_packets]
+                
+                # Hardware type statistics
+                features['sum_arp_hw_type'] = sum(hw_types)
+                features['mean_arp_hw_type'] = np.mean(hw_types) if hw_types else np.nan
+                features['max_arp_hw_type'] = max(hw_types) if hw_types else np.nan
+                features['min_arp_hw_type'] = min(hw_types) if hw_types else np.nan
+                
+                # Protocol type statistics  
+                features['sum_arp_proto_type'] = sum(proto_types)
+                features['mean_arp_proto_type'] = np.mean(proto_types) if proto_types else np.nan
+                
+                # Opcode statistics
+                features['sum_arp_opcode'] = sum(opcodes)
+                features['mean_arp_opcode'] = np.mean(opcodes) if opcodes else np.nan
+                features['max_arp_opcode'] = max(opcodes) if opcodes else np.nan
+                features['min_arp_opcode'] = min(opcodes) if opcodes else np.nan
+                
+                # Size statistics
+                features['sum_arp_size'] = sum(packet_sizes)
+                features['mean_arp_size'] = np.mean(packet_sizes) if packet_sizes else np.nan
+                features['max_arp_size'] = max(packet_sizes) if packet_sizes else np.nan
+                features['min_arp_size'] = min(packet_sizes) if packet_sizes else np.nan
+                
+                # Protocol-specific counts
+                request_count = sum(1 for p in arp_packets if p.get_features().get('arp_is_request', False))
+                reply_count = sum(1 for p in arp_packets if p.get_features().get('arp_is_reply', False))
+                gratuitous_count = sum(1 for p in arp_packets if p.get_features().get('arp_is_gratuitous', False))
+                
+                features['arp_request_count'] = request_count
+                features['arp_reply_count'] = reply_count
+                features['arp_gratuitous_count'] = gratuitous_count
+                features['arp_request_ratio'] = (request_count / len(arp_packets)) * 100 if arp_packets else 0
+                features['arp_reply_ratio'] = (reply_count / len(arp_packets)) * 100 if arp_packets else 0
+                
+            else:
+                self._set_default_arp_aggregated_features(features)
+                
+        except Exception:
+            self._set_default_arp_aggregated_features(features)
+    
+    def _extract_dhcp_aggregated_features(self, features: Dict[str, Any]):
+        """Extract aggregated DHCP features across all DHCP packets in flow."""
+        try:
+            dhcp_packets = [p for p in self.packets if p.get_features().get('is_dhcp', False)]
+            
+            if dhcp_packets:
+                # Extract DHCP-specific features for aggregation
+                opcodes = [p.get_features().get('dhcp_opcode', 1) for p in dhcp_packets]
+                transaction_ids = [p.get_features().get('dhcp_transaction_id', 0) for p in dhcp_packets]
+                lease_times = [p.get_features().get('dhcp_lease_time', 0) for p in dhcp_packets]
+                message_types = [p.get_features().get('dhcp_message_type', 1) for p in dhcp_packets]
+                options_counts = [p.get_features().get('dhcp_options_count', 0) for p in dhcp_packets]
+                
+                # DHCP opcode statistics
+                features['sum_dhcp_opcode'] = sum(opcodes)
+                features['mean_dhcp_opcode'] = np.mean(opcodes) if opcodes else np.nan
+                
+                # Transaction ID statistics
+                features['sum_dhcp_transaction_id'] = sum(transaction_ids)
+                features['mean_dhcp_transaction_id'] = np.mean(transaction_ids) if transaction_ids else np.nan
+                features['max_dhcp_transaction_id'] = max(transaction_ids) if transaction_ids else np.nan
+                features['min_dhcp_transaction_id'] = min(transaction_ids) if transaction_ids else np.nan
+                
+                # Lease time statistics
+                features['sum_dhcp_lease_time'] = sum(lease_times)
+                features['mean_dhcp_lease_time'] = np.mean(lease_times) if lease_times else np.nan
+                features['max_dhcp_lease_time'] = max(lease_times) if lease_times else np.nan
+                features['min_dhcp_lease_time'] = min(lease_times) if lease_times else np.nan
+                
+                # Message type statistics
+                features['sum_dhcp_message_type'] = sum(message_types)
+                features['mean_dhcp_message_type'] = np.mean(message_types) if message_types else np.nan
+                
+                # Options count statistics
+                features['sum_dhcp_options_count'] = sum(options_counts)
+                features['mean_dhcp_options_count'] = np.mean(options_counts) if options_counts else np.nan
+                features['max_dhcp_options_count'] = max(options_counts) if options_counts else np.nan
+                features['min_dhcp_options_count'] = min(options_counts) if options_counts else np.nan
+                
+            else:
+                self._set_default_dhcp_aggregated_features(features)
+                
+        except Exception:
+            self._set_default_dhcp_aggregated_features(features)
+    
+    def _extract_dtp_aggregated_features(self, features: Dict[str, Any]):
+        """Extract aggregated DTP features across all DTP packets in flow."""
+        try:
+            dtp_packets = [p for p in self.packets if p.get_features().get('dtp_tlv_count', 0) > 0]
+            
+            if dtp_packets:
+                # Extract DTP-specific features for aggregation
+                versions = [p.get_features().get('dtp_version', 0) for p in dtp_packets]
+                tlv_counts = [p.get_features().get('dtp_tlv_count', 0) for p in dtp_packets]
+                domain_lengths = [p.get_features().get('dtp_domain_length', 0) for p in dtp_packets]
+                
+                # DTP version statistics
+                features['sum_dtp_version'] = sum(versions)
+                features['mean_dtp_version'] = np.mean(versions) if versions else np.nan
+                
+                # TLV count statistics
+                features['sum_dtp_tlv_count'] = sum(tlv_counts)
+                features['mean_dtp_tlv_count'] = np.mean(tlv_counts) if tlv_counts else np.nan
+                features['max_dtp_tlv_count'] = max(tlv_counts) if tlv_counts else np.nan
+                features['min_dtp_tlv_count'] = min(tlv_counts) if tlv_counts else np.nan
+                
+                # Domain length statistics
+                features['sum_dtp_domain_length'] = sum(domain_lengths)
+                features['mean_dtp_domain_length'] = np.mean(domain_lengths) if domain_lengths else np.nan
+                
+                # Frame type counts
+                isl_count = sum(1 for p in dtp_packets if p.get_features().get('dtp_frame_isl', False))
+                dot1q_count = sum(1 for p in dtp_packets if p.get_features().get('dtp_frame_802dot1q', False))
+                
+                features['dtp_frame_isl_count'] = isl_count
+                features['dtp_frame_802dot1q_count'] = dot1q_count
+                features['dtp_frame_isl_ratio'] = (isl_count / len(dtp_packets)) * 100 if dtp_packets else 0
+                
+            else:
+                self._set_default_dtp_aggregated_features(features)
+                
+        except Exception:
+            self._set_default_dtp_aggregated_features(features)
     
     def _extract_timing_statistics(self, features: Dict[str, Any]):
         """Extract timing-related features."""
@@ -498,6 +638,70 @@ class Flow:
             'mean_llc_dsap_cr': 0,
         }
         features.update(llc_defaults)
+    
+    def _set_default_arp_aggregated_features(self, features: Dict[str, Any]):
+        """Set default ARP aggregated features."""
+        arp_defaults = {
+            'sum_arp_hw_type': 0,
+            'mean_arp_hw_type': 0,
+            'max_arp_hw_type': 0,
+            'min_arp_hw_type': 0,
+            'sum_arp_proto_type': 0,
+            'mean_arp_proto_type': 0,
+            'sum_arp_opcode': 0,
+            'mean_arp_opcode': 0,
+            'max_arp_opcode': 0,
+            'min_arp_opcode': 0,
+            'sum_arp_size': 0,
+            'mean_arp_size': 0,
+            'max_arp_size': 0,
+            'min_arp_size': 0,
+            'arp_request_count': 0,
+            'arp_reply_count': 0,
+            'arp_gratuitous_count': 0,
+            'arp_request_ratio': 0,
+            'arp_reply_ratio': 0,
+        }
+        features.update(arp_defaults)
+    
+    def _set_default_dhcp_aggregated_features(self, features: Dict[str, Any]):
+        """Set default DHCP aggregated features."""
+        dhcp_defaults = {
+            'sum_dhcp_opcode': 0,
+            'mean_dhcp_opcode': 0,
+            'sum_dhcp_transaction_id': 0,
+            'mean_dhcp_transaction_id': 0,
+            'max_dhcp_transaction_id': 0,
+            'min_dhcp_transaction_id': 0,
+            'sum_dhcp_lease_time': 0,
+            'mean_dhcp_lease_time': 0,
+            'max_dhcp_lease_time': 0,
+            'min_dhcp_lease_time': 0,
+            'sum_dhcp_message_type': 0,
+            'mean_dhcp_message_type': 0,
+            'sum_dhcp_options_count': 0,
+            'mean_dhcp_options_count': 0,
+            'max_dhcp_options_count': 0,
+            'min_dhcp_options_count': 0,
+        }
+        features.update(dhcp_defaults)
+    
+    def _set_default_dtp_aggregated_features(self, features: Dict[str, Any]):
+        """Set default DTP aggregated features."""
+        dtp_defaults = {
+            'sum_dtp_version': 0,
+            'mean_dtp_version': 0,
+            'sum_dtp_tlv_count': 0,
+            'mean_dtp_tlv_count': 0,
+            'max_dtp_tlv_count': 0,
+            'min_dtp_tlv_count': 0,
+            'sum_dtp_domain_length': 0,
+            'mean_dtp_domain_length': 0,
+            'dtp_frame_isl_count': 0,
+            'dtp_frame_802dot1q_count': 0,
+            'dtp_frame_isl_ratio': 0,
+        }
+        features.update(dtp_defaults)
     
     def _extract_combined_statistical_features(self, features: Dict[str, Any], protocol_counts: Dict[str, int]):
         """Extract advanced statistical features combining multiple protocols."""

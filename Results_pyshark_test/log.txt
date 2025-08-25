@@ -1,0 +1,97 @@
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - ============================================================
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - DLL Flowlyzer Analysis Started
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - ============================================================
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - Input files: 1 PCAP file(s)
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - Output directory: ../Results_pyshark_test
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - Flow timeout: 1200s
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - Separate L2/L3: False
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - Queue size: 100000
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO -   1. jul9.pcap2
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - ------------------------------------------------------------
+2025-08-25 11:15:00 - flowlyzer.utils.packet_queue - INFO - Started packet queue with 4 workers
+2025-08-25 11:15:00 - DLLFlowlyzer - INFO - File 1/1: jul9.pcap2 (0 packets)
+2025-08-25 11:15:02 - DLLFlowlyzer - INFO - Progress: 10,000 packets processed | 486 UDP, 322 TCP | 34 flows (2 completed) | 9410 pkt/s
+2025-08-25 11:15:04 - DLLFlowlyzer - INFO - Progress: 20,000 packets processed | 10823 UDP, 8050 TCP, 32 IPv6, 17 ARP, 15 STP, 7 ETH_0x8899, 1 LLDP | 356 flows (217 completed) | 5357 pkt/s
+2025-08-25 11:15:06 - DLLFlowlyzer - INFO - Progress: 30,000 packets processed | 16161 UDP, 10865 TCP, 61 IPv6, 35 ARP, 35 STP, 13 ETH_0x8899, 1 LLDP, 2 ICMP | 595 flows (454 completed) | 5534 pkt/s
+2025-08-25 11:15:08 - DLLFlowlyzer - INFO - Progress: 40,000 packets processed | 23417 UDP, 14772 TCP, 82 IPv6, 47 ARP, 50 STP, 22 ETH_0x8899, 3 LLDP, 2 ICMP | 899 flows (731 completed) | 5544 pkt/s
+2025-08-25 11:15:09 - DLLFlowlyzer - INFO - Progress: 50,000 packets processed | 29156 UDP, 16428 TCP, 113 IPv6, 76 ARP, 80 STP, 32 ETH_0x8899, 8 LLDP, 2 ICMP, 25 IPv4 | 1035 flows (955 completed) | 5725 pkt/s
+2025-08-25 11:15:11 - DLLFlowlyzer - INFO - Progress: 60,000 packets processed | 38093 UDP, 20832 TCP, 201 IPv6, 125 ARP, 130 STP, 56 ETH_0x8899, 11 LLDP, 2 ICMP, 25 IPv4, 8 CDP | 1484 flows (1243 completed) | 5698 pkt/s
+2025-08-25 11:15:13 - DLLFlowlyzer - INFO - Progress: 70,000 packets processed | 44742 UDP, 22965 TCP, 238 IPv6, 153 ARP, 160 STP, 69 ETH_0x8899, 16 LLDP, 2 ICMP, 25 IPv4, 8 CDP | 1690 flows (1541 completed) | 5595 pkt/s
+2025-08-25 11:15:15 - DLLFlowlyzer - INFO - Progress: 80,000 packets processed | 51711 UDP, 24646 TCP, 290 IPv6, 189 ARP, 210 STP, 90 ETH_0x8899, 22 LLDP, 2 ICMP, 82 IPv4, 8 CDP | 1851 flows (1739 completed) | 5653 pkt/s
+2025-08-25 11:15:17 - DLLFlowlyzer - INFO - Progress: 90,000 packets processed | 60190 UDP, 28115 TCP, 318 IPv6, 221 ARP, 250 STP, 106 ETH_0x8899, 25 LLDP, 2 ICMP, 82 IPv4, 11 CDP | 2171 flows (1929 completed) | 5567 pkt/s
+2025-08-25 11:15:18 - DLLFlowlyzer - INFO - Progress: 100,000 packets processed | 64955 UDP, 30909 TCP, 332 IPv6, 262 ARP, 295 STP, 126 ETH_0x8899, 32 LLDP, 2 ICMP, 118 IPv4, 16 CDP | 2522 flows (2331 completed) | 5713 pkt/s
+2025-08-25 11:15:20 - DLLFlowlyzer - INFO - Progress: 110,000 packets processed | 72712 UDP, 35470 TCP, 381 IPv6, 303 ARP, 345 STP, 149 ETH_0x8899, 33 LLDP, 2 ICMP, 118 IPv4, 16 CDP | 3050 flows (2727 completed) | 5625 pkt/s
+2025-08-25 11:15:21 - DLLFlowlyzer - INFO - Progress: 120,000 packets processed | 74724 UDP, 42228 TCP, 460 IPv6, 368 ARP, 410 STP, 181 ETH_0x8899, 41 LLDP, 2 ICMP, 122 IPv4, 24 CDP | 3958 flows (3360 completed) | 5710 pkt/s
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO - File 1/1: jul9.pcap2 (128,622 packets)
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO - Waiting for packet processing to complete...
+2025-08-25 11:15:23 - flowlyzer.utils.packet_queue - INFO - Stopped packet queue workers
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO - ----------------------------------------
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO - Flow Statistics:
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -   Total flows: 4278
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -   Active flows: 0
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -   Completed flows: 4278
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -   Timed out flows: 0
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -   Force closed flows: 0
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -   Protocol distribution:
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     UDP: 76084
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     TCP: 50795
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     IPv6: 482
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     ARP: 404
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     STP: 440
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     ETH_0x8899: 195
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     LLDP: 47
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     ICMP: 2
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     IPv4: 149
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -     CDP: 24
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO - ----------------------------------------
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO - Feature Extraction:
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -   Processing 4278 flows
+2025-08-25 11:15:23 - DLLFlowlyzer - INFO -   Extracting 236 features per flow
+2025-08-25 11:15:23 - flowlyzer.features.feature_extractor - INFO - Extracting features from 4278 flows using 4 threads
+2025-08-25 11:15:26 - flowlyzer.features.feature_extractor - INFO - Completed 5/9 feature extraction chunks
+2025-08-25 11:15:26 - flowlyzer.features.feature_extractor - INFO - Completed 9/9 feature extraction chunks
+2025-08-25 11:15:26 - flowlyzer.features.labeling - INFO - Flow labeling completed: {'Benign': 4278}
+2025-08-25 11:15:26 - DLLFlowlyzer - INFO - ----------------------------------------
+2025-08-25 11:15:26 - DLLFlowlyzer - INFO - Flow Labeling Results:
+2025-08-25 11:15:26 - DLLFlowlyzer - INFO -   Benign: 4278 (100.0%)
+2025-08-25 11:15:26 - flowlyzer.features.csv_exporter - INFO - Exported 4278 flows to ../Results_pyshark_test/features_20250825_111526.csv
+2025-08-25 11:15:26 - DLLFlowlyzer - INFO - ----------------------------------------
+2025-08-25 11:15:26 - DLLFlowlyzer - INFO - Export Results:
+2025-08-25 11:15:26 - DLLFlowlyzer - INFO -   Total flows exported: 4278
+2025-08-25 11:15:26 - DLLFlowlyzer - INFO -   Combined file: features_20250825_111526.csv
+2025-08-25 11:15:27 - flowlyzer.utils.plotting - INFO - Protocol statistics plot saved: ../Results_pyshark_test/protocol_statistics_20250825_111527.png
+2025-08-25 11:15:28 - flowlyzer.utils.plotting - INFO - Layer 2 analysis plot saved: ../Results_pyshark_test/layer2_analysis_20250825_111528.png
+2025-08-25 11:15:29 - flowlyzer.utils.plotting - INFO - Layer 2 heatmap analysis saved: ../Results_pyshark_test/layer2_heatmap_analysis_20250825_111528.png
+2025-08-25 11:15:30 - flowlyzer.utils.plotting - INFO - Flow statistics plot saved: ../Results_pyshark_test/flow_statistics_20250825_111529.png
+2025-08-25 11:15:31 - flowlyzer.utils.plotting - INFO - Attack analysis plot saved: ../Results_pyshark_test/attack_analysis_20250825_111530.png
+2025-08-25 11:15:32 - flowlyzer.utils.plotting - INFO - Feature correlation heatmap saved: ../Results_pyshark_test/feature_correlation_20250825_111531.png
+2025-08-25 11:15:32 - flowlyzer.utils.plotting - INFO - Statistics CSV saved: ../Results_pyshark_test/analysis_statistics_20250825_111532.csv
+2025-08-25 11:15:32 - flowlyzer.utils.plotting - INFO - Created 7 visualization files
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - Generated 7 visualization files:
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   - protocol_statistics_20250825_111527.png
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   - layer2_analysis_20250825_111528.png
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   - layer2_heatmap_analysis_20250825_111528.png
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   - flow_statistics_20250825_111529.png
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   - attack_analysis_20250825_111530.png
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   - feature_correlation_20250825_111531.png
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   - analysis_statistics_20250825_111532.csv
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - ============================================================
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - DLL Flowlyzer Analysis Completed
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - ============================================================
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - Total time: 31.18 seconds
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - Total packets: 128,622
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - Total flows: 4,278
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - Average rate: 4125 packets/second
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - 
+Protocol Distribution:
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   UDP: 76,084 (59.2%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   TCP: 50,795 (39.5%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   IPv6: 482 (0.4%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   ARP: 404 (0.3%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   STP: 440 (0.3%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   ETH_0x8899: 195 (0.2%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   LLDP: 47 (0.0%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   ICMP: 2 (0.0%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   IPv4: 149 (0.1%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO -   CDP: 24 (0.0%)
+2025-08-25 11:15:32 - DLLFlowlyzer - INFO - ============================================================

@@ -349,6 +349,19 @@ class FeatureExtractor:
             'dtp_sender_tlv_len',
             'dtp_sender_id',
             
+            # DTP aggregated features
+            'sum_dtp_version',
+            'mean_dtp_version',
+            'sum_dtp_tlv_count',
+            'mean_dtp_tlv_count',
+            'max_dtp_tlv_count',
+            'min_dtp_tlv_count',
+            'sum_dtp_domain_length',
+            'mean_dtp_domain_length',
+            'dtp_frame_isl_count',
+            'dtp_frame_802dot1q_count',
+            'dtp_frame_isl_ratio',
+            
             # ISL features (enhanced)
             'num_isl_frame',
             'percent_isl_frame',
@@ -383,6 +396,27 @@ class FeatureExtractor:
             'arp_opcode',
             'arp_proto_type',
             
+            # ARP aggregated features
+            'sum_arp_hw_type',
+            'mean_arp_hw_type',
+            'max_arp_hw_type',
+            'min_arp_hw_type',
+            'sum_arp_proto_type',
+            'mean_arp_proto_type',
+            'sum_arp_opcode',
+            'mean_arp_opcode',
+            'max_arp_opcode',
+            'min_arp_opcode',
+            'sum_arp_size',
+            'mean_arp_size',
+            'max_arp_size',
+            'min_arp_size',
+            'arp_request_count',
+            'arp_reply_count',
+            'arp_gratuitous_count',
+            'arp_request_ratio',
+            'arp_reply_ratio',
+            
             # DHCP features (enhanced)
             'num_dhcp_frame',
             'percent_dhcp_frame',
@@ -400,6 +434,24 @@ class FeatureExtractor:
             'dhcp_message_type',
             'dhcp_options_len',
             'dhcp_option_padding',
+            
+            # DHCP aggregated features
+            'sum_dhcp_opcode',
+            'mean_dhcp_opcode',
+            'sum_dhcp_transaction_id',
+            'mean_dhcp_transaction_id',
+            'max_dhcp_transaction_id',
+            'min_dhcp_transaction_id',
+            'sum_dhcp_lease_time',
+            'mean_dhcp_lease_time',
+            'max_dhcp_lease_time',
+            'min_dhcp_lease_time',
+            'sum_dhcp_message_type',
+            'mean_dhcp_message_type',
+            'sum_dhcp_options_count',
+            'mean_dhcp_options_count',
+            'max_dhcp_options_count',
+            'min_dhcp_options_count',
             
             # CDP features (comprehensive)
             'num_cdp_frame',

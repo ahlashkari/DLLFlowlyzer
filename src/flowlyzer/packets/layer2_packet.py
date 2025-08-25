@@ -1,17 +1,23 @@
 """
 Layer 2 protocol packet analysis classes (STP, CDP, LLDP, etc.).
+Enhanced with PyShark integration for accurate protocol feature extraction.
 """
 
 from .base_packet import BasePacket
 from scapy.all import Packet
 from typing import Dict, Any
+from ..utils.pyshark_extractor import PySharkProtocolExtractor
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class STPPacket(BasePacket):
-    """Spanning Tree Protocol packet analyzer."""
+    """Spanning Tree Protocol packet analyzer with PyShark integration."""
     
     def __init__(self, scapy_packet: Packet, frame_number: int):
         super().__init__(scapy_packet, frame_number)
+        self.extractor = PySharkProtocolExtractor()
         self._extract_stp_features()
     
     def get_protocol_type(self) -> str:
@@ -19,66 +25,87 @@ class STPPacket(BasePacket):
         return 'STP'
     
     def _extract_stp_features(self):
-        """Extract comprehensive STP-specific features."""
+        """Extract comprehensive STP-specific features using PyShark integration."""
         try:
-            if self.packet.haslayer('STP'):
+            # Get raw packet bytes for PyShark analysis
+            packet_bytes = bytes(self.packet)
+            
+            # Use PyShark extractor for accurate STP feature extraction
+            pyshark_features = self.extractor.extract_packet_features(packet_bytes, 'STP')
+            
+            # Update features with PyShark results (all with stp_ prefix)
+            self.features.update(pyshark_features)
+            
+            # Fallback to Scapy if PyShark extraction fails
+            if not pyshark_features and self.packet.haslayer('STP'):
                 stp_layer = self.packet['STP']
                 
-                self.features['stp_proto_id'] = int(stp_layer.proto) if hasattr(stp_layer, 'proto') else 0
+                # Basic STP fields with protocol prefix
+                self.features['stp_protocol_id'] = int(stp_layer.proto) if hasattr(stp_layer, 'proto') else 0
                 self.features['stp_version'] = int(stp_layer.version) if hasattr(stp_layer, 'version') else 0
-                self.features['stp_bpdu_type'] = int(stp_layer.bpdutype) if hasattr(stp_layer, 'bpdutype') else 0
+                self.features['stp_type'] = int(stp_layer.bpdutype) if hasattr(stp_layer, 'bpdutype') else 0
                 
+                # STP timing fields (convert to seconds)
+                self.features['stp_msg_age'] = float(stp_layer.msg_age) / 256 if hasattr(stp_layer, 'msg_age') else 0.0
+                self.features['stp_max_age'] = float(stp_layer.max_age) / 256 if hasattr(stp_layer, 'max_age') else 0.0
+                self.features['stp_hello_time'] = float(stp_layer.hello_time) / 256 if hasattr(stp_layer, 'hello_time') else 0.0
+                self.features['stp_forward_delay'] = float(stp_layer.forward_delay) / 256 if hasattr(stp_layer, 'forward_delay') else 0.0
+                
+                # STP flags
                 if hasattr(stp_layer, 'bpduflags'):
                     flags = int(stp_layer.bpduflags)
-                    self.features['stp_flags'] = flags
                     self.features['stp_flags_tc'] = bool(flags & 0x01)
                     self.features['stp_flags_tcack'] = bool(flags & 0x80)
+                    self.features['stp_flags_agreement'] = bool(flags & 0x40)
+                    self.features['stp_flags_learning'] = bool(flags & 0x20)
+                    self.features['stp_flags_forwarding'] = bool(flags & 0x10)
                 else:
-                    self.features['stp_flags'] = 0
                     self.features['stp_flags_tc'] = False
                     self.features['stp_flags_tcack'] = False
+                    self.features['stp_flags_agreement'] = False
+                    self.features['stp_flags_learning'] = False
+                    self.features['stp_flags_forwarding'] = False
                 
-                self.features['stp_msg_age'] = int(stp_layer.msg_age) if hasattr(stp_layer, 'msg_age') else 0
-                self.features['stp_max_age'] = int(stp_layer.max_age) if hasattr(stp_layer, 'max_age') else 0
-                self.features['stp_hello_time'] = int(stp_layer.hello_time) if hasattr(stp_layer, 'hello_time') else 0
-                self.features['stp_forward_delay'] = int(stp_layer.forward_delay) if hasattr(stp_layer, 'forward_delay') else 0
-                self.features['stp_hello'] = self.features['stp_hello_time']
-                self.features['stp_forward'] = self.features['stp_forward_delay']
-                
-                max_age = self.features['stp_max_age']
-                if max_age > 0:
-                    self.features['stp_age_div_max_age'] = self.features['stp_msg_age'] / max_age
-                else:
-                    self.features['stp_age_div_max_age'] = 0
-                
+                # Bridge and Root information
                 if hasattr(stp_layer, 'rootid'):
-                    root_id = int(stp_layer.rootid) if isinstance(stp_layer.rootid, (int, str)) else 0
                     self.features['stp_root_id'] = str(stp_layer.rootid)
-                    self.features['stp_root_identifier_prio'] = (root_id >> 48) & 0xFFFF
-                    self.features['stp_root_identifier_ext'] = (root_id >> 32) & 0xFFFF
-                    self.features['stp_root_cost'] = int(stp_layer.pathcost) if hasattr(stp_layer, 'pathcost') else 0
+                    if hasattr(stp_layer, 'rootid') and len(str(stp_layer.rootid)) >= 4:
+                        try:
+                            root_id = int(str(stp_layer.rootid).replace(':', ''), 16) if ':' in str(stp_layer.rootid) else int(stp_layer.rootid)
+                            self.features['stp_root_priority'] = (root_id >> 48) & 0xFFFF
+                        except:
+                            self.features['stp_root_priority'] = 0
+                    else:
+                        self.features['stp_root_priority'] = 0
                 else:
                     self.features['stp_root_id'] = ''
-                    self.features['stp_root_identifier_prio'] = 0
-                    self.features['stp_root_identifier_ext'] = 0
-                    self.features['stp_root_cost'] = 0
+                    self.features['stp_root_priority'] = 0
                 
                 if hasattr(stp_layer, 'bridgeid'):
-                    bridge_id = int(stp_layer.bridgeid) if isinstance(stp_layer.bridgeid, (int, str)) else 0
                     self.features['stp_bridge_id'] = str(stp_layer.bridgeid)
-                    self.features['stp_bridge_identifier_prio'] = (bridge_id >> 48) & 0xFFFF
-                    self.features['stp_bridge_identifier_ext'] = (bridge_id >> 32) & 0xFFFF
+                    if hasattr(stp_layer, 'bridgeid') and len(str(stp_layer.bridgeid)) >= 4:
+                        try:
+                            bridge_id = int(str(stp_layer.bridgeid).replace(':', ''), 16) if ':' in str(stp_layer.bridgeid) else int(stp_layer.bridgeid)
+                            self.features['stp_bridge_priority'] = (bridge_id >> 48) & 0xFFFF
+                        except:
+                            self.features['stp_bridge_priority'] = 0
+                    else:
+                        self.features['stp_bridge_priority'] = 0
                 else:
                     self.features['stp_bridge_id'] = ''
-                    self.features['stp_bridge_identifier_prio'] = 0
-                    self.features['stp_bridge_identifier_ext'] = 0
+                    self.features['stp_bridge_priority'] = 0
                 
+                # Path cost and port information  
+                self.features['stp_cost'] = int(stp_layer.pathcost) if hasattr(stp_layer, 'pathcost') else 0
                 self.features['stp_port_id'] = int(stp_layer.portid) if hasattr(stp_layer, 'portid') else 0
                 
-            else:
+            # Set defaults if no features were extracted
+            if not any(key.startswith('stp_') and self.features.get(key, 0) != 0 
+                      for key in self.features):
                 self._set_default_stp_features()
                 
-        except Exception:
+        except Exception as e:
+            logger.debug(f"STP feature extraction error: {e}")
             self._set_default_stp_features()
     
     def _set_default_stp_features(self):
@@ -110,10 +137,11 @@ class STPPacket(BasePacket):
 
 
 class CDPPacket(BasePacket):
-    """Cisco Discovery Protocol packet analyzer."""
+    """Cisco Discovery Protocol packet analyzer with PyShark integration."""
     
     def __init__(self, scapy_packet: Packet, frame_number: int):
         super().__init__(scapy_packet, frame_number)
+        self.extractor = PySharkProtocolExtractor()
         self._extract_cdp_features()
     
     def get_protocol_type(self) -> str:
@@ -121,38 +149,52 @@ class CDPPacket(BasePacket):
         return 'CDP'
     
     def _extract_cdp_features(self):
-        """Extract comprehensive CDP-specific features using payload-based detection."""
+        """Extract comprehensive CDP-specific features using PyShark integration."""
         try:
-            # This class is only created for confirmed CDP packets, so always mark as CDP
-            raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
+            # Get raw packet bytes for PyShark analysis
+            packet_bytes = bytes(self.packet)
             
-            # Try PyShark extraction first
-            if self._try_pyshark_cdp_extraction():
-                # Ensure we have at least basic CDP identification
-                if self.features.get('cdp_tlvs', 0) == 0:
-                    self.features['cdp_tlvs'] = 1  # Mark as CDP packet
-                return
+            # Use PyShark extractor for accurate CDP feature extraction
+            pyshark_features = self.extractor.extract_packet_features(packet_bytes, 'CDP')
             
-            cdp_offset = -1
-            if self._validate_cdp_structure(raw_payload):
-                cdp_offset = self._find_cdp_header_offset(raw_payload)
-                
-                if cdp_offset >= 0 and len(raw_payload) >= cdp_offset + 4:
-                    self.features['cdp_version'] = raw_payload[cdp_offset] if cdp_offset < len(raw_payload) else 1
-                    self.features['cdp_ttl'] = raw_payload[cdp_offset + 1] if cdp_offset + 1 < len(raw_payload) else 180
-                    if cdp_offset + 4 <= len(raw_payload):
-                        self.features['cdp_checksum_status'] = int.from_bytes(raw_payload[cdp_offset + 2:cdp_offset + 4], 'big')
-                    else:
-                        self.features['cdp_checksum_status'] = 0
-                else:
-                    self.features['cdp_version'] = 1  # Default CDP version
-                    self.features['cdp_ttl'] = 180     # Default TTL
-                    self.features['cdp_checksum_status'] = 0
+            # Update features with PyShark results (all with cdp_ prefix)
+            self.features.update(pyshark_features)
+            
+            # Ensure we always have basic CDP identification for flow counting
+            if 'cdp_tlv_count' in self.features:
+                self.features['cdp_tlvs'] = max(1, self.features['cdp_tlv_count'])
             else:
-                # Even if structure validation fails, this is a CDP packet
-                self.features['cdp_version'] = 1
-                self.features['cdp_ttl'] = 180
-                self.features['cdp_checksum_status'] = 0
+                self.features['cdp_tlvs'] = 1  # At least 1 for CDP identification
+            
+            # If PyShark extraction failed, use fallback
+            if not pyshark_features:
+                self.features.update({
+                    'cdp_version': 2,
+                    'cdp_ttl': 180,
+                    'cdp_checksum': 0,
+                    'cdp_device_id': '',
+                    'cdp_device_id_len': 0,
+                    'cdp_addresses_count': 0,
+                    'cdp_port_id': '',
+                    'cdp_port_id_len': 0,
+                    'cdp_capabilities_flags': 0,
+                    'cdp_platform': '',
+                    'cdp_platform_len': 0,
+                    'cdp_software_version': '',
+                    'cdp_software_version_len': 0,
+                    'cdp_tlv_count': 1,
+                    'cdp_tlvs': 1
+                })
+                
+        except Exception as e:
+            logger.debug(f"CDP feature extraction error: {e}")
+            # Set basic CDP defaults
+            self.features.update({
+                'cdp_version': 2,
+                'cdp_ttl': 180,
+                'cdp_tlvs': 1,
+                'cdp_tlv_count': 1
+            })
             
             # Parse TLVs
             tlv_data = self._parse_cdp_tlvs(raw_payload[cdp_offset + 4:] if cdp_offset >= 0 else raw_payload)
@@ -757,10 +799,11 @@ class LLDPPacket(BasePacket):
 
 
 class ARPPacket(BasePacket):
-    """ARP packet analyzer."""
+    """ARP packet analyzer with PyShark integration."""
     
     def __init__(self, scapy_packet: Packet, frame_number: int):
         super().__init__(scapy_packet, frame_number)
+        self.extractor = PySharkProtocolExtractor()
         self._extract_arp_features()
     
     def get_protocol_type(self) -> str:
@@ -768,14 +811,19 @@ class ARPPacket(BasePacket):
         return 'ARP'
     
     def _extract_arp_features(self):
-        """Extract comprehensive ARP-specific features."""
+        """Extract comprehensive ARP-specific features using PyShark integration."""
         try:
-            arp_layer = None
+            # Get raw packet bytes for PyShark analysis
+            packet_bytes = bytes(self.packet)
             
-            # Try to get ARP layer
-            if self.packet.haslayer('ARP'):
-                arp_layer = self.packet['ARP']
-            else:
+            # Use PyShark extractor for accurate ARP feature extraction
+            pyshark_features = self.extractor.extract_packet_features(packet_bytes, 'ARP')
+            
+            # Update features with PyShark results (all with arp_ prefix)
+            self.features.update(pyshark_features)
+            
+            # Fallback to Scapy if PyShark extraction fails
+            if not pyshark_features and self.packet.haslayer('ARP'):
                 # For ARP packets that might not have proper layer detection
                 # This class is only created for confirmed ARP packets
                 raw_data = bytes(self.packet)
@@ -885,3 +933,134 @@ class ARPPacket(BasePacket):
             'arp_proto_type': 0x0800,
         }
         self.features.update(arp_defaults)
+
+
+class DHCPPacket(BasePacket):
+    """DHCP packet analyzer for Layer 2 flows with PyShark integration."""
+    
+    def __init__(self, scapy_packet: Packet, frame_number: int):
+        super().__init__(scapy_packet, frame_number)
+        self.extractor = PySharkProtocolExtractor()
+        self._extract_dhcp_features()
+    
+    def get_protocol_type(self) -> str:
+        """Override to ensure DHCP packets are correctly identified."""
+        return 'DHCP'
+    
+    def is_layer2_flow(self) -> bool:
+        """DHCP is treated as Layer 2 for network infrastructure analysis."""
+        return True
+    
+    def _extract_dhcp_features(self):
+        """Extract comprehensive DHCP-specific features using PyShark integration."""
+        try:
+            # Get raw packet bytes for PyShark analysis
+            packet_bytes = bytes(self.packet)
+            
+            # Use PyShark extractor for accurate DHCP feature extraction
+            pyshark_features = self.extractor.extract_packet_features(packet_bytes, 'DHCP')
+            
+            # Update features with PyShark results (all with dhcp_ prefix)
+            self.features.update(pyshark_features)
+            
+            # Mark as DHCP for flow identification
+            self.features['is_dhcp'] = True
+            
+            # Fallback to basic DHCP extraction if PyShark fails
+            if not pyshark_features:
+                self._extract_dhcp_fallback()
+                
+        except Exception as e:
+            logger.debug(f"DHCP feature extraction error: {e}")
+            self._extract_dhcp_fallback()
+    
+    def _extract_dhcp_fallback(self):
+        """Fallback DHCP feature extraction using Scapy."""
+        try:
+            # Basic DHCP identification
+            self.features.update({
+                'dhcp_opcode': 1,  # BOOTREQUEST
+                'dhcp_hardware_type': 1,  # Ethernet
+                'dhcp_hardware_addr_len': 6,  # MAC address length
+                'dhcp_hops': 0,
+                'dhcp_transaction_id': 0,
+                'dhcp_seconds_elapsed': 0,
+                'dhcp_flags': 0,
+                'dhcp_client_ip': '0.0.0.0',
+                'dhcp_your_ip': '0.0.0.0',
+                'dhcp_server_ip': '0.0.0.0',
+                'dhcp_gateway_ip': '0.0.0.0',
+                'dhcp_client_mac': '',
+                'dhcp_magic_cookie': 0x63825363,  # Standard DHCP magic cookie
+                'dhcp_message_type': 1,  # DHCP Discover
+                'dhcp_options_count': 0,
+                'is_dhcp': True
+            })
+            
+            # Try to extract from UDP layer if available
+            if self.packet.haslayer('UDP'):
+                udp_layer = self.packet['UDP']
+                src_port = int(udp_layer.sport) if hasattr(udp_layer, 'sport') else 0
+                dst_port = int(udp_layer.dport) if hasattr(udp_layer, 'dport') else 0
+                
+                # DHCP uses ports 67 (server) and 68 (client)
+                if src_port == 68 or dst_port == 67:
+                    self.features['dhcp_opcode'] = 1  # Request
+                elif src_port == 67 or dst_port == 68:
+                    self.features['dhcp_opcode'] = 2  # Reply
+                    
+            # Extract MAC address from Ethernet layer if available
+            if self.packet.haslayer('Ether'):
+                eth_layer = self.packet['Ether']
+                self.features['dhcp_client_mac'] = str(eth_layer.src)
+                
+        except Exception as e:
+            logger.debug(f"DHCP fallback extraction error: {e}")
+
+
+class DTPPacket(BasePacket):
+    """Dynamic Trunking Protocol packet analyzer with PyShark integration."""
+    
+    def __init__(self, scapy_packet: Packet, frame_number: int):
+        super().__init__(scapy_packet, frame_number)
+        self.extractor = PySharkProtocolExtractor()
+        self._extract_dtp_features()
+    
+    def get_protocol_type(self) -> str:
+        """Override to ensure DTP packets are correctly identified."""
+        return 'DTP'
+    
+    def _extract_dtp_features(self):
+        """Extract comprehensive DTP-specific features using PyShark integration."""
+        try:
+            # Get raw packet bytes for PyShark analysis
+            packet_bytes = bytes(self.packet)
+            
+            # Use PyShark extractor for accurate DTP feature extraction
+            pyshark_features = self.extractor.extract_packet_features(packet_bytes, 'DTP')
+            
+            # Update features with PyShark results (all with dtp_ prefix)
+            self.features.update(pyshark_features)
+            
+            # If PyShark extraction failed, use fallback
+            if not pyshark_features:
+                self.features.update({
+                    'dtp_version': 1,
+                    'dtp_domain_length': 0,
+                    'dtp_domain_name': '',
+                    'dtp_status': 0,
+                    'dtp_type': 0,
+                    'dtp_neighbor_length': 0,
+                    'dtp_neighbor_info': '',
+                    'dtp_frame_isl': False,
+                    'dtp_frame_802dot1q': False,
+                    'dtp_tlv_count': 0
+                })
+                
+        except Exception as e:
+            logger.debug(f"DTP feature extraction error: {e}")
+            # Set basic DTP defaults
+            self.features.update({
+                'dtp_version': 1,
+                'dtp_tlv_count': 0
+            })

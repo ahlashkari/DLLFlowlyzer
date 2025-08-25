@@ -11,7 +11,7 @@ from .flow import Flow
 from ..packets.base_packet import BasePacket
 from ..packets.tcp_packet import TCPPacket
 from ..packets.udp_packet import UDPPacket
-from ..packets.layer2_packet import STPPacket, CDPPacket, LLDPPacket, ARPPacket
+from ..packets.layer2_packet import STPPacket, CDPPacket, LLDPPacket, ARPPacket, DHCPPacket
 from ..packets.llc_packet import LLCPacket, VTPPacket, DTPPacket, ISLPacket, LoopPacket
 
 
