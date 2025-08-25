@@ -138,37 +138,31 @@ class DTPPacket(BasePacket):
         return 'DTP'
     
     def _extract_dtp_features(self):
-        """Extract comprehensive DTP-specific features."""
+        """Extract comprehensive DTP-specific features using payload-based detection."""
         try:
-            # DTP detection by destination MAC (01:00:0c:cc:cc:cc)
-            if self.features.get('dst_mac_addr') == '01:00:0c:cc:cc:cc':
-                self.features['is_dtp'] = True
-                
-                # DTP header and TLV analysis
-                raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
-                
-                if len(raw_payload) >= 1:
-                    self.features['dtp_version'] = raw_payload[0]
-                else:
-                    self.features['dtp_version'] = 0
-                
-                # Enhanced DTP TLV analysis
-                tlv_data = self._parse_dtp_tlvs(raw_payload)
-                self.features['dtp_tlvs'] = tlv_data['tlv_count']
-                
-                # TLV-specific lengths
-                self.features['dtp_tlv_len'] = tlv_data.get('domain_len', 0)
-                self.features['dtp_trunk_status_tlv_len'] = tlv_data.get('trunk_status_len', 0)
-                self.features['dtp_trunk_type_tlv_len'] = tlv_data.get('trunk_type_len', 0)
-                self.features['dtp_sender_tlv_len'] = tlv_data.get('sender_id_len', 0)
-                self.features['dtp_sender_id'] = tlv_data.get('sender_id', '')
-                
+            # This class is only created for confirmed DTP packets, so extract directly
+            self.features['is_dtp'] = True
+            
+            # DTP header and TLV analysis
+            raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
+            
+            if len(raw_payload) >= 1:
+                self.features['dtp_version'] = raw_payload[0]
             else:
-                self.features['is_dtp'] = False
-                self._set_default_dtp_features()
+                self.features['dtp_version'] = 0
+            
+            # Enhanced DTP TLV analysis
+            tlv_data = self._parse_dtp_tlvs(raw_payload)
+            self.features['dtp_tlvs'] = tlv_data['tlv_count']
+            
+            # TLV-specific lengths
+            self.features['dtp_tlv_len'] = tlv_data.get('domain_len', 0)
+            self.features['dtp_trunk_status_tlv_len'] = tlv_data.get('trunk_status_len', 0)
+            self.features['dtp_trunk_type_tlv_len'] = tlv_data.get('trunk_type_len', 0)
+            self.features['dtp_sender_tlv_len'] = tlv_data.get('sender_id_len', 0)
+            self.features['dtp_sender_id'] = tlv_data.get('sender_id', '')
                 
         except Exception:
-            self.features['is_dtp'] = False
             self._set_default_dtp_features()
     
     def _parse_dtp_tlvs(self, payload: bytes) -> dict:

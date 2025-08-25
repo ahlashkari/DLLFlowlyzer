@@ -18,35 +18,47 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 ## Features
 
 ### Core Capabilities
-- **222 Comprehensive Features**: Statistical, protocol-specific, and enhanced Layer 2 features
+- **240+ Comprehensive Features**: Statistical, protocol-specific, enhanced Layer 2 features, and advanced statistical combinations
 - **Multi-Protocol Support**: TCP, UDP, QUIC, and Layer 2 protocols (STP, CDP, LLDP, ARP, DHCP, LLC, DTP, VTP, ISL)
 - **Enhanced Layer 2 Analysis**: Deep packet inspection for CDP TLVs, STP identifiers, DHCP options, ARP details
-- **Enhanced Protocol Detection**: Advanced CDP/LLDP/DTP separation with payload validation and structure analysis
-- **PyShark-Enhanced CDP Analysis**: Dual-mode CDP extraction using PyShark with native fallback for comprehensive feature extraction
+- **Enhanced Protocol Detection**: Advanced CDP/LLDP/DTP separation using payload-based analysis independent of MAC addresses
+- **Payload-Based Protocol Analysis**: CDP and DTP detection using SNAP OUI/PID analysis and TLV structure validation, eliminating dependency on Cisco MAC addresses
 - **Flow Detection**: Bidirectional flow detection with configurable timeouts
 - **Multi-threaded Processing**: Parallel packet processing with optimized queuing
 - **Flexible Labeling**: Support for IP, MAC, time-based, and text file configuration
 - **CSV-Only Output**: Clean CSV exports with optional Layer 2/3 separation
 - **Visualization**: Comprehensive plotting and statistics generation
 - **Comprehensive Logging**: Detailed progress tracking and statistics with real-time protocol detection
+- **Advanced Visualization**: Layer 2 protocol heatmaps, correlation matrices, and statistical analysis charts
 
 ### Enhanced Layer 2 Features
 - **ARP Protocol**: Hardware/protocol types, opcodes, address mappings
 - **DHCP Protocol**: BOOTP fields, flags, options parsing, message types
 - **STP Protocol**: Root/bridge identifiers with priorities, timing fields, topology flags
 - **CDP Protocol**: Complete TLV parsing, device information, capabilities flags, power management
-  - Enhanced detection with SNAP OUI/PID analysis and payload validation
-  - Robust separation from DTP packets (same MAC, different PID)
-  - Real-time CDP packet counting in logs
+  - MAC-independent detection using SNAP OUI (00:00:0c) and PID (0x2000) analysis
+  - Multi-method validation: LLC/SNAP headers, payload structure, and TLV pattern matching
+  - Robust separation from DTP and other Cisco protocols using different PIDs
 - **LLDP Protocol**: Comprehensive TLV structure analysis, chassis/port ID extraction
   - Enhanced detection with TLV structure validation
   - Clear separation from CDP despite potential packet tagging ambiguity
   - System capabilities and management address parsing
 - **LLC Protocol**: SAP values, control fields, command/response bits
 - **DTP Protocol**: Dynamic Trunking negotiation, sender information
+  - Payload-based detection using SNAP OUI (00:00:0c) and PID (0x2004) analysis
+  - TLV structure validation for Domain, Status, Type, and Neighbor information
+  - Independent of MAC address patterns for broader compatibility
 - **ISL Protocol**: Inter-Switch Link encapsulation, VLAN information
 - **VTP Protocol**: VLAN Trunking management domain information
 - **Loop Detection**: Network loop indicators and skip count analysis
+
+### Advanced Statistical Features
+- **Protocol Ratios**: STP/CDP ratios, ARP/DHCP ratios, and cross-protocol relationships
+- **Statistical Variance Analysis**: Standard deviation ratios across different protocols
+- **Protocol Diversity Metrics**: Entropy-based measures of protocol distribution
+- **Temporal Analysis**: Inter-arrival time analysis, burst detection, and temporal clustering
+- **Network Activity Scoring**: Weighted activity scores for different Layer 2 protocols
+- **Protocol Imbalance Detection**: Gini coefficient-inspired protocol distribution analysis
 
 ## Usage
 

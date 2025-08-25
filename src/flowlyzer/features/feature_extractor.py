@@ -462,6 +462,22 @@ class FeatureExtractor:
             'cdp_spare_poe_tlv_req_spare_pair_poe',
             'cdp_spare_poe_tlv_pse_spare_pair_poe',
             
+            # Extended statistical features (ratios and combinations)
+            'stp_over_cdp_ratio',
+            'cdp_over_stp_ratio',
+            'arp_over_dhcp_ratio',
+            'dhcp_over_arp_ratio',
+            'l2_protocol_diversity',
+            'std_stp_over_std_arp',
+            'std_frame_len_over_std_stp',
+            'stp_concentration',
+            'cdp_concentration',
+            'arp_concentration',
+            'l2_weighted_activity_score',
+            'l2_protocol_imbalance',
+            'inter_arrival_cv',
+            'burst_ratio',
+            
             'label',
         ]
     

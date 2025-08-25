@@ -198,6 +198,184 @@ class FlowlyzerPlotter:
             self.logger.error(f"Error creating correlation heatmap: {e}")
             return ""
     
+    def create_layer2_heatmap_analysis(self, flows_df: pd.DataFrame) -> str:
+        """Create Layer 2 protocol heatmap analysis."""
+        try:
+            fig, axes = plt.subplots(2, 2, figsize=(20, 16))
+            fig.suptitle('Layer 2 Protocol Heatmap Analysis', fontsize=16, fontweight='bold')
+            
+            # 1. Layer 2 Protocol Correlation Heatmap
+            l2_protocol_cols = ['num_stp_frame', 'num_cdp_frame', 'num_arp_frame', 
+                               'num_dhcp_frame', 'num_llc_frame', 'num_dtp_frame', 'num_isl_frame',
+                               'num_lldp_frame', 'num_vtp_frame']
+            
+            if not flows_df.empty:
+                # Filter for columns that exist and have some activity
+                available_l2_cols = [col for col in l2_protocol_cols if col in flows_df.columns and flows_df[col].sum() > 0]
+                
+                if len(available_l2_cols) >= 2:
+                    l2_corr = flows_df[available_l2_cols].corr()
+                    # Clean column names for display
+                    clean_names = [col.replace('num_', '').replace('_frame', '').upper() for col in available_l2_cols]
+                    l2_corr.index = clean_names
+                    l2_corr.columns = clean_names
+                    
+                    sns.heatmap(l2_corr, annot=True, cmap='RdYlBu_r', center=0, 
+                               square=True, ax=axes[0, 0], fmt='.2f', cbar_kws={"shrink": .8})
+                    axes[0, 0].set_title('Layer 2 Protocol Correlations')
+                else:
+                    axes[0, 0].text(0.5, 0.5, 'Insufficient L2 protocol data', ha='center', va='center')
+                    axes[0, 0].set_title('Layer 2 Protocol Correlations')
+            
+            # 2. Layer 2 Feature Intensity Heatmap
+            if not flows_df.empty:
+                l2_feature_cols = []
+                for prefix in ['stp_', 'cdp_', 'arp_', 'dhcp_', 'llc_', 'lldp_']:
+                    prefix_cols = [col for col in flows_df.columns if col.startswith(prefix) 
+                                  and flows_df[col].dtype in ['int64', 'float64'] and flows_df[col].sum() > 0]
+                    l2_feature_cols.extend(prefix_cols[:5])  # Limit to 5 per protocol
+                
+                if l2_feature_cols:
+                    # Sample flows for heatmap (max 50 flows for readability)
+                    sample_size = min(50, len(flows_df))
+                    sampled_flows = flows_df.sample(n=sample_size, random_state=42)
+                    
+                    # Normalize features for better visualization
+                    feature_data = sampled_flows[l2_feature_cols].fillna(0)
+                    if len(feature_data.columns) > 0 and len(feature_data) > 0:
+                        # Normalize each column to 0-1 range
+                        normalized_data = (feature_data - feature_data.min()) / (feature_data.max() - feature_data.min() + 1e-8)
+                        
+                        # Clean column names
+                        clean_cols = [col.replace('_', ' ').title() for col in normalized_data.columns]
+                        normalized_data.columns = clean_cols
+                        
+                        sns.heatmap(normalized_data.T, cmap='viridis', ax=axes[0, 1], 
+                                   cbar_kws={"shrink": .8}, yticklabels=True, xticklabels=False)
+                        axes[0, 1].set_title('Layer 2 Feature Intensity (Sample)')
+                        axes[0, 1].set_xlabel('Flow Samples')
+                        axes[0, 1].set_ylabel('Features')
+                    else:
+                        axes[0, 1].text(0.5, 0.5, 'No L2 feature data', ha='center', va='center')
+                        axes[0, 1].set_title('Layer 2 Feature Intensity')
+                else:
+                    axes[0, 1].text(0.5, 0.5, 'No L2 features available', ha='center', va='center')
+                    axes[0, 1].set_title('Layer 2 Feature Intensity')
+            
+            # 3. Statistical Feature Combinations Heatmap
+            if not flows_df.empty:
+                stat_combinations = {}
+                
+                # Create statistical combinations
+                if 'num_stp_frame' in flows_df.columns and 'num_cdp_frame' in flows_df.columns:
+                    stp_total = flows_df['num_stp_frame'].sum()
+                    cdp_total = flows_df['num_cdp_frame'].sum()
+                    if stp_total + cdp_total > 0:
+                        stat_combinations['STP/CDP Ratio'] = stp_total / (cdp_total + 1e-8)
+                
+                if 'num_arp_frame' in flows_df.columns and 'num_dhcp_frame' in flows_df.columns:
+                    arp_total = flows_df['num_arp_frame'].sum()
+                    dhcp_total = flows_df['num_dhcp_frame'].sum()
+                    if arp_total + dhcp_total > 0:
+                        stat_combinations['ARP/DHCP Ratio'] = arp_total / (dhcp_total + 1e-8)
+                
+                # Add percentage calculations
+                total_l2_packets = sum(flows_df[col].sum() for col in available_l2_cols if col in flows_df.columns)
+                if total_l2_packets > 0:
+                    for col in available_l2_cols:
+                        if col in flows_df.columns:
+                            protocol_name = col.replace('num_', '').replace('_frame', '').upper()
+                            stat_combinations[f'{protocol_name} %'] = (flows_df[col].sum() / total_l2_packets) * 100
+                
+                if stat_combinations:
+                    # Create a matrix for heatmap
+                    protocols = list(set([k.split()[0] for k in stat_combinations.keys()]))
+                    metrics = list(set([' '.join(k.split()[1:]) for k in stat_combinations.keys() if len(k.split()) > 1]))
+                    
+                    if len(protocols) > 1:
+                        heatmap_data = []
+                        heatmap_index = []
+                        for metric in ['%', 'Ratio']:
+                            row = []
+                            for protocol in protocols[:6]:  # Limit for readability
+                                key = f"{protocol} {metric}"
+                                if key in stat_combinations:
+                                    row.append(stat_combinations[key])
+                                else:
+                                    row.append(0)
+                            if any(x > 0 for x in row):
+                                heatmap_data.append(row)
+                                heatmap_index.append(metric)
+                        
+                        if heatmap_data:
+                            heatmap_df = pd.DataFrame(heatmap_data, 
+                                                    columns=protocols[:len(heatmap_data[0])], 
+                                                    index=heatmap_index)
+                            sns.heatmap(heatmap_df, annot=True, cmap='plasma', ax=axes[1, 0], 
+                                       fmt='.2f', cbar_kws={"shrink": .8})
+                            axes[1, 0].set_title('Protocol Statistical Combinations')
+                        else:
+                            axes[1, 0].text(0.5, 0.5, 'No statistical data', ha='center', va='center')
+                            axes[1, 0].set_title('Protocol Statistical Combinations')
+                    else:
+                        axes[1, 0].text(0.5, 0.5, 'Insufficient protocols for comparison', ha='center', va='center')
+                        axes[1, 0].set_title('Protocol Statistical Combinations')
+                else:
+                    axes[1, 0].text(0.5, 0.5, 'No statistical combinations available', ha='center', va='center')
+                    axes[1, 0].set_title('Protocol Statistical Combinations')
+            
+            # 4. MAC Address Vendor vs Protocol Heatmap
+            if not flows_df.empty and 'src_mac_addr_vendor' in flows_df.columns:
+                # Get top vendors and protocols
+                vendor_counts = flows_df['src_mac_addr_vendor'].value_counts().head(8)
+                top_vendors = vendor_counts.index.tolist()
+                
+                if top_vendors and len(available_l2_cols) > 0:
+                    vendor_protocol_matrix = []
+                    for vendor in top_vendors:
+                        vendor_flows = flows_df[flows_df['src_mac_addr_vendor'] == vendor]
+                        row = []
+                        for col in available_l2_cols[:6]:  # Limit protocols for readability
+                            if col in flows_df.columns:
+                                row.append(vendor_flows[col].sum())
+                            else:
+                                row.append(0)
+                        vendor_protocol_matrix.append(row)
+                    
+                    if vendor_protocol_matrix:
+                        protocol_names = [col.replace('num_', '').replace('_frame', '').upper() 
+                                        for col in available_l2_cols[:6]]
+                        vendor_df = pd.DataFrame(vendor_protocol_matrix, 
+                                               columns=protocol_names, 
+                                               index=top_vendors)
+                        
+                        sns.heatmap(vendor_df, annot=True, cmap='YlOrRd', ax=axes[1, 1], 
+                                   fmt='d', cbar_kws={"shrink": .8})
+                        axes[1, 1].set_title('Vendor vs Protocol Activity')
+                        axes[1, 1].set_xlabel('Protocols')
+                        axes[1, 1].set_ylabel('MAC Vendors')
+                    else:
+                        axes[1, 1].text(0.5, 0.5, 'No vendor-protocol data', ha='center', va='center')
+                        axes[1, 1].set_title('Vendor vs Protocol Activity')
+                else:
+                    axes[1, 1].text(0.5, 0.5, 'No vendor or protocol data', ha='center', va='center')
+                    axes[1, 1].set_title('Vendor vs Protocol Activity')
+            
+            plt.tight_layout()
+            
+            # Save plot
+            timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+            plot_file = self.output_dir / f"layer2_heatmap_analysis_{timestamp}.png"
+            plt.savefig(plot_file, dpi=300, bbox_inches='tight')
+            plt.close()
+            
+            self.logger.info(f"Layer 2 heatmap analysis saved: {plot_file}")
+            return str(plot_file)
+            
+        except Exception as e:
+            self.logger.error(f"Error creating Layer 2 heatmap analysis: {e}")
+            return ""
+
     def create_layer2_analysis(self, flows_df: pd.DataFrame) -> str:
         """Create Layer 2 specific analysis plots."""
         try:
@@ -570,6 +748,11 @@ class FlowlyzerPlotter:
             layer2_plot = self.create_layer2_analysis(flows_df)
             if layer2_plot:
                 plot_files.append(layer2_plot)
+            
+            # Create Layer 2 heatmap analysis
+            layer2_heatmap = self.create_layer2_heatmap_analysis(flows_df)
+            if layer2_heatmap:
+                plot_files.append(layer2_heatmap)
             
             # Create flow statistics
             flow_plot = self.create_flow_statistics_summary(flows_df)

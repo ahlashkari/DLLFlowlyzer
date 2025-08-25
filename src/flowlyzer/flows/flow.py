@@ -231,6 +231,15 @@ class Flow:
             features['num_cdp_frame'] = cdp_count
             features['percent_cdp_frame'] = (cdp_count / len(self.packets)) * 100 if self.packets else np.nan
             
+            # Extended statistical features combining protocols
+            self._extract_combined_statistical_features(features, {
+                'stp_count': stp_count,
+                'cdp_count': cdp_count,
+                'arp_count': arp_count,
+                'dhcp_count': dhcp_count,
+                'llc_count': llc_count
+            })
+            
             # Extract protocol-specific aggregated features
             self._extract_stp_aggregated_features(features)
             self._extract_cdp_aggregated_features(features)
@@ -489,6 +498,105 @@ class Flow:
             'mean_llc_dsap_cr': 0,
         }
         features.update(llc_defaults)
+    
+    def _extract_combined_statistical_features(self, features: Dict[str, Any], protocol_counts: Dict[str, int]):
+        """Extract advanced statistical features combining multiple protocols."""
+        total_packets = len(self.packets)
+        if total_packets == 0:
+            return
+        
+        # Protocol ratio features
+        stp_count = protocol_counts.get('stp_count', 0)
+        cdp_count = protocol_counts.get('cdp_count', 0)
+        arp_count = protocol_counts.get('arp_count', 0)
+        dhcp_count = protocol_counts.get('dhcp_count', 0)
+        llc_count = protocol_counts.get('llc_count', 0)
+        
+        # STP over CDP ratio
+        features['stp_over_cdp_ratio'] = stp_count / (cdp_count + 1e-8)
+        features['cdp_over_stp_ratio'] = cdp_count / (stp_count + 1e-8)
+        
+        # ARP over DHCP ratio
+        features['arp_over_dhcp_ratio'] = arp_count / (dhcp_count + 1e-8)
+        features['dhcp_over_arp_ratio'] = dhcp_count / (arp_count + 1e-8)
+        
+        # Layer 2 protocol diversity (entropy-like measure)
+        l2_counts = [stp_count, cdp_count, arp_count, dhcp_count, llc_count]
+        l2_total = sum(l2_counts)
+        if l2_total > 0:
+            l2_probs = [count / l2_total for count in l2_counts if count > 0]
+            features['l2_protocol_diversity'] = -sum(p * np.log2(p) for p in l2_probs if p > 0)
+        else:
+            features['l2_protocol_diversity'] = 0
+        
+        # Statistical variance ratios
+        try:
+            # Collect various feature values for standard deviation calculations
+            frame_lens = [packet.get_features().get('frame_len', 0) for packet in self.packets]
+            stp_ages = [packet.get_features().get('stp_msg_age', 0) for packet in self.packets if packet.get_features().get('stp_msg_age', 0) > 0]
+            arp_opcodes = [packet.get_features().get('arp_opcode', 0) for packet in self.packets if packet.get_features().get('arp_opcode', 0) > 0]
+            
+            std_frame_len = np.std(frame_lens) if frame_lens else 0
+            std_stp_ages = np.std(stp_ages) if len(stp_ages) > 1 else 0
+            std_arp_opcodes = np.std(arp_opcodes) if len(arp_opcodes) > 1 else 0
+            
+            # STD ratios
+            features['std_stp_over_std_arp'] = std_stp_ages / (std_arp_opcodes + 1e-8)
+            features['std_frame_len_over_std_stp'] = std_frame_len / (std_stp_ages + 1e-8)
+            
+        except Exception:
+            features['std_stp_over_std_arp'] = 0
+            features['std_frame_len_over_std_stp'] = 0
+        
+        # Protocol concentration metrics
+        features['stp_concentration'] = (stp_count / total_packets) ** 2 if total_packets > 0 else 0
+        features['cdp_concentration'] = (cdp_count / total_packets) ** 2 if total_packets > 0 else 0
+        features['arp_concentration'] = (arp_count / total_packets) ** 2 if total_packets > 0 else 0
+        
+        # Combined protocol activity score
+        l2_activity_scores = {
+            'stp': stp_count * 1.0,  # Weight by importance
+            'cdp': cdp_count * 1.2,  # CDP slightly more important
+            'arp': arp_count * 0.8,
+            'dhcp': dhcp_count * 1.1,
+            'llc': llc_count * 0.5
+        }
+        features['l2_weighted_activity_score'] = sum(l2_activity_scores.values())
+        
+        # Protocol imbalance measure (Gini-like coefficient)
+        if l2_total > 0:
+            sorted_counts = sorted(l2_counts, reverse=True)
+            n = len([c for c in sorted_counts if c > 0])
+            if n > 1:
+                cumulative = np.cumsum(sorted_counts)
+                features['l2_protocol_imbalance'] = (n + 1 - 2 * sum((n + 1 - i) * count for i, count in enumerate(sorted_counts, 1)) / cumulative[-1]) / n
+            else:
+                features['l2_protocol_imbalance'] = 1.0  # Perfect imbalance (only one protocol)
+        else:
+            features['l2_protocol_imbalance'] = 0
+        
+        # Temporal clustering features (if packets have timing)
+        try:
+            if len(self.packets) > 2:
+                timestamps = [packet.timestamp for packet in self.packets]
+                inter_arrival_times = np.diff(timestamps)
+                
+                # Coefficient of variation for inter-arrival times
+                if len(inter_arrival_times) > 1 and np.mean(inter_arrival_times) > 0:
+                    features['inter_arrival_cv'] = np.std(inter_arrival_times) / np.mean(inter_arrival_times)
+                else:
+                    features['inter_arrival_cv'] = 0
+                
+                # Burst detection - ratio of fast vs slow packets
+                median_time = np.median(inter_arrival_times)
+                fast_packets = sum(1 for t in inter_arrival_times if t < median_time / 2)
+                features['burst_ratio'] = fast_packets / len(inter_arrival_times) if inter_arrival_times else 0
+            else:
+                features['inter_arrival_cv'] = 0
+                features['burst_ratio'] = 0
+        except Exception:
+            features['inter_arrival_cv'] = 0
+            features['burst_ratio'] = 0
     
     def is_layer2_flow(self) -> bool:
         """Check if this is a Layer 2 flow (no IP addressing)."""

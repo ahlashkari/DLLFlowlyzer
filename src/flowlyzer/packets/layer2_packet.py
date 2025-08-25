@@ -24,12 +24,10 @@ class STPPacket(BasePacket):
             if self.packet.haslayer('STP'):
                 stp_layer = self.packet['STP']
                 
-                # STP basic fields
                 self.features['stp_proto_id'] = int(stp_layer.proto) if hasattr(stp_layer, 'proto') else 0
                 self.features['stp_version'] = int(stp_layer.version) if hasattr(stp_layer, 'version') else 0
                 self.features['stp_bpdu_type'] = int(stp_layer.bpdutype) if hasattr(stp_layer, 'bpdutype') else 0
                 
-                # STP flags
                 if hasattr(stp_layer, 'bpduflags'):
                     flags = int(stp_layer.bpduflags)
                     self.features['stp_flags'] = flags
@@ -40,22 +38,19 @@ class STPPacket(BasePacket):
                     self.features['stp_flags_tc'] = False
                     self.features['stp_flags_tcack'] = False
                 
-                # STP timing fields
                 self.features['stp_msg_age'] = int(stp_layer.msg_age) if hasattr(stp_layer, 'msg_age') else 0
                 self.features['stp_max_age'] = int(stp_layer.max_age) if hasattr(stp_layer, 'max_age') else 0
                 self.features['stp_hello_time'] = int(stp_layer.hello_time) if hasattr(stp_layer, 'hello_time') else 0
                 self.features['stp_forward_delay'] = int(stp_layer.forward_delay) if hasattr(stp_layer, 'forward_delay') else 0
-                self.features['stp_hello'] = self.features['stp_hello_time']  # Alias for compatibility
-                self.features['stp_forward'] = self.features['stp_forward_delay']  # Alias for compatibility
+                self.features['stp_hello'] = self.features['stp_hello_time']
+                self.features['stp_forward'] = self.features['stp_forward_delay']
                 
-                # Calculate age ratio
                 max_age = self.features['stp_max_age']
                 if max_age > 0:
                     self.features['stp_age_div_max_age'] = self.features['stp_msg_age'] / max_age
                 else:
                     self.features['stp_age_div_max_age'] = 0
                 
-                # Root identifier details
                 if hasattr(stp_layer, 'rootid'):
                     root_id = int(stp_layer.rootid) if isinstance(stp_layer.rootid, (int, str)) else 0
                     self.features['stp_root_id'] = str(stp_layer.rootid)
@@ -68,7 +63,6 @@ class STPPacket(BasePacket):
                     self.features['stp_root_identifier_ext'] = 0
                     self.features['stp_root_cost'] = 0
                 
-                # Bridge identifier details
                 if hasattr(stp_layer, 'bridgeid'):
                     bridge_id = int(stp_layer.bridgeid) if isinstance(stp_layer.bridgeid, (int, str)) else 0
                     self.features['stp_bridge_id'] = str(stp_layer.bridgeid)
@@ -79,7 +73,6 @@ class STPPacket(BasePacket):
                     self.features['stp_bridge_identifier_prio'] = 0
                     self.features['stp_bridge_identifier_ext'] = 0
                 
-                # Port identifier
                 self.features['stp_port_id'] = int(stp_layer.portid) if hasattr(stp_layer, 'portid') else 0
                 
             else:
@@ -128,118 +121,100 @@ class CDPPacket(BasePacket):
         return 'CDP'
     
     def _extract_cdp_features(self):
-        """Extract comprehensive CDP-specific features with enhanced validation using both native and pyshark analysis."""
+        """Extract comprehensive CDP-specific features using payload-based detection."""
         try:
-            # Enhanced CDP detection - must match MAC and validate payload structure
-            dst_mac = self.features.get('dst_mac_addr', '').lower()
-            if dst_mac == '01:00:0c:cc:cc:cc':
+            # This class is only created for confirmed CDP packets, so extract directly
+            if self._try_pyshark_cdp_extraction():
+                return
+            
+            raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
+            
+            if self._validate_cdp_structure(raw_payload):
+                cdp_offset = self._find_cdp_header_offset(raw_payload)
                 
-                # Try pyshark-enhanced extraction first
-                if self._try_pyshark_cdp_extraction():
-                    return
-                
-                # Validate CDP structure and extract features
-                raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
-                
-                if self._validate_cdp_structure(raw_payload):
-                    # Extract CDP header fields
-                    cdp_offset = self._find_cdp_header_offset(raw_payload)
-                    
-                    if cdp_offset >= 0 and len(raw_payload) >= cdp_offset + 4:
-                        self.features['cdp_version'] = raw_payload[cdp_offset] if cdp_offset < len(raw_payload) else 0
-                        self.features['cdp_ttl'] = raw_payload[cdp_offset + 1] if cdp_offset + 1 < len(raw_payload) else 0
-                        if cdp_offset + 4 <= len(raw_payload):
-                            self.features['cdp_checksum_status'] = int.from_bytes(raw_payload[cdp_offset + 2:cdp_offset + 4], 'big')
-                        else:
-                            self.features['cdp_checksum_status'] = 0
+                if cdp_offset >= 0 and len(raw_payload) >= cdp_offset + 4:
+                    self.features['cdp_version'] = raw_payload[cdp_offset] if cdp_offset < len(raw_payload) else 0
+                    self.features['cdp_ttl'] = raw_payload[cdp_offset + 1] if cdp_offset + 1 < len(raw_payload) else 0
+                    if cdp_offset + 4 <= len(raw_payload):
+                        self.features['cdp_checksum_status'] = int.from_bytes(raw_payload[cdp_offset + 2:cdp_offset + 4], 'big')
                     else:
-                        self.features['cdp_version'] = 0
-                        self.features['cdp_ttl'] = 0
                         self.features['cdp_checksum_status'] = 0
                 else:
-                    # MAC matches but payload doesn't look like CDP, set defaults
                     self.features['cdp_version'] = 0
                     self.features['cdp_ttl'] = 0
                     self.features['cdp_checksum_status'] = 0
-                
-                    # Enhanced CDP TLV analysis
-                    tlv_data = self._parse_cdp_tlvs(raw_payload[cdp_offset + 4:] if cdp_offset >= 0 else raw_payload)
-                
-                # Basic TLV counts
-                self.features['cdp_tlvs'] = tlv_data['tlv_count']
-                self.features['cdp_addresses_count'] = tlv_data['addresses_count']
-                
-                # Device information TLVs
-                self.features['cdp_device_id_tlv_len'] = tlv_data.get('device_id_len', 0)
-                self.features['cdp_software_version_tlv_len'] = tlv_data.get('software_version_len', 0)
-                self.features['cdp_platform_tlv_len'] = tlv_data.get('platform_len', 0)
-                self.features['cdp_platform'] = tlv_data.get('platform', '')
-                
-                # Address TLVs
-                self.features['cdp_addresses_tlv_len'] = tlv_data.get('addresses_tlv_len', 0)
-                self.features['cdp_addresses_sum_len'] = tlv_data.get('addresses_sum_len', 0)
-                self.features['cdp_addresses_sum_protocol_len'] = tlv_data.get('addresses_sum_protocol_len', 0)
-                self.features['cdp_management_addresses_sum_len'] = tlv_data.get('mgmt_addresses_sum_len', 0)
-                self.features['cdp_management_addresses_sum_protocol_len'] = tlv_data.get('mgmt_addresses_sum_protocol_len', 0)
-                
-                # Port and capabilities
-                self.features['cdp_port_id_tlv_len'] = tlv_data.get('port_id_len', 0)
-                self.features['cdp_capabilities_tlv_len'] = tlv_data.get('capabilities_len', 0)
-                
-                # Capability flags
-                capabilities = tlv_data.get('capabilities_flags', 0)
-                self.features['cdp_capabilities'] = capabilities
-                self.features['cdp_capabilities_router'] = bool(capabilities & 0x01)
-                self.features['cdp_capabilities_trans_bridge'] = bool(capabilities & 0x02)
-                self.features['cdp_capabilities_src_bridge'] = bool(capabilities & 0x04)
-                self.features['cdp_capabilities_switch'] = bool(capabilities & 0x08)
-                self.features['cdp_capabilities_host'] = bool(capabilities & 0x10)
-                self.features['cdp_capabilities_igmp'] = bool(capabilities & 0x20)
-                self.features['cdp_capabilities_repeater'] = bool(capabilities & 0x40)
-                self.features['cdp_capabilities_voip_phone'] = bool(capabilities & 0x80)
-                self.features['cdp_capabilities_remote'] = bool(capabilities & 0x100)
-                self.features['cdp_capabilities_cvta'] = bool(capabilities & 0x200)
-                self.features['cdp_capabilities_mac_relay'] = bool(capabilities & 0x400)
-                
-                # Protocol hello and VTP
-                self.features['cdp_hello_tlv_len'] = tlv_data.get('hello_tlv_len', 0)
-                self.features['cdp_hello_oui'] = tlv_data.get('hello_oui', 0)
-                self.features['cdp_hello_num_unknown'] = tlv_data.get('hello_num_unknown', 0)
-                self.features['cdp_hello_management_vlan'] = tlv_data.get('hello_management_vlan', 0)
-                self.features['cdp_vtp_management_tlv_len'] = tlv_data.get('vtp_management_len', 0)
-                
-                # Native VLAN
-                self.features['cdp_vlan_native_tlv_len'] = tlv_data.get('native_vlan_len', 0)
-                self.features['cdp_vlan_native_native_vlan'] = tlv_data.get('native_vlan_id', 0)
-                
-                # Duplex
-                self.features['cdp_duplex_tlv_len'] = tlv_data.get('duplex_len', 0)
-                self.features['cdp_duplex'] = tlv_data.get('duplex_value', 0)
-                
-                # Power features
-                self.features['cdp_power_tlv_len'] = tlv_data.get('power_len', 0)
-                self.features['cdp_power_request_id'] = tlv_data.get('power_request_id', 0)
-                self.features['cdp_power_management_id'] = tlv_data.get('power_management_id', 0)
-                self.features['cdp_power_sum'] = tlv_data.get('power_sum', 0)
-                
-                # Spare pair PoE
-                self.features['cdp_spare_pair_tlv_len'] = tlv_data.get('spare_pair_len', 0)
-                self.features['cdp_spare_poe_tlv_poe'] = tlv_data.get('spare_poe_poe', 0)
-                self.features['cdp_spare_poe_tlv_spare_pair_arch'] = tlv_data.get('spare_pair_arch', 0)
-                self.features['cdp_spare_poe_tlv_req_spare_pair_poe'] = tlv_data.get('req_spare_pair_poe', 0)
-                self.features['cdp_spare_poe_tlv_pse_spare_pair_poe'] = tlv_data.get('pse_spare_pair_poe', 0)
-                
             else:
-                # Not a CDP packet based on MAC
-                self._set_default_cdp_features()
+                self.features['cdp_version'] = 0
+                self.features['cdp_ttl'] = 0
+                self.features['cdp_checksum_status'] = 0
+            
+            tlv_data = self._parse_cdp_tlvs(raw_payload[cdp_offset + 4:] if cdp_offset >= 0 else raw_payload)
+            
+            self.features['cdp_tlvs'] = tlv_data['tlv_count']
+            self.features['cdp_addresses_count'] = tlv_data['addresses_count']
+            
+            # Device information TLVs
+            self.features['cdp_device_id_tlv_len'] = tlv_data.get('device_id_len', 0)
+            self.features['cdp_software_version_tlv_len'] = tlv_data.get('software_version_len', 0)
+            self.features['cdp_platform_tlv_len'] = tlv_data.get('platform_len', 0)
+            self.features['cdp_platform'] = tlv_data.get('platform', '')
+            
+            # Address TLVs
+            self.features['cdp_addresses_tlv_len'] = tlv_data.get('addresses_tlv_len', 0)
+            self.features['cdp_addresses_sum_len'] = tlv_data.get('addresses_sum_len', 0)
+            self.features['cdp_addresses_sum_protocol_len'] = tlv_data.get('addresses_sum_protocol_len', 0)
+            self.features['cdp_management_addresses_sum_len'] = tlv_data.get('mgmt_addresses_sum_len', 0)
+            self.features['cdp_management_addresses_sum_protocol_len'] = tlv_data.get('mgmt_addresses_sum_protocol_len', 0)
+            
+            # Port and capabilities
+            self.features['cdp_port_id_tlv_len'] = tlv_data.get('port_id_len', 0)
+            self.features['cdp_capabilities_tlv_len'] = tlv_data.get('capabilities_len', 0)
+            
+            # Capability flags
+            capabilities = tlv_data.get('capabilities_flags', 0)
+            self.features['cdp_capabilities'] = capabilities
+            self.features['cdp_capabilities_router'] = bool(capabilities & 0x01)
+            self.features['cdp_capabilities_trans_bridge'] = bool(capabilities & 0x02)
+            self.features['cdp_capabilities_src_bridge'] = bool(capabilities & 0x04)
+            self.features['cdp_capabilities_switch'] = bool(capabilities & 0x08)
+            self.features['cdp_capabilities_host'] = bool(capabilities & 0x10)
+            self.features['cdp_capabilities_igmp'] = bool(capabilities & 0x20)
+            self.features['cdp_capabilities_repeater'] = bool(capabilities & 0x40)
+            self.features['cdp_capabilities_voip_phone'] = bool(capabilities & 0x80)
+            self.features['cdp_capabilities_remote'] = bool(capabilities & 0x100)
+            self.features['cdp_capabilities_cvta'] = bool(capabilities & 0x200)
+            self.features['cdp_capabilities_mac_relay'] = bool(capabilities & 0x400)
+            
+            # Protocol hello and VTP
+            self.features['cdp_hello_tlv_len'] = tlv_data.get('hello_tlv_len', 0)
+            self.features['cdp_hello_oui'] = tlv_data.get('hello_oui', 0)
+            self.features['cdp_hello_num_unknown'] = tlv_data.get('hello_num_unknown', 0)
+            self.features['cdp_hello_management_vlan'] = tlv_data.get('hello_management_vlan', 0)
+            self.features['cdp_vtp_management_tlv_len'] = tlv_data.get('vtp_management_len', 0)
+            
+            # Native VLAN
+            self.features['cdp_vlan_native_tlv_len'] = tlv_data.get('native_vlan_len', 0)
+            self.features['cdp_vlan_native_native_vlan'] = tlv_data.get('native_vlan_id', 0)
+            
+            # Duplex
+            self.features['cdp_duplex_tlv_len'] = tlv_data.get('duplex_len', 0)
+            self.features['cdp_duplex'] = tlv_data.get('duplex_value', 0)
+            
+            # Power features
+            self.features['cdp_power_tlv_len'] = tlv_data.get('power_len', 0)
+            self.features['cdp_power_request_id'] = tlv_data.get('power_request_id', 0)
+            self.features['cdp_power_management_id'] = tlv_data.get('power_management_id', 0)
+            self.features['cdp_power_sum'] = tlv_data.get('power_sum', 0)
+            
+            # Spare pair PoE
+            self.features['cdp_spare_pair_tlv_len'] = tlv_data.get('spare_pair_len', 0)
+            self.features['cdp_spare_poe_tlv_poe'] = tlv_data.get('spare_poe_poe', 0)
+            self.features['cdp_spare_poe_tlv_spare_pair_arch'] = tlv_data.get('spare_pair_arch', 0)
+            self.features['cdp_spare_poe_tlv_req_spare_pair_poe'] = tlv_data.get('req_spare_pair_poe', 0)
+            self.features['cdp_spare_poe_tlv_pse_spare_pair_poe'] = tlv_data.get('pse_spare_pair_poe', 0)
                 
         except Exception as e:
-            # On error, still try to mark as CDP if MAC matches
-            dst_mac = self.features.get('dst_mac_addr', '').lower()
-            if dst_mac == '01:00:0c:cc:cc:cc':
-                self._set_default_cdp_features()
-            else:
-                self._set_default_cdp_features()
+            self._set_default_cdp_features()
     
     def _parse_cdp_tlvs(self, payload: bytes) -> dict:
         """Parse CDP TLVs and extract detailed information."""

@@ -162,42 +162,123 @@ class FlowManager:
             return BasePacket(scapy_packet, frame_number)
     
     def _is_cdp_packet(self, scapy_packet) -> bool:
-        """Check if packet is CDP with enhanced payload analysis."""
+        """Check if packet is CDP using payload-based analysis without MAC dependency."""
         try:
-            if scapy_packet.haslayer('Ether'):
-                dst_mac = str(scapy_packet['Ether'].dst).lower()
-                if dst_mac in _CISCO_MACS:
-                    # CDP uses the same MAC as DTP, need precise payload analysis
-                    raw_payload = bytes(scapy_packet.payload) if scapy_packet.payload else b''
-                    
-                    if scapy_packet.haslayer('LLC'):
-                        llc_layer = scapy_packet['LLC']
-                        # CDP typically has DSAP/SSAP = 0xAA (SNAP)
-                        if hasattr(llc_layer, 'dsap') and hasattr(llc_layer, 'ssap'):
-                            if llc_layer.dsap == 0xaa and llc_layer.ssap == 0xaa:
-                                # Check if it's CDP by looking at SNAP OUI and PID
-                                # CDP has OUI 00:00:0c and PID 0x2000
-                                if len(raw_payload) >= 8:
-                                    # Look for CDP SNAP signature in LLC payload
-                                    return raw_payload[3:6] == b'\x00\x00\x0c' and raw_payload[6:8] == b'\x20\x00'
-                                elif len(raw_payload) >= 5:
-                                    # Alternative check: look for CDP SNAP at start of LLC payload
-                                    return raw_payload[0:3] == b'\x00\x00\x0c' and raw_payload[3:5] == b'\x20\x00'
-                    else:
-                        # If no LLC layer, check for CDP directly in ethernet payload
-                        if len(raw_payload) >= 8:
-                            # Check for CDP version field (should be 1 or 2) and reasonable TTL
-                            if len(raw_payload) >= 2:
-                                version = raw_payload[0]
-                                ttl = raw_payload[1]
-                                # CDP version is typically 1 or 2, TTL is reasonable (1-255)
-                                if version in [1, 2] and 1 <= ttl <= 255:
-                                    return True
-                        # If MAC matches but no clear structure, assume it's CDP for compatibility
-                        return True
+            raw_payload = bytes(scapy_packet.payload) if scapy_packet.payload else b''
+            
+            # Method 1: Check LLC/SNAP for CDP OUI and PID
+            if scapy_packet.haslayer('LLC'):
+                llc_layer = scapy_packet['LLC']
+                if hasattr(llc_layer, 'dsap') and hasattr(llc_layer, 'ssap'):
+                    if llc_layer.dsap == 0xaa and llc_layer.ssap == 0xaa:
+                        # Check for CDP SNAP: OUI 00:00:0c and PID 0x2000
+                        llc_payload = bytes(llc_layer.payload) if llc_layer.payload else b''
+                        if len(llc_payload) >= 5:
+                            if llc_payload[0:3] == b'\x00\x00\x0c' and llc_payload[3:5] == b'\x20\x00':
+                                return True
+            
+            # Method 2: Search for CDP SNAP signature anywhere in payload
+            for i in range(len(raw_payload) - 7):
+                if (raw_payload[i:i+3] == b'\x00\x00\x0c' and 
+                    raw_payload[i+3:i+5] == b'\x20\x00'):
+                    # Validate CDP header follows
+                    cdp_start = i + 5
+                    if cdp_start + 2 < len(raw_payload):
+                        version = raw_payload[cdp_start]
+                        ttl = raw_payload[cdp_start + 1]
+                        if version in [1, 2] and 1 <= ttl <= 255:
+                            return True
+            
+            # Method 3: Look for CDP version/TTL pattern without SNAP
+            for i in range(len(raw_payload) - 4):
+                version = raw_payload[i]
+                ttl = raw_payload[i + 1]
+                if version in [1, 2] and 1 <= ttl <= 255:
+                    # Additional validation: check for reasonable checksum position
+                    if i + 4 <= len(raw_payload):
+                        # Look ahead for TLV patterns (Type-Length-Value)
+                        tlv_start = i + 4
+                        valid_tlvs = 0
+                        offset = tlv_start
+                        
+                        # Check for at least 2 valid TLV structures
+                        while offset < len(raw_payload) - 4 and valid_tlvs < 3:
+                            tlv_type = int.from_bytes(raw_payload[offset:offset+2], 'big')
+                            tlv_length = int.from_bytes(raw_payload[offset+2:offset+4], 'big')
+                            
+                            # Valid CDP TLV types: 1-25
+                            if 1 <= tlv_type <= 25 and 4 <= tlv_length <= 1500:
+                                valid_tlvs += 1
+                                offset += tlv_length
+                            else:
+                                break
+                        
+                        if valid_tlvs >= 2:
+                            return True
+            
             return False
         except Exception as e:
             self.logger.debug(f"Error in CDP detection: {e}")
+            return False
+    
+    def _is_dtp_packet(self, scapy_packet) -> bool:
+        """Check if packet is DTP using payload-based analysis without MAC dependency."""
+        try:
+            raw_payload = bytes(scapy_packet.payload) if scapy_packet.payload else b''
+            
+            # Method 1: Check LLC/SNAP for DTP OUI and PID
+            if scapy_packet.haslayer('LLC'):
+                llc_layer = scapy_packet['LLC']
+                if hasattr(llc_layer, 'dsap') and hasattr(llc_layer, 'ssap'):
+                    if llc_layer.dsap == 0xaa and llc_layer.ssap == 0xaa:
+                        # Check for DTP SNAP: OUI 00:00:0c and PID 0x2004
+                        llc_payload = bytes(llc_layer.payload) if llc_layer.payload else b''
+                        if len(llc_payload) >= 5:
+                            if llc_payload[0:3] == b'\x00\x00\x0c' and llc_payload[3:5] == b'\x20\x04':
+                                return True
+            
+            # Method 2: Search for DTP SNAP signature anywhere in payload
+            for i in range(len(raw_payload) - 7):
+                if (raw_payload[i:i+3] == b'\x00\x00\x0c' and 
+                    raw_payload[i+3:i+5] == b'\x20\x04'):
+                    # Validate DTP header follows
+                    dtp_start = i + 5
+                    if dtp_start + 4 < len(raw_payload):
+                        # DTP has a version field (usually 1) at start
+                        version = raw_payload[dtp_start]
+                        if version == 1:
+                            return True
+            
+            # Method 3: Look for DTP TLV patterns
+            for i in range(len(raw_payload) - 8):
+                # DTP TLVs have specific patterns
+                if i + 8 <= len(raw_payload):
+                    # Check for DTP TLV structure (Type-Length-Value)
+                    tlv_type = int.from_bytes(raw_payload[i:i+2], 'big')
+                    tlv_length = int.from_bytes(raw_payload[i+2:i+4], 'big')
+                    
+                    # DTP TLV types: 1 (Domain), 2 (Status), 3 (Type), 4 (Neighbor)
+                    if tlv_type in [1, 2, 3, 4] and 4 <= tlv_length <= 100:
+                        # Look for more DTP TLVs to confirm
+                        valid_dtp_tlvs = 1
+                        offset = i + tlv_length
+                        
+                        while offset < len(raw_payload) - 4 and valid_dtp_tlvs < 3:
+                            next_type = int.from_bytes(raw_payload[offset:offset+2], 'big')
+                            next_length = int.from_bytes(raw_payload[offset+2:offset+4], 'big')
+                            
+                            if next_type in [1, 2, 3, 4] and 4 <= next_length <= 100:
+                                valid_dtp_tlvs += 1
+                                offset += next_length
+                            else:
+                                break
+                        
+                        if valid_dtp_tlvs >= 2:
+                            return True
+            
+            return False
+        except Exception as e:
+            self.logger.debug(f"Error in DTP detection: {e}")
             return False
     
     def _is_lldp_packet(self, scapy_packet) -> bool:
