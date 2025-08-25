@@ -21,21 +21,21 @@ class FeatureExtractor:
         self.num_threads = num_threads
         self.logger = logging.getLogger(__name__)
     
-    def extract_features(self, flows: List[Flow]) -> pd.DataFrame:
+    def extract_features(self, flows: List[Flow], global_protocol_stats: Dict[str, int] = None) -> pd.DataFrame:
         if not flows:
             return pd.DataFrame(columns=self.feature_columns)
         
         if self.num_threads == 1 or len(flows) < 100:
-            return self._extract_features_sequential(flows)
+            return self._extract_features_sequential(flows, global_protocol_stats)
         else:
-            return self._extract_features_parallel(flows)
+            return self._extract_features_parallel(flows, global_protocol_stats)
     
-    def _extract_features_sequential(self, flows: List[Flow]) -> pd.DataFrame:
+    def _extract_features_sequential(self, flows: List[Flow], global_protocol_stats: Dict[str, int] = None) -> pd.DataFrame:
         feature_rows = []
         
         for flow in flows:
             try:
-                flow_features = self._extract_flow_features(flow)
+                flow_features = self._extract_flow_features(flow, global_protocol_stats)
                 feature_rows.append(flow_features)
             except Exception as e:
                 default_features = self._get_default_features()
@@ -46,7 +46,7 @@ class FeatureExtractor:
         df = self._fill_missing_values(df)
         return df
     
-    def _extract_features_parallel(self, flows: List[Flow]) -> pd.DataFrame:
+    def _extract_features_parallel(self, flows: List[Flow], global_protocol_stats: Dict[str, int] = None) -> pd.DataFrame:
         self.logger.info(f"Extracting features from {len(flows)} flows using {self.num_threads} threads")
         
         chunk_size = max(1, len(flows) // (self.num_threads * 2))
@@ -56,7 +56,7 @@ class FeatureExtractor:
         completed_chunks = 0
         
         with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
-            future_to_chunk = {executor.submit(self._process_flow_chunk, chunk): chunk 
+            future_to_chunk = {executor.submit(self._process_flow_chunk, chunk, global_protocol_stats): chunk 
                              for chunk in flow_chunks}
             
             for future in as_completed(future_to_chunk):
@@ -80,11 +80,11 @@ class FeatureExtractor:
         df = self._fill_missing_values(df)
         return df
     
-    def _process_flow_chunk(self, flows: List[Flow]) -> List[Dict[str, Any]]:
+    def _process_flow_chunk(self, flows: List[Flow], global_protocol_stats: Dict[str, int] = None) -> List[Dict[str, Any]]:
         chunk_features = []
         for flow in flows:
             try:
-                flow_features = self._extract_flow_features(flow)
+                flow_features = self._extract_flow_features(flow, global_protocol_stats)
                 chunk_features.append(flow_features)
             except Exception as e:
                 default_features = self._get_default_features()
@@ -92,9 +92,13 @@ class FeatureExtractor:
                 chunk_features.append(default_features)
         return chunk_features
     
-    def _extract_flow_features(self, flow: Flow) -> Dict[str, Any]:
+    def _extract_flow_features(self, flow: Flow, global_protocol_stats: Dict[str, int] = None) -> Dict[str, Any]:
         """Extract all features for a single flow."""
         features = flow.get_features()
+        
+        # Update percentage calculations with global context if available
+        if global_protocol_stats:
+            flow.update_global_percentages(features, global_protocol_stats)
         
         if flow.packets:
             first_packet_features = flow.packets[0].get_features()
@@ -178,14 +182,14 @@ class FeatureExtractor:
                 isl_lengths = [p.get_features().get('isl_len', 0) for p in isl_packets]
                 isl_bpdus = [p.get_features().get('isl_bpdu', 0) for p in isl_packets]
                 
-                features['sum_isl_len'] = sum(isl_lengths)
-                features['mean_isl_len'] = np.mean(isl_lengths) if isl_lengths else 0
-                features['max_isl_len'] = max(isl_lengths) if isl_lengths else 0
-                features['min_isl_len'] = min(isl_lengths) if isl_lengths else 0
-                features['median_isl_len'] = np.median(isl_lengths) if isl_lengths else 0
-                features['std_isl_len'] = np.std(isl_lengths) if len(isl_lengths) > 1 else 0
-                features['norm_isl_len'] = features['std_isl_len'] / features['mean_isl_len'] if features['mean_isl_len'] > 0 else 0
-                features['mean_isl_bpdu'] = np.mean(isl_bpdus) if isl_bpdus else 0
+                features['isl_sum_len'] = sum(isl_lengths)
+                features['isl_mean_len'] = np.mean(isl_lengths) if isl_lengths else 0
+                features['isl_max_len'] = max(isl_lengths) if isl_lengths else 0
+                features['isl_min_len'] = min(isl_lengths) if isl_lengths else 0
+                features['isl_median_len'] = np.median(isl_lengths) if isl_lengths else 0
+                features['isl_std_len'] = np.std(isl_lengths) if len(isl_lengths) > 1 else 0
+                features['isl_norm_len'] = features['isl_std_len'] / features['isl_mean_len'] if features['isl_mean_len'] > 0 else 0
+                features['isl_mean_bpdu'] = np.mean(isl_bpdus) if isl_bpdus else 0
                 
             else:
                 self._set_default_isl_features(features)
@@ -201,14 +205,14 @@ class FeatureExtractor:
         isl_defaults = {
             'num_isl_frame': 0,
             'percent_isl_frame': 0,
-            'mean_isl_bpdu': 0,
-            'sum_isl_len': 0,
-            'mean_isl_len': 0,
-            'max_isl_len': 0,
-            'min_isl_len': 0,
-            'median_isl_len': 0,
-            'std_isl_len': 0,
-            'norm_isl_len': 0,
+            'isl_mean_bpdu': 0,
+            'isl_sum_len': 0,
+            'isl_mean_len': 0,
+            'isl_max_len': 0,
+            'isl_min_len': 0,
+            'isl_median_len': 0,
+            'isl_std_len': 0,
+            'isl_norm_len': 0,
         }
         features.update(isl_defaults)
     
@@ -280,21 +284,21 @@ class FeatureExtractor:
             # LLC features (enhanced)
             'num_llc_frame',
             'percent_llc_frame',
-            'mean_llc_ssap_sap',
-            'max_llc_ssap_sap',
-            'min_llc_ssap_sap',
-            'median_llc_ssap_sap',
-            'std_llc_ssap_sap',
-            'norm_llc_ssap_sap',
-            'sum_llc_dsap_sap',
-            'mean_llc_dsap_sap',
-            'max_llc_dsap_sap',
-            'min_llc_dsap_sap',
-            'median_llc_dsap_sap',
-            'std_llc_dsap_sap',
-            'norm_llc_dsap_sap',
-            'mean_llc_ssap_cr',
-            'mean_llc_dsap_cr',
+            'llc_mean_ssap_sap',
+            'llc_max_ssap_sap',
+            'llc_min_ssap_sap',
+            'llc_median_ssap_sap',
+            'llc_std_ssap_sap',
+            'llc_norm_ssap_sap',
+            'llc_sum_dsap_sap',
+            'llc_mean_dsap_sap',
+            'llc_max_dsap_sap',
+            'llc_min_dsap_sap',
+            'llc_median_dsap_sap',
+            'llc_std_dsap_sap',
+            'llc_norm_dsap_sap',
+            'llc_mean_ssap_cr',
+            'llc_mean_dsap_cr',
             'llc_control_ftype',
             'llc_control_u_modifier',
             'llc_dsap_ig',
@@ -302,23 +306,23 @@ class FeatureExtractor:
             # STP features (enhanced)
             'num_stp_frame',
             'percent_stp_frame',
-            'sum_stp_msg_age',
-            'mean_stp_msg_age',
-            'max_stp_msg_age',
-            'min_stp_msg_age',
-            'median_stp_msg_age',
-            'std_stp_msg_age',
-            'norm_stp_msg_age',
-            'sum_stp_forward',
-            'mean_stp_forward',
-            'max_stp_forward',
-            'min_stp_forward',
-            'median_stp_forward',
-            'std_stp_forward',
-            'count_stp_flags_tc_1',
-            'count_stp_flags_tcack_1',
-            'percent_stp_flags_tc_1',
-            'percent_stp_flags_tcack_1',
+            'stp_sum_msg_age',
+            'stp_mean_msg_age',
+            'stp_max_msg_age',
+            'stp_min_msg_age',
+            'stp_median_msg_age',
+            'stp_std_msg_age',
+            'stp_norm_msg_age',
+            'stp_sum_forward',
+            'stp_mean_forward',
+            'stp_max_forward',
+            'stp_min_forward',
+            'stp_median_forward',
+            'stp_std_forward',
+            'stp_count_flags_tc_1',
+            'stp_count_flags_tcack_1',
+            'stp_percent_flags_tc_1',
+            'stp_percent_flags_tcack_1',
             'stp_age_div_max_age',
             'stp_version',
             'stp_hello',
@@ -338,10 +342,7 @@ class FeatureExtractor:
             'loop_function',
             'loop_relevant_function',
             
-            # DTP features (enhanced)
-            'num_dtp_frame',
-            'percent_dtp_frame',
-            'sum_dtp_tlvs',
+            # DTP features (enhanced) - num/percent/sum are dynamically generated
             'dtp_version',
             'dtp_tlv_len',
             'dtp_trunk_status_tlv_len',
@@ -350,29 +351,27 @@ class FeatureExtractor:
             'dtp_sender_id',
             
             # DTP aggregated features
-            'sum_dtp_version',
-            'mean_dtp_version',
-            'sum_dtp_tlv_count',
-            'mean_dtp_tlv_count',
-            'max_dtp_tlv_count',
-            'min_dtp_tlv_count',
-            'sum_dtp_domain_length',
-            'mean_dtp_domain_length',
+            'dtp_sum_version',
+            'dtp_mean_version',
+            'dtp_sum_tlv_count',
+            'dtp_mean_tlv_count',
+            'dtp_max_tlv_count',
+            'dtp_min_tlv_count',
+            'dtp_sum_domain_length',
+            'dtp_mean_domain_length',
             'dtp_frame_isl_count',
             'dtp_frame_802dot1q_count',
             'dtp_frame_isl_ratio',
             
-            # ISL features (enhanced)
-            'num_isl_frame',
-            'percent_isl_frame',
-            'mean_isl_bpdu',
-            'sum_isl_len',
-            'mean_isl_len',
-            'max_isl_len',
-            'min_isl_len',
-            'median_isl_len',
-            'std_isl_len',
-            'norm_isl_len',
+            # ISL features (enhanced) - num/percent are dynamically generated
+            'isl_mean_bpdu',
+            'isl_sum_len',
+            'isl_mean_len',
+            'isl_max_len',
+            'isl_min_len',
+            'isl_median_len',
+            'isl_std_len',
+            'isl_norm_len',
             'isl_reserved',
             'isl_index',
             'isl_vlan_id',
@@ -397,20 +396,20 @@ class FeatureExtractor:
             'arp_proto_type',
             
             # ARP aggregated features
-            'sum_arp_hw_type',
-            'mean_arp_hw_type',
-            'max_arp_hw_type',
-            'min_arp_hw_type',
-            'sum_arp_proto_type',
-            'mean_arp_proto_type',
-            'sum_arp_opcode',
-            'mean_arp_opcode',
-            'max_arp_opcode',
-            'min_arp_opcode',
-            'sum_arp_size',
-            'mean_arp_size',
-            'max_arp_size',
-            'min_arp_size',
+            'arp_sum_hw_type',
+            'arp_mean_hw_type',
+            'arp_max_hw_type',
+            'arp_min_hw_type',
+            'arp_sum_proto_type',
+            'arp_mean_proto_type',
+            'arp_sum_opcode',
+            'arp_mean_opcode',
+            'arp_max_opcode',
+            'arp_min_opcode',
+            'arp_sum_size',
+            'arp_mean_size',
+            'arp_max_size',
+            'arp_min_size',
             'arp_request_count',
             'arp_reply_count',
             'arp_gratuitous_count',
@@ -436,41 +435,41 @@ class FeatureExtractor:
             'dhcp_option_padding',
             
             # DHCP aggregated features
-            'sum_dhcp_opcode',
-            'mean_dhcp_opcode',
-            'sum_dhcp_transaction_id',
-            'mean_dhcp_transaction_id',
-            'max_dhcp_transaction_id',
-            'min_dhcp_transaction_id',
-            'sum_dhcp_lease_time',
-            'mean_dhcp_lease_time',
-            'max_dhcp_lease_time',
-            'min_dhcp_lease_time',
-            'sum_dhcp_message_type',
-            'mean_dhcp_message_type',
-            'sum_dhcp_options_count',
-            'mean_dhcp_options_count',
-            'max_dhcp_options_count',
-            'min_dhcp_options_count',
+            'dhcp_sum_opcode',
+            'dhcp_mean_opcode',
+            'dhcp_sum_transaction_id',
+            'dhcp_mean_transaction_id',
+            'dhcp_max_transaction_id',
+            'dhcp_min_transaction_id',
+            'dhcp_sum_lease_time',
+            'dhcp_mean_lease_time',
+            'dhcp_max_lease_time',
+            'dhcp_min_lease_time',
+            'dhcp_sum_message_type',
+            'dhcp_mean_message_type',
+            'dhcp_sum_options_count',
+            'dhcp_mean_options_count',
+            'dhcp_max_options_count',
+            'dhcp_min_options_count',
             
             # CDP features (comprehensive)
             'num_cdp_frame',
             'percent_cdp_frame',
-            'sum_cdp_addresses_count',
-            'mean_cdp_addresses_count',
-            'max_cdp_addresses_count',
-            'min_cdp_addresses_count',
-            'median_cdp_addresses_count',
-            'std_cdp_addresses_count',
-            'norm_cdp_addresses_count',
-            'sum_cdp_tlvs',
-            'sum_cdp_capabilities',
-            'mean_cdp_power_sum',
-            'max_cdp_power_sum',
-            'min_cdp_power_sum',
-            'median_cdp_power_sum',
-            'std_cdp_power_sum',
-            'norm_cdp_power_sum',
+            'cdp_sum_addresses_count',
+            'cdp_mean_addresses_count',
+            'cdp_max_addresses_count',
+            'cdp_min_addresses_count',
+            'cdp_median_addresses_count',
+            'cdp_std_addresses_count',
+            'cdp_norm_addresses_count',
+            'cdp_sum_tlvs',
+            'cdp_sum_capabilities',
+            'cdp_mean_power_sum',
+            'cdp_max_power_sum',
+            'cdp_min_power_sum',
+            'cdp_median_power_sum',
+            'cdp_std_power_sum',
+            'cdp_norm_power_sum',
             'cdp_version',
             'cdp_ttl',
             'cdp_checksum_status',

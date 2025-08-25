@@ -139,9 +139,12 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                         if frame_number % 5000 == 0:  # Check more frequently
                             batch_flows = flow_manager.get_batch_completed_flows(CSV_BATCH_SIZE)
                             if batch_flows:
+                                # Get current global protocol statistics
+                                current_stats = flow_manager.get_statistics()
                                 total_flows_processed += process_flow_batch(
                                     batch_flows, feature_extractor, flow_labeler, 
-                                    csv_exporter, batch_files, processing_config, logger
+                                    csv_exporter, batch_files, processing_config, logger,
+                                    current_stats.get('protocol_stats', {})
                                 )
                             
                             # Log progress and memory stats
@@ -169,9 +172,11 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                                 # Process completed flows immediately using larger CSV batches
                                 emergency_batch = flow_manager.get_batch_completed_flows(CSV_BATCH_SIZE * 3)
                                 if emergency_batch:
+                                    current_stats = flow_manager.get_statistics()
                                     total_flows_processed += process_flow_batch(
                                         emergency_batch, feature_extractor, flow_labeler,
-                                        csv_exporter, batch_files, processing_config, logger
+                                        csv_exporter, batch_files, processing_config, logger,
+                                        current_stats.get('protocol_stats', {})
                                     )
                             
                             elif warning_triggered:
@@ -181,9 +186,11 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                                 # Process some completed flows using CSV batch size
                                 warning_batch = flow_manager.get_batch_completed_flows(CSV_BATCH_SIZE)
                                 if warning_batch:
+                                    current_stats = flow_manager.get_statistics()
                                     total_flows_processed += process_flow_batch(
                                         warning_batch, feature_extractor, flow_labeler,
-                                        csv_exporter, batch_files, processing_config, logger
+                                        csv_exporter, batch_files, processing_config, logger,
+                                        current_stats.get('protocol_stats', {})
                                     )
                         
                         # Regular memory cleanup
@@ -193,9 +200,11 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                             # Process any flows that were just completed using CSV batch size
                             cleanup_batch = flow_manager.get_batch_completed_flows(CSV_BATCH_SIZE * 2)
                             if cleanup_batch:
+                                current_stats = flow_manager.get_statistics()
                                 total_flows_processed += process_flow_batch(
                                     cleanup_batch, feature_extractor, flow_labeler,
-                                    csv_exporter, batch_files, processing_config, logger
+                                    csv_exporter, batch_files, processing_config, logger,
+                                    current_stats.get('protocol_stats', {})
                                 )
                             
                             # Force garbage collection
@@ -218,9 +227,11 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
         # Process any remaining flows
         remaining_flows = flow_manager.get_batch_completed_flows(1000)  # Get all remaining
         if remaining_flows:
+            final_stats = flow_manager.get_statistics()
             total_flows_processed += process_flow_batch(
                 remaining_flows, feature_extractor, flow_labeler,
-                csv_exporter, batch_files, processing_config, logger
+                csv_exporter, batch_files, processing_config, logger,
+                final_stats.get('protocol_stats', {})
             )
             logger.logger.info(f"Processed final batch of {len(remaining_flows)} flows")
     
@@ -302,14 +313,15 @@ def perform_aggressive_cleanup(flow_manager, logger, memory_monitor=None):
 
 
 def process_flow_batch(flows: list, feature_extractor, flow_labeler, csv_exporter, 
-                      batch_files: dict, processing_config: dict, logger) -> int:
+                      batch_files: dict, processing_config: dict, logger, 
+                      global_protocol_stats: dict = None) -> int:
     """Process a batch of flows: extract features, apply labels, and export to CSV."""
     if not flows:
         return 0
     
     try:
-        # Extract features from batch
-        flows_df = feature_extractor.extract_features(flows)
+        # Extract features from batch with global protocol statistics
+        flows_df = feature_extractor.extract_features(flows, global_protocol_stats)
         
         # Apply labeling
         if flow_labeler:

@@ -1,13 +1,13 @@
 # DLL Flowlyzer
 
-Comprehensive DataLink Layer Network Flow Analyzer for extracting 200+ features from PCAP files for machine learning analysis. Specializes in Layer 2 protocol analysis with enhanced attack detection capabilities.
+Comprehensive DataLink Layer Network Flow Analyzer for extracting 282 features from PCAP files for machine learning analysis. Specializes in Layer 2 protocol analysis with PyShark-enhanced deep protocol inspection and attack detection capabilities.
 
 ## Quick Start
 
 1. Install dependencies:
 ```bash
 pip install -r requirements.txt
-pip install pyshark  # For enhanced CDP packet analysis
+pip install pyshark  # For enhanced protocol analysis
 ```
 
 2. Run analysis:
@@ -18,7 +18,7 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 ## Features
 
 ### Core Capabilities
-- **240+ Comprehensive Features**: Statistical, protocol-specific, enhanced Layer 2 features, and advanced statistical combinations
+- **282 Comprehensive Features**: Statistical, protocol-specific, PyShark-enhanced Layer 2 features, and advanced statistical combinations
 - **Multi-Protocol Support**: TCP, UDP, QUIC, and Layer 2 protocols (STP, CDP, LLDP, ARP, DHCP, LLC, DTP, VTP, ISL)
 - **Enhanced Layer 2 Analysis**: Deep packet inspection for CDP TLVs, STP identifiers, DHCP options, ARP details
 - **Enhanced Protocol Detection**: Advanced CDP/LLDP/DTP separation using payload-based analysis independent of MAC addresses
@@ -60,6 +60,28 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 - **Network Activity Scoring**: Weighted activity scores for different Layer 2 protocols
 - **Protocol Imbalance Detection**: Gini coefficient-inspired protocol distribution analysis
 - **Enhanced Feature Quality**: Meaningful defaults and robust extraction ensure no null values
+
+## Recent Updates (2025)
+
+### PyShark Integration Enhancement
+- **Deep Protocol Inspection**: Real protocol feature extraction using PyShark instead of default values
+- **Enhanced Protocol Support**: STP, CDP, ARP, DHCP, DTP with actual protocol field parsing
+- **Null Value Handling**: Missing protocol features now show as `null` instead of default values (0, '')
+- **Global Percentage Calculations**: Protocol percentages now calculated against total Layer 2 packets across all flows
+- **Protocol-First Naming**: All features renamed to protocol-first format (e.g., `arp_mean_hw_type` instead of `mean_arp_hw_type`)
+
+### New Protocol Features
+- **STP**: Real message age, bridge IDs, timing values from BPDU parsing
+- **CDP**: Actual device information, capabilities, power consumption from TLV analysis
+- **ARP**: Hardware/protocol types, addresses, operation codes from ARP headers
+- **DHCP**: Transaction IDs, lease times, options from DHCP/BOOTP parsing
+- **DTP**: Domain information, frame types, TLV data from DTP analysis
+
+### Enhanced Feature Set
+- **Total Features**: Increased from 240+ to 282 features per flow
+- **Protocol-Specific**: 93 features renamed to protocol-first naming convention
+- **Real Values**: 50+ new features extracted from actual protocol fields instead of defaults
+- **Statistical Features**: Enhanced null handling for insufficient data scenarios
 
 ## Usage
 

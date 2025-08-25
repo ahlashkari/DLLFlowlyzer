@@ -58,26 +58,7 @@ class PySharkProtocolExtractor:
     
     def _extract_stp_features_pyshark(self, packet_data: bytes) -> Dict[str, Any]:
         """Extract STP features using PyShark for accurate parsing."""
-        features = {
-            'stp_msg_age': 0,
-            'stp_max_age': 0,
-            'stp_hello_time': 0,
-            'stp_forward_delay': 0,
-            'stp_bridge_id': '',
-            'stp_root_id': '',
-            'stp_port_id': 0,
-            'stp_cost': 0,
-            'stp_bridge_priority': 0,
-            'stp_root_priority': 0,
-            'stp_flags_tc': False,
-            'stp_flags_tcack': False,
-            'stp_flags_agreement': False,
-            'stp_flags_learning': False,
-            'stp_flags_forwarding': False,
-            'stp_proto_id': 0,
-            'stp_version': 0,
-            'stp_type': 0
-        }
+        features = {}  # Only populate features that are actually detected
         
         try:
             # Try to parse STP using raw bytes analysis since PyShark needs file
@@ -147,32 +128,7 @@ class PySharkProtocolExtractor:
     
     def _extract_cdp_features_pyshark(self, packet_data: bytes) -> Dict[str, Any]:
         """Extract CDP features using enhanced parsing."""
-        features = {
-            'cdp_version': 0,
-            'cdp_ttl': 0,
-            'cdp_checksum': 0,
-            'cdp_device_id': '',
-            'cdp_device_id_len': 0,
-            'cdp_addresses_count': 0,
-            'cdp_port_id': '',
-            'cdp_port_id_len': 0,
-            'cdp_capabilities_flags': 0,
-            'cdp_capabilities_router': False,
-            'cdp_capabilities_bridge': False,
-            'cdp_capabilities_switch': False,
-            'cdp_capabilities_host': False,
-            'cdp_platform': '',
-            'cdp_platform_len': 0,
-            'cdp_software_version': '',
-            'cdp_software_version_len': 0,
-            'cdp_tlv_count': 0,
-            'cdp_tlvs': 0,
-            'cdp_power_consumption': 0,
-            'cdp_power_request': 0,
-            'cdp_power_available': 0,
-            'cdp_duplex': '',
-            'cdp_vlan_id': 0
-        }
+        features = {}  # Only populate features that are actually detected
         
         try:
             # Look for CDP header (version, TTL, checksum)
@@ -241,21 +197,7 @@ class PySharkProtocolExtractor:
     
     def _extract_arp_features_pyshark(self, packet_data: bytes) -> Dict[str, Any]:
         """Extract ARP features using enhanced parsing."""
-        features = {
-            'arp_hardware_type': 1,
-            'arp_protocol_type': 0x0800,
-            'arp_hardware_size': 6,
-            'arp_protocol_size': 4,
-            'arp_opcode': 1,
-            'arp_sender_hw_addr': '',
-            'arp_sender_proto_addr': '',
-            'arp_target_hw_addr': '',
-            'arp_target_proto_addr': '',
-            'arp_is_request': True,
-            'arp_is_reply': False,
-            'arp_is_gratuitous': False,
-            'arp_packet_size': 0
-        }
+        features = {}  # Only populate features that are actually detected
         
         try:
             # Find ARP in packet - look for ARP header
@@ -310,30 +252,7 @@ class PySharkProtocolExtractor:
     
     def _extract_dhcp_features_pyshark(self, packet_data: bytes) -> Dict[str, Any]:
         """Extract DHCP features using enhanced parsing."""
-        features = {
-            'dhcp_opcode': 1,
-            'dhcp_hardware_type': 1,
-            'dhcp_hardware_addr_len': 6,
-            'dhcp_hops': 0,
-            'dhcp_transaction_id': 0,
-            'dhcp_seconds_elapsed': 0,
-            'dhcp_flags': 0,
-            'dhcp_client_ip': '',
-            'dhcp_your_ip': '',
-            'dhcp_server_ip': '',
-            'dhcp_gateway_ip': '',
-            'dhcp_client_mac': '',
-            'dhcp_magic_cookie': 0,
-            'dhcp_message_type': 1,
-            'dhcp_requested_ip': '',
-            'dhcp_server_identifier': '',
-            'dhcp_lease_time': 0,
-            'dhcp_options_count': 0,
-            'dhcp_vendor_class': '',
-            'dhcp_hostname': '',
-            'dhcp_domain_name': '',
-            'is_dhcp': False
-        }
+        features = {}  # Only populate features that are actually detected
         
         try:
             # Find DHCP/BOOTP in packet
@@ -385,18 +304,7 @@ class PySharkProtocolExtractor:
     
     def _extract_dtp_features_pyshark(self, packet_data: bytes) -> Dict[str, Any]:
         """Extract DTP (Dynamic Trunking Protocol) features."""
-        features = {
-            'dtp_version': 0,
-            'dtp_domain_length': 0,
-            'dtp_domain_name': '',
-            'dtp_status': 0,
-            'dtp_type': 0,
-            'dtp_neighbor_length': 0,
-            'dtp_neighbor_info': '',
-            'dtp_frame_isl': False,
-            'dtp_frame_802dot1q': False,
-            'dtp_tlv_count': 0
-        }
+        features = {}  # Only populate features that are actually detected
         
         try:
             # Find DTP in packet - look for DTP TLVs

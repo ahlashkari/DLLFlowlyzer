@@ -262,26 +262,26 @@ class Flow:
                 tc_flags = [p.get_features().get('stp_flags_tc', False) for p in stp_packets]
                 tcack_flags = [p.get_features().get('stp_flags_tcack', False) for p in stp_packets]
                 
-                features['sum_stp_msg_age'] = sum(msg_ages)
-                features['mean_stp_msg_age'] = np.mean(msg_ages) if msg_ages else np.nan
-                features['max_stp_msg_age'] = max(msg_ages) if msg_ages else np.nan
-                features['min_stp_msg_age'] = min(msg_ages) if msg_ages else np.nan
-                features['median_stp_msg_age'] = np.median(msg_ages) if msg_ages else np.nan
-                features['std_stp_msg_age'] = np.std(msg_ages) if len(msg_ages) > 1 else np.nan
-                features['norm_stp_msg_age'] = features['std_stp_msg_age'] / features['mean_stp_msg_age'] if features['mean_stp_msg_age'] > 0 else np.nan
+                features['stp_sum_msg_age'] = sum(msg_ages)
+                features['stp_mean_msg_age'] = np.mean(msg_ages) if msg_ages else np.nan
+                features['stp_max_msg_age'] = max(msg_ages) if msg_ages else np.nan
+                features['stp_min_msg_age'] = min(msg_ages) if msg_ages else np.nan
+                features['stp_median_msg_age'] = np.median(msg_ages) if msg_ages else np.nan
+                features['stp_std_msg_age'] = np.std(msg_ages) if len(msg_ages) > 1 else np.nan
+                features['stp_norm_msg_age'] = features['stp_std_msg_age'] / features['stp_mean_msg_age'] if features['stp_mean_msg_age'] > 0 else np.nan
                 
-                features['sum_stp_forward'] = sum(forward_delays)
-                features['mean_stp_forward'] = np.mean(forward_delays) if forward_delays else np.nan
-                features['max_stp_forward'] = max(forward_delays) if forward_delays else np.nan
-                features['min_stp_forward'] = min(forward_delays) if forward_delays else np.nan
-                features['median_stp_forward'] = np.median(forward_delays) if forward_delays else np.nan
-                features['std_stp_forward'] = np.std(forward_delays) if len(forward_delays) > 1 else np.nan
+                features['stp_sum_forward'] = sum(forward_delays)
+                features['stp_mean_forward'] = np.mean(forward_delays) if forward_delays else np.nan
+                features['stp_max_forward'] = max(forward_delays) if forward_delays else np.nan
+                features['stp_min_forward'] = min(forward_delays) if forward_delays else np.nan
+                features['stp_median_forward'] = np.median(forward_delays) if forward_delays else np.nan
+                features['stp_std_forward'] = np.std(forward_delays) if len(forward_delays) > 1 else np.nan
                 
                 # Flag counts
-                features['count_stp_flags_tc_1'] = sum(tc_flags)
-                features['count_stp_flags_tcack_1'] = sum(tcack_flags)
-                features['percent_stp_flags_tc_1'] = (sum(tc_flags) / len(stp_packets)) * 100
-                features['percent_stp_flags_tcack_1'] = (sum(tcack_flags) / len(stp_packets)) * 100
+                features['stp_count_flags_tc_1'] = sum(tc_flags)
+                features['stp_count_flags_tcack_1'] = sum(tcack_flags)
+                features['stp_percent_flags_tc_1'] = (sum(tc_flags) / len(stp_packets)) * 100
+                features['stp_percent_flags_tcack_1'] = (sum(tcack_flags) / len(stp_packets)) * 100
                 
             else:
                 self._set_default_stp_aggregated_features(features)
@@ -300,23 +300,23 @@ class Flow:
                 capabilities = [p.get_features().get('cdp_capabilities', 0) for p in cdp_packets]
                 power_sums = [p.get_features().get('cdp_power_sum', 0) for p in cdp_packets]
                 
-                features['sum_cdp_addresses_count'] = sum(addresses_counts)
-                features['mean_cdp_addresses_count'] = np.mean(addresses_counts) if addresses_counts else np.nan
-                features['max_cdp_addresses_count'] = max(addresses_counts) if addresses_counts else np.nan
-                features['min_cdp_addresses_count'] = min(addresses_counts) if addresses_counts else np.nan
-                features['median_cdp_addresses_count'] = np.median(addresses_counts) if addresses_counts else np.nan
-                features['std_cdp_addresses_count'] = np.std(addresses_counts) if len(addresses_counts) > 1 else np.nan
-                features['norm_cdp_addresses_count'] = features['std_cdp_addresses_count'] / features['mean_cdp_addresses_count'] if features['mean_cdp_addresses_count'] > 0 else np.nan
+                features['cdp_sum_addresses_count'] = sum(addresses_counts)
+                features['cdp_mean_addresses_count'] = np.mean(addresses_counts) if addresses_counts else np.nan
+                features['cdp_max_addresses_count'] = max(addresses_counts) if addresses_counts else np.nan
+                features['cdp_min_addresses_count'] = min(addresses_counts) if addresses_counts else np.nan
+                features['cdp_median_addresses_count'] = np.median(addresses_counts) if addresses_counts else np.nan
+                features['cdp_std_addresses_count'] = np.std(addresses_counts) if len(addresses_counts) > 1 else np.nan
+                features['cdp_norm_addresses_count'] = features['cdp_std_addresses_count'] / features['cdp_mean_addresses_count'] if features['cdp_mean_addresses_count'] > 0 else np.nan
                 
-                features['sum_cdp_tlvs'] = sum(tlv_counts)
-                features['sum_cdp_capabilities'] = sum(capabilities)
+                features['cdp_sum_tlvs'] = sum(tlv_counts)
+                features['cdp_sum_capabilities'] = sum(capabilities)
                 
-                features['mean_cdp_power_sum'] = np.mean(power_sums) if power_sums else np.nan
-                features['max_cdp_power_sum'] = max(power_sums) if power_sums else np.nan
-                features['min_cdp_power_sum'] = min(power_sums) if power_sums else np.nan
-                features['median_cdp_power_sum'] = np.median(power_sums) if power_sums else np.nan
-                features['std_cdp_power_sum'] = np.std(power_sums) if len(power_sums) > 1 else np.nan
-                features['norm_cdp_power_sum'] = features['std_cdp_power_sum'] / features['mean_cdp_power_sum'] if features['mean_cdp_power_sum'] > 0 else np.nan
+                features['cdp_mean_power_sum'] = np.mean(power_sums) if power_sums else np.nan
+                features['cdp_max_power_sum'] = max(power_sums) if power_sums else np.nan
+                features['cdp_min_power_sum'] = min(power_sums) if power_sums else np.nan
+                features['cdp_median_power_sum'] = np.median(power_sums) if power_sums else np.nan
+                features['cdp_std_power_sum'] = np.std(power_sums) if len(power_sums) > 1 else np.nan
+                features['cdp_norm_power_sum'] = features['cdp_std_power_sum'] / features['cdp_mean_power_sum'] if features['cdp_mean_power_sum'] > 0 else np.nan
                 
             else:
                 self._set_default_cdp_aggregated_features(features)
@@ -336,25 +336,25 @@ class Flow:
                 dsap_crs = [p.get_features().get('llc_dsap_cr', False) for p in llc_packets]
                 
                 # SSAP SAP statistics
-                features['mean_llc_ssap_sap'] = np.mean(ssap_saps) if ssap_saps else np.nan
-                features['max_llc_ssap_sap'] = max(ssap_saps) if ssap_saps else np.nan
-                features['min_llc_ssap_sap'] = min(ssap_saps) if ssap_saps else np.nan
-                features['median_llc_ssap_sap'] = np.median(ssap_saps) if ssap_saps else np.nan
-                features['std_llc_ssap_sap'] = np.std(ssap_saps) if len(ssap_saps) > 1 else np.nan
-                features['norm_llc_ssap_sap'] = features['std_llc_ssap_sap'] / features['mean_llc_ssap_sap'] if features['mean_llc_ssap_sap'] > 0 else np.nan
+                features['llc_mean_ssap_sap'] = np.mean(ssap_saps) if ssap_saps else np.nan
+                features['llc_max_ssap_sap'] = max(ssap_saps) if ssap_saps else np.nan
+                features['llc_min_ssap_sap'] = min(ssap_saps) if ssap_saps else np.nan
+                features['llc_median_ssap_sap'] = np.median(ssap_saps) if ssap_saps else np.nan
+                features['llc_std_ssap_sap'] = np.std(ssap_saps) if len(ssap_saps) > 1 else np.nan
+                features['llc_norm_ssap_sap'] = features['llc_std_ssap_sap'] / features['llc_mean_ssap_sap'] if features['llc_mean_ssap_sap'] > 0 else np.nan
                 
                 # DSAP SAP statistics
-                features['sum_llc_dsap_sap'] = sum(dsap_saps)
-                features['mean_llc_dsap_sap'] = np.mean(dsap_saps) if dsap_saps else np.nan
-                features['max_llc_dsap_sap'] = max(dsap_saps) if dsap_saps else np.nan
-                features['min_llc_dsap_sap'] = min(dsap_saps) if dsap_saps else np.nan
-                features['median_llc_dsap_sap'] = np.median(dsap_saps) if dsap_saps else np.nan
-                features['std_llc_dsap_sap'] = np.std(dsap_saps) if len(dsap_saps) > 1 else np.nan
-                features['norm_llc_dsap_sap'] = features['std_llc_dsap_sap'] / features['mean_llc_dsap_sap'] if features['mean_llc_dsap_sap'] > 0 else np.nan
+                features['llc_sum_dsap_sap'] = sum(dsap_saps)
+                features['llc_mean_dsap_sap'] = np.mean(dsap_saps) if dsap_saps else np.nan
+                features['llc_max_dsap_sap'] = max(dsap_saps) if dsap_saps else np.nan
+                features['llc_min_dsap_sap'] = min(dsap_saps) if dsap_saps else np.nan
+                features['llc_median_dsap_sap'] = np.median(dsap_saps) if dsap_saps else np.nan
+                features['llc_std_dsap_sap'] = np.std(dsap_saps) if len(dsap_saps) > 1 else np.nan
+                features['llc_norm_dsap_sap'] = features['llc_std_dsap_sap'] / features['llc_mean_dsap_sap'] if features['llc_mean_dsap_sap'] > 0 else np.nan
                 
                 # Command/Response bit averages
-                features['mean_llc_ssap_cr'] = np.mean([1 if cr else 0 for cr in ssap_crs]) if ssap_crs else np.nan
-                features['mean_llc_dsap_cr'] = np.mean([1 if cr else 0 for cr in dsap_crs]) if dsap_crs else np.nan
+                features['llc_mean_ssap_cr'] = np.mean([1 if cr else 0 for cr in ssap_crs]) if ssap_crs else np.nan
+                features['llc_mean_dsap_cr'] = np.mean([1 if cr else 0 for cr in dsap_crs]) if dsap_crs else np.nan
                 
             else:
                 self._set_default_llc_aggregated_features(features)
@@ -368,46 +368,44 @@ class Flow:
             arp_packets = [p for p in self.packets if p.get_protocol_type() == 'ARP']
             
             if arp_packets:
-                # Extract ARP-specific features for aggregation
-                hw_types = [p.get_features().get('arp_hardware_type', 1) for p in arp_packets]
-                proto_types = [p.get_features().get('arp_protocol_type', 2048) for p in arp_packets]
-                opcodes = [p.get_features().get('arp_opcode', 1) for p in arp_packets]
-                hw_sizes = [p.get_features().get('arp_hardware_size', 6) for p in arp_packets]
-                proto_sizes = [p.get_features().get('arp_protocol_size', 4) for p in arp_packets]
-                packet_sizes = [p.get_features().get('arp_packet_size', 0) for p in arp_packets]
+                # Extract ARP-specific features for aggregation - only use values that exist
+                hw_types = [p.get_features()['arp_hardware_type'] for p in arp_packets if 'arp_hardware_type' in p.get_features()]
+                proto_types = [p.get_features()['arp_protocol_type'] for p in arp_packets if 'arp_protocol_type' in p.get_features()]
+                opcodes = [p.get_features()['arp_opcode'] for p in arp_packets if 'arp_opcode' in p.get_features()]
+                packet_sizes = [p.get_features()['arp_packet_size'] for p in arp_packets if 'arp_packet_size' in p.get_features()]
                 
-                # Hardware type statistics
-                features['sum_arp_hw_type'] = sum(hw_types)
-                features['mean_arp_hw_type'] = np.mean(hw_types) if hw_types else np.nan
-                features['max_arp_hw_type'] = max(hw_types) if hw_types else np.nan
-                features['min_arp_hw_type'] = min(hw_types) if hw_types else np.nan
+                # Hardware type statistics (use null if no data)
+                features['arp_sum_hw_type'] = sum(hw_types) if hw_types else None
+                features['arp_mean_hw_type'] = float(np.mean(hw_types)) if hw_types else None
+                features['arp_max_hw_type'] = max(hw_types) if hw_types else None
+                features['arp_min_hw_type'] = min(hw_types) if hw_types else None
                 
                 # Protocol type statistics  
-                features['sum_arp_proto_type'] = sum(proto_types)
-                features['mean_arp_proto_type'] = np.mean(proto_types) if proto_types else np.nan
+                features['arp_sum_proto_type'] = sum(proto_types) if proto_types else None
+                features['arp_mean_proto_type'] = float(np.mean(proto_types)) if proto_types else None
                 
                 # Opcode statistics
-                features['sum_arp_opcode'] = sum(opcodes)
-                features['mean_arp_opcode'] = np.mean(opcodes) if opcodes else np.nan
-                features['max_arp_opcode'] = max(opcodes) if opcodes else np.nan
-                features['min_arp_opcode'] = min(opcodes) if opcodes else np.nan
+                features['arp_sum_opcode'] = sum(opcodes) if opcodes else None
+                features['arp_mean_opcode'] = float(np.mean(opcodes)) if opcodes else None
+                features['arp_max_opcode'] = max(opcodes) if opcodes else None
+                features['arp_min_opcode'] = min(opcodes) if opcodes else None
                 
                 # Size statistics
-                features['sum_arp_size'] = sum(packet_sizes)
-                features['mean_arp_size'] = np.mean(packet_sizes) if packet_sizes else np.nan
-                features['max_arp_size'] = max(packet_sizes) if packet_sizes else np.nan
-                features['min_arp_size'] = min(packet_sizes) if packet_sizes else np.nan
+                features['arp_sum_size'] = sum(packet_sizes) if packet_sizes else None
+                features['arp_mean_size'] = float(np.mean(packet_sizes)) if packet_sizes else None
+                features['arp_max_size'] = max(packet_sizes) if packet_sizes else None
+                features['arp_min_size'] = min(packet_sizes) if packet_sizes else None
                 
-                # Protocol-specific counts
-                request_count = sum(1 for p in arp_packets if p.get_features().get('arp_is_request', False))
-                reply_count = sum(1 for p in arp_packets if p.get_features().get('arp_is_reply', False))
-                gratuitous_count = sum(1 for p in arp_packets if p.get_features().get('arp_is_gratuitous', False))
+                # Protocol-specific counts (only count packets that have the feature)
+                request_count = sum(1 for p in arp_packets if p.get_features().get('arp_is_request') is True)
+                reply_count = sum(1 for p in arp_packets if p.get_features().get('arp_is_reply') is True)
+                gratuitous_count = sum(1 for p in arp_packets if p.get_features().get('arp_is_gratuitous') is True)
                 
                 features['arp_request_count'] = request_count
                 features['arp_reply_count'] = reply_count
                 features['arp_gratuitous_count'] = gratuitous_count
-                features['arp_request_ratio'] = (request_count / len(arp_packets)) * 100 if arp_packets else 0
-                features['arp_reply_ratio'] = (reply_count / len(arp_packets)) * 100 if arp_packets else 0
+                features['arp_request_ratio'] = (request_count / len(arp_packets)) * 100 if arp_packets else None
+                features['arp_reply_ratio'] = (reply_count / len(arp_packets)) * 100 if arp_packets else None
                 
             else:
                 self._set_default_arp_aggregated_features(features)
@@ -421,38 +419,38 @@ class Flow:
             dhcp_packets = [p for p in self.packets if p.get_features().get('is_dhcp', False)]
             
             if dhcp_packets:
-                # Extract DHCP-specific features for aggregation
-                opcodes = [p.get_features().get('dhcp_opcode', 1) for p in dhcp_packets]
-                transaction_ids = [p.get_features().get('dhcp_transaction_id', 0) for p in dhcp_packets]
-                lease_times = [p.get_features().get('dhcp_lease_time', 0) for p in dhcp_packets]
-                message_types = [p.get_features().get('dhcp_message_type', 1) for p in dhcp_packets]
-                options_counts = [p.get_features().get('dhcp_options_count', 0) for p in dhcp_packets]
+                # Extract DHCP-specific features for aggregation - only use values that exist
+                opcodes = [p.get_features()['dhcp_opcode'] for p in dhcp_packets if 'dhcp_opcode' in p.get_features()]
+                transaction_ids = [p.get_features()['dhcp_transaction_id'] for p in dhcp_packets if 'dhcp_transaction_id' in p.get_features()]
+                lease_times = [p.get_features()['dhcp_lease_time'] for p in dhcp_packets if 'dhcp_lease_time' in p.get_features()]
+                message_types = [p.get_features()['dhcp_message_type'] for p in dhcp_packets if 'dhcp_message_type' in p.get_features()]
+                options_counts = [p.get_features()['dhcp_options_count'] for p in dhcp_packets if 'dhcp_options_count' in p.get_features()]
                 
-                # DHCP opcode statistics
-                features['sum_dhcp_opcode'] = sum(opcodes)
-                features['mean_dhcp_opcode'] = np.mean(opcodes) if opcodes else np.nan
+                # DHCP opcode statistics (use null if no data)
+                features['dhcp_sum_opcode'] = sum(opcodes) if opcodes else None
+                features['dhcp_mean_opcode'] = float(np.mean(opcodes)) if opcodes else None
                 
                 # Transaction ID statistics
-                features['sum_dhcp_transaction_id'] = sum(transaction_ids)
-                features['mean_dhcp_transaction_id'] = np.mean(transaction_ids) if transaction_ids else np.nan
-                features['max_dhcp_transaction_id'] = max(transaction_ids) if transaction_ids else np.nan
-                features['min_dhcp_transaction_id'] = min(transaction_ids) if transaction_ids else np.nan
+                features['dhcp_sum_transaction_id'] = sum(transaction_ids) if transaction_ids else None
+                features['dhcp_mean_transaction_id'] = float(np.mean(transaction_ids)) if transaction_ids else None
+                features['dhcp_max_transaction_id'] = max(transaction_ids) if transaction_ids else None
+                features['dhcp_min_transaction_id'] = min(transaction_ids) if transaction_ids else None
                 
                 # Lease time statistics
-                features['sum_dhcp_lease_time'] = sum(lease_times)
-                features['mean_dhcp_lease_time'] = np.mean(lease_times) if lease_times else np.nan
-                features['max_dhcp_lease_time'] = max(lease_times) if lease_times else np.nan
-                features['min_dhcp_lease_time'] = min(lease_times) if lease_times else np.nan
+                features['dhcp_sum_lease_time'] = sum(lease_times) if lease_times else None
+                features['dhcp_mean_lease_time'] = float(np.mean(lease_times)) if lease_times else None
+                features['dhcp_max_lease_time'] = max(lease_times) if lease_times else None
+                features['dhcp_min_lease_time'] = min(lease_times) if lease_times else None
                 
                 # Message type statistics
-                features['sum_dhcp_message_type'] = sum(message_types)
-                features['mean_dhcp_message_type'] = np.mean(message_types) if message_types else np.nan
+                features['dhcp_sum_message_type'] = sum(message_types) if message_types else None
+                features['dhcp_mean_message_type'] = float(np.mean(message_types)) if message_types else None
                 
                 # Options count statistics
-                features['sum_dhcp_options_count'] = sum(options_counts)
-                features['mean_dhcp_options_count'] = np.mean(options_counts) if options_counts else np.nan
-                features['max_dhcp_options_count'] = max(options_counts) if options_counts else np.nan
-                features['min_dhcp_options_count'] = min(options_counts) if options_counts else np.nan
+                features['dhcp_sum_options_count'] = sum(options_counts) if options_counts else None
+                features['dhcp_mean_options_count'] = float(np.mean(options_counts)) if options_counts else None
+                features['dhcp_max_options_count'] = max(options_counts) if options_counts else None
+                features['dhcp_min_options_count'] = min(options_counts) if options_counts else None
                 
             else:
                 self._set_default_dhcp_aggregated_features(features)
@@ -466,32 +464,32 @@ class Flow:
             dtp_packets = [p for p in self.packets if p.get_features().get('dtp_tlv_count', 0) > 0]
             
             if dtp_packets:
-                # Extract DTP-specific features for aggregation
-                versions = [p.get_features().get('dtp_version', 0) for p in dtp_packets]
-                tlv_counts = [p.get_features().get('dtp_tlv_count', 0) for p in dtp_packets]
-                domain_lengths = [p.get_features().get('dtp_domain_length', 0) for p in dtp_packets]
+                # Extract DTP-specific features for aggregation - only use values that exist
+                versions = [p.get_features()['dtp_version'] for p in dtp_packets if 'dtp_version' in p.get_features()]
+                tlv_counts = [p.get_features()['dtp_tlv_count'] for p in dtp_packets if 'dtp_tlv_count' in p.get_features()]
+                domain_lengths = [p.get_features()['dtp_domain_length'] for p in dtp_packets if 'dtp_domain_length' in p.get_features()]
                 
-                # DTP version statistics
-                features['sum_dtp_version'] = sum(versions)
-                features['mean_dtp_version'] = np.mean(versions) if versions else np.nan
+                # DTP version statistics (use null if no data)
+                features['dtp_sum_version'] = sum(versions) if versions else None
+                features['dtp_mean_version'] = float(np.mean(versions)) if versions else None
                 
                 # TLV count statistics
-                features['sum_dtp_tlv_count'] = sum(tlv_counts)
-                features['mean_dtp_tlv_count'] = np.mean(tlv_counts) if tlv_counts else np.nan
-                features['max_dtp_tlv_count'] = max(tlv_counts) if tlv_counts else np.nan
-                features['min_dtp_tlv_count'] = min(tlv_counts) if tlv_counts else np.nan
+                features['dtp_sum_tlv_count'] = sum(tlv_counts) if tlv_counts else None
+                features['dtp_mean_tlv_count'] = float(np.mean(tlv_counts)) if tlv_counts else None
+                features['dtp_max_tlv_count'] = max(tlv_counts) if tlv_counts else None
+                features['dtp_min_tlv_count'] = min(tlv_counts) if tlv_counts else None
                 
                 # Domain length statistics
-                features['sum_dtp_domain_length'] = sum(domain_lengths)
-                features['mean_dtp_domain_length'] = np.mean(domain_lengths) if domain_lengths else np.nan
+                features['dtp_sum_domain_length'] = sum(domain_lengths) if domain_lengths else None
+                features['dtp_mean_domain_length'] = float(np.mean(domain_lengths)) if domain_lengths else None
                 
-                # Frame type counts
-                isl_count = sum(1 for p in dtp_packets if p.get_features().get('dtp_frame_isl', False))
-                dot1q_count = sum(1 for p in dtp_packets if p.get_features().get('dtp_frame_802dot1q', False))
+                # Frame type counts (count features should be 0, not null when no data)
+                isl_count = sum(1 for p in dtp_packets if p.get_features().get('dtp_frame_isl') is True)
+                dot1q_count = sum(1 for p in dtp_packets if p.get_features().get('dtp_frame_802dot1q') is True)
                 
                 features['dtp_frame_isl_count'] = isl_count
                 features['dtp_frame_802dot1q_count'] = dot1q_count
-                features['dtp_frame_isl_ratio'] = (isl_count / len(dtp_packets)) * 100 if dtp_packets else 0
+                features['dtp_frame_isl_ratio'] = (isl_count / len(dtp_packets)) * 100 if dtp_packets else None
                 
             else:
                 self._set_default_dtp_aggregated_features(features)
@@ -577,131 +575,131 @@ class Flow:
     def _set_default_stp_aggregated_features(self, features: Dict[str, Any]):
         """Set default STP aggregated features."""
         stp_defaults = {
-            'sum_stp_msg_age': 0,
-            'mean_stp_msg_age': 0,
-            'max_stp_msg_age': 0,
-            'min_stp_msg_age': 0,
-            'median_stp_msg_age': 0,
-            'std_stp_msg_age': 0,
-            'norm_stp_msg_age': 0,
-            'sum_stp_forward': 0,
-            'mean_stp_forward': 0,
-            'max_stp_forward': 0,
-            'min_stp_forward': 0,
-            'median_stp_forward': 0,
-            'std_stp_forward': 0,
-            'count_stp_flags_tc_1': 0,
-            'count_stp_flags_tcack_1': 0,
-            'percent_stp_flags_tc_1': 0,
-            'percent_stp_flags_tcack_1': 0,
+            'stp_sum_msg_age': 0,
+            'stp_mean_msg_age': 0,
+            'stp_max_msg_age': 0,
+            'stp_min_msg_age': 0,
+            'stp_median_msg_age': 0,
+            'stp_std_msg_age': 0,
+            'stp_norm_msg_age': 0,
+            'stp_sum_forward': 0,
+            'stp_mean_forward': 0,
+            'stp_max_forward': 0,
+            'stp_min_forward': 0,
+            'stp_median_forward': 0,
+            'stp_std_forward': 0,
+            'stp_count_flags_tc_1': 0,
+            'stp_count_flags_tcack_1': 0,
+            'stp_percent_flags_tc_1': 0,
+            'stp_percent_flags_tcack_1': 0,
         }
         features.update(stp_defaults)
     
     def _set_default_cdp_aggregated_features(self, features: Dict[str, Any]):
         """Set default CDP aggregated features."""
         cdp_defaults = {
-            'sum_cdp_addresses_count': 0,
-            'mean_cdp_addresses_count': 0,
-            'max_cdp_addresses_count': 0,
-            'min_cdp_addresses_count': 0,
-            'median_cdp_addresses_count': 0,
-            'std_cdp_addresses_count': 0,
-            'norm_cdp_addresses_count': 0,
-            'sum_cdp_tlvs': 0,
-            'sum_cdp_capabilities': 0,
-            'mean_cdp_power_sum': 0,
-            'max_cdp_power_sum': 0,
-            'min_cdp_power_sum': 0,
-            'median_cdp_power_sum': 0,
-            'std_cdp_power_sum': 0,
-            'norm_cdp_power_sum': 0,
+            'cdp_sum_addresses_count': 0,
+            'cdp_mean_addresses_count': 0,
+            'cdp_max_addresses_count': 0,
+            'cdp_min_addresses_count': 0,
+            'cdp_median_addresses_count': 0,
+            'cdp_std_addresses_count': 0,
+            'cdp_norm_addresses_count': 0,
+            'cdp_sum_tlvs': 0,
+            'cdp_sum_capabilities': 0,
+            'cdp_mean_power_sum': 0,
+            'cdp_max_power_sum': 0,
+            'cdp_min_power_sum': 0,
+            'cdp_median_power_sum': 0,
+            'cdp_std_power_sum': 0,
+            'cdp_norm_power_sum': 0,
         }
         features.update(cdp_defaults)
     
     def _set_default_llc_aggregated_features(self, features: Dict[str, Any]):
         """Set default LLC aggregated features."""
         llc_defaults = {
-            'mean_llc_ssap_sap': 0,
-            'max_llc_ssap_sap': 0,
-            'min_llc_ssap_sap': 0,
-            'median_llc_ssap_sap': 0,
-            'std_llc_ssap_sap': 0,
-            'norm_llc_ssap_sap': 0,
-            'sum_llc_dsap_sap': 0,
-            'mean_llc_dsap_sap': 0,
-            'max_llc_dsap_sap': 0,
-            'min_llc_dsap_sap': 0,
-            'median_llc_dsap_sap': 0,
-            'std_llc_dsap_sap': 0,
-            'norm_llc_dsap_sap': 0,
-            'mean_llc_ssap_cr': 0,
-            'mean_llc_dsap_cr': 0,
+            'llc_mean_ssap_sap': 0,
+            'llc_max_ssap_sap': 0,
+            'llc_min_ssap_sap': 0,
+            'llc_median_ssap_sap': 0,
+            'llc_std_ssap_sap': 0,
+            'llc_norm_ssap_sap': 0,
+            'llc_sum_dsap_sap': 0,
+            'llc_mean_dsap_sap': 0,
+            'llc_max_dsap_sap': 0,
+            'llc_min_dsap_sap': 0,
+            'llc_median_dsap_sap': 0,
+            'llc_std_dsap_sap': 0,
+            'llc_norm_dsap_sap': 0,
+            'llc_mean_ssap_cr': 0,
+            'llc_mean_dsap_cr': 0,
         }
         features.update(llc_defaults)
     
     def _set_default_arp_aggregated_features(self, features: Dict[str, Any]):
-        """Set default ARP aggregated features."""
-        arp_defaults = {
-            'sum_arp_hw_type': 0,
-            'mean_arp_hw_type': 0,
-            'max_arp_hw_type': 0,
-            'min_arp_hw_type': 0,
-            'sum_arp_proto_type': 0,
-            'mean_arp_proto_type': 0,
-            'sum_arp_opcode': 0,
-            'mean_arp_opcode': 0,
-            'max_arp_opcode': 0,
-            'min_arp_opcode': 0,
-            'sum_arp_size': 0,
-            'mean_arp_size': 0,
-            'max_arp_size': 0,
-            'min_arp_size': 0,
-            'arp_request_count': 0,
+        """Set null ARP aggregated features when no ARP packets exist."""
+        arp_nulls = {
+            'arp_sum_hw_type': None,
+            'arp_mean_hw_type': None,
+            'arp_max_hw_type': None,
+            'arp_min_hw_type': None,
+            'arp_sum_proto_type': None,
+            'arp_mean_proto_type': None,
+            'arp_sum_opcode': None,
+            'arp_mean_opcode': None,
+            'arp_max_opcode': None,
+            'arp_min_opcode': None,
+            'arp_sum_size': None,
+            'arp_mean_size': None,
+            'arp_max_size': None,
+            'arp_min_size': None,
+            'arp_request_count': 0,  # Count features should be 0, not null
             'arp_reply_count': 0,
             'arp_gratuitous_count': 0,
-            'arp_request_ratio': 0,
-            'arp_reply_ratio': 0,
+            'arp_request_ratio': None,
+            'arp_reply_ratio': None,
         }
-        features.update(arp_defaults)
+        features.update(arp_nulls)
     
     def _set_default_dhcp_aggregated_features(self, features: Dict[str, Any]):
-        """Set default DHCP aggregated features."""
-        dhcp_defaults = {
-            'sum_dhcp_opcode': 0,
-            'mean_dhcp_opcode': 0,
-            'sum_dhcp_transaction_id': 0,
-            'mean_dhcp_transaction_id': 0,
-            'max_dhcp_transaction_id': 0,
-            'min_dhcp_transaction_id': 0,
-            'sum_dhcp_lease_time': 0,
-            'mean_dhcp_lease_time': 0,
-            'max_dhcp_lease_time': 0,
-            'min_dhcp_lease_time': 0,
-            'sum_dhcp_message_type': 0,
-            'mean_dhcp_message_type': 0,
-            'sum_dhcp_options_count': 0,
-            'mean_dhcp_options_count': 0,
-            'max_dhcp_options_count': 0,
-            'min_dhcp_options_count': 0,
+        """Set null DHCP aggregated features when no DHCP packets exist."""
+        dhcp_nulls = {
+            'dhcp_sum_opcode': None,
+            'dhcp_mean_opcode': None,
+            'dhcp_sum_transaction_id': None,
+            'dhcp_mean_transaction_id': None,
+            'dhcp_max_transaction_id': None,
+            'dhcp_min_transaction_id': None,
+            'dhcp_sum_lease_time': None,
+            'dhcp_mean_lease_time': None,
+            'dhcp_max_lease_time': None,
+            'dhcp_min_lease_time': None,
+            'dhcp_sum_message_type': None,
+            'dhcp_mean_message_type': None,
+            'dhcp_sum_options_count': None,
+            'dhcp_mean_options_count': None,
+            'dhcp_max_options_count': None,
+            'dhcp_min_options_count': None,
         }
-        features.update(dhcp_defaults)
+        features.update(dhcp_nulls)
     
     def _set_default_dtp_aggregated_features(self, features: Dict[str, Any]):
-        """Set default DTP aggregated features."""
-        dtp_defaults = {
-            'sum_dtp_version': 0,
-            'mean_dtp_version': 0,
-            'sum_dtp_tlv_count': 0,
-            'mean_dtp_tlv_count': 0,
-            'max_dtp_tlv_count': 0,
-            'min_dtp_tlv_count': 0,
-            'sum_dtp_domain_length': 0,
-            'mean_dtp_domain_length': 0,
-            'dtp_frame_isl_count': 0,
+        """Set null DTP aggregated features when no DTP packets exist."""
+        dtp_nulls = {
+            'dtp_sum_version': None,
+            'dtp_mean_version': None,
+            'dtp_sum_tlv_count': None,
+            'dtp_mean_tlv_count': None,
+            'dtp_max_tlv_count': None,
+            'dtp_min_tlv_count': None,
+            'dtp_sum_domain_length': None,
+            'dtp_mean_domain_length': None,
+            'dtp_frame_isl_count': 0,  # Count features should be 0, not null
             'dtp_frame_802dot1q_count': 0,
-            'dtp_frame_isl_ratio': 0,
+            'dtp_frame_isl_ratio': None,
         }
-        features.update(dtp_defaults)
+        features.update(dtp_nulls)
     
     def _extract_combined_statistical_features(self, features: Dict[str, Any], protocol_counts: Dict[str, int]):
         """Extract advanced statistical features combining multiple protocols."""
@@ -805,6 +803,43 @@ class Flow:
             features['inter_arrival_cv'] = 0
             features['burst_ratio'] = 0
     
+    def update_global_percentages(self, features: Dict[str, Any], global_protocol_stats: Dict[str, int]):
+        """
+        Update percentage calculations to use global Layer 2 packet counts instead of per-flow counts.
+        
+        Args:
+            features: Flow features dictionary to update
+            global_protocol_stats: Global protocol statistics from FlowManager
+        """
+        # Calculate total Layer 2 packets (excluding IP-based protocols)
+        layer2_protocols = {'STP', 'ARP', 'CDP', 'DHCP', 'DTP', 'LLC', 'Unknown'}
+        total_layer2_packets = sum(
+            count for protocol, count in global_protocol_stats.items() 
+            if protocol in layer2_protocols
+        )
+        
+        if total_layer2_packets > 0:
+            # Get flow-specific counts
+            stp_count = features.get('num_stp_frame', 0)
+            arp_count = features.get('num_arp_frame', 0)  
+            cdp_count = features.get('num_cdp_frame', 0)
+            dhcp_count = features.get('num_dhcp_frame', 0)
+            llc_count = features.get('num_llc_frame', 0)
+            
+            # Update percentage calculations based on global Layer 2 totals
+            features['percent_stp_frame'] = (stp_count / total_layer2_packets) * 100
+            features['percent_arp_frame'] = (arp_count / total_layer2_packets) * 100
+            features['percent_cdp_frame'] = (cdp_count / total_layer2_packets) * 100
+            features['percent_dhcp_frame'] = (dhcp_count / total_layer2_packets) * 100
+            features['percent_llc_frame'] = (llc_count / total_layer2_packets) * 100
+        else:
+            # If no Layer 2 packets globally, set all percentages to 0
+            features['percent_stp_frame'] = 0.0
+            features['percent_arp_frame'] = 0.0
+            features['percent_cdp_frame'] = 0.0
+            features['percent_dhcp_frame'] = 0.0
+            features['percent_llc_frame'] = 0.0
+
     def is_layer2_flow(self) -> bool:
         """Check if this is a Layer 2 flow (no IP addressing)."""
         return self.src_ip is None or self.dst_ip is None
