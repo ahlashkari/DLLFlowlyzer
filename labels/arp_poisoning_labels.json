@@ -1,0 +1,153 @@
+{
+    "description": "Labeling configuration for ARP Poisoning Attack folder",
+    "attack_type": "ARP Poisoning Attack (Advanced ARP Cache Manipulation)",
+    "attack_schedule": "Recurring ARP poisoning attacks with systematic timing",
+    
+    "layer_2_only": true,
+    "comment": "ARP poisoning is a Layer 2 attack - set to true for Layer 2 focus",
+    
+    "time_labels": [
+        {
+            "comment": "ARP Poisoning - Recurring pattern info",
+            "time_range": "11:12-17:00",
+            "label": "ARP Poisoning Pattern",
+            "description": "Recurring ARP poisoning every 2 minutes from 11:12 till 17:00",
+            "recurring_pattern": {
+                "start_time": "11:12",
+                "end_time": "17:00",
+                "interval_minutes": 2,
+                "attack_duration_seconds": 60
+            }
+        },
+        {
+            "comment": "ARP Poisoning Attack Phase 1",
+            "time_range": "11:04-11:31",
+            "label": "ARP Poisoning Attack",
+            "description": "Initial ARP cache poisoning attack phase"
+        },
+        {
+            "comment": "ARP Poisoning Attack Phase 2",
+            "time_range": "12:10-12:40",
+            "label": "ARP Poisoning Attack",
+            "description": "Extended ARP poisoning attack phase"
+        },
+        {
+            "comment": "ARP Poisoning Attack Phase 3",
+            "time_range": "12:59-13:04",
+            "label": "ARP Poisoning Attack",
+            "description": "Brief intensive ARP poisoning"
+        },
+        {
+            "comment": "ARP Poisoning Attack Phase 4",
+            "time_range": "13:06-13:46",
+            "label": "ARP Poisoning Attack",
+            "description": "Major ARP poisoning attack phase"
+        },
+        {
+            "comment": "ARP Poisoning Attack Phase 5",
+            "time_range": "14:09-14:49",
+            "label": "ARP Poisoning Attack",
+            "description": "Afternoon ARP poisoning attack"
+        },
+        {
+            "comment": "ARP Poisoning Attack Phase 6",
+            "time_range": "14:55-15:48",
+            "label": "ARP Poisoning Attack",
+            "description": "Extended final ARP poisoning phase"
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target ARP packets for cache manipulation",
+            "protocols": ["ARP"],
+            "time_range": "11:04-15:48",
+            "label": "ARP Cache Poisoning",
+            "description": "Systematic ARP cache manipulation attacks"
+        },
+        {
+            "comment": "Target gratuitous ARP for poisoning",
+            "protocols": ["ARP"],
+            "arp_type": "gratuitous",
+            "time_range": "11:04-15:48",
+            "label": "Gratuitous ARP Poisoning",
+            "description": "Unsolicited ARP responses for systematic poisoning"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add attacker IP here when known",
+            "ip": "ATTACKER_IP_PLACEHOLDER",
+            "label": "ARP Poisoning Attacker",
+            "description": "Primary device performing ARP poisoning attacks"
+        },
+        {
+            "comment": "Add primary target IP being poisoned",
+            "ip": "PRIMARY_TARGET_IP_PLACEHOLDER",
+            "label": "ARP Poisoning Primary Target",
+            "description": "Main IP address being targeted by poisoning"
+        },
+        {
+            "comment": "Add secondary target IPs if multiple targets",
+            "ip": "SECONDARY_TARGET_IP_PLACEHOLDER",
+            "label": "ARP Poisoning Secondary Target",
+            "description": "Additional IP addresses being poisoned"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add attacker MAC here when known - ESSENTIAL for ARP poisoning detection",
+            "mac": "ATTACKER_MAC_PLACEHOLDER",
+            "label": "ARP Poisoning Attacker MAC",
+            "description": "MAC address of device performing systematic ARP poisoning"
+        },
+        {
+            "comment": "Add legitimate target device MAC",
+            "mac": "LEGITIMATE_TARGET_MAC_PLACEHOLDER",
+            "label": "Legitimate Target MAC",
+            "description": "Legitimate MAC address being impersonated in poisoning"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols involved in ARP poisoning attacks",
+        "primary_protocols": ["ARP"],
+        "secondary_protocols": ["ETH"],
+        "frame_types": ["ARP_FRAME"]
+    },
+    
+    "attack_characteristics": {
+        "systematic_timing": "Recurring attacks every 2 minutes indicating automated attack",
+        "prolonged_duration": "Extended attack period from 11:04 to 15:48",
+        "multiple_phases": "Distinct attack phases with varying intensities",
+        "coordination_with_other_attacks": "Timed coordination with VLAN attacks (both every 2 min from 11:12)"
+    },
+    
+    "attack_indicators": {
+        "periodic_arp_injection": "ARP packets injected at regular 2-minute intervals",
+        "cache_pollution_pattern": "Systematic corruption of network ARP caches",
+        "multi_target_poisoning": "Simultaneous poisoning of multiple network devices",
+        "persistent_false_mappings": "Continuous reinforcement of false IP-MAC associations"
+    },
+    
+    "detection_signatures": {
+        "timing_pattern": "ARP anomalies occurring every 120 seconds",
+        "source_consistency": "Same attacking MAC across multiple poisoning phases",
+        "target_pattern": "Consistent targeting of same IP addresses across phases"
+    },
+    
+    "advanced_indicators": {
+        "arp_storm_creation": "Triggering ARP storms through conflicting responses",
+        "network_segmentation_bypass": "Using ARP poisoning to bypass network segmentation",
+        "traffic_interception_setup": "Positioning for man-in-the-middle attacks",
+        "defense_evasion": "Timing attacks to evade detection mechanisms"
+    },
+    
+    "correlation_with_other_attacks": {
+        "vlan_attack_coordination": "Both ARP poisoning and VLAN attacks start recurring pattern at 11:12",
+        "switch_spoof_timing": "Potential coordination with switch spoofing attacks",
+        "network_reconnaissance": "ARP poisoning may facilitate other Layer 2 attacks"
+    }
+}

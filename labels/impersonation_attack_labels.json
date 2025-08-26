@@ -1,0 +1,119 @@
+{
+    "description": "Labeling configuration for Impersonation Attack folder",
+    "attack_type": "Device Impersonation Attack",
+    "attack_schedule": "Multiple time windows throughout the day",
+    
+    "layer_2_only": true,
+    "comment": "Set to true to apply labels only to Layer 2 flows, false for all flows",
+    
+    "time_labels": [
+        {
+            "comment": "Impersonation Attack Phase 1",
+            "time_range": "10:53-11:14",
+            "label": "Impersonation Attack",
+            "description": "Device impersonation attack - spoofing legitimate device identity"
+        },
+        {
+            "comment": "Impersonation Attack Phase 2", 
+            "time_range": "11:26-11:46",
+            "label": "Impersonation Attack",
+            "description": "Second phase of device impersonation attack"
+        },
+        {
+            "comment": "Impersonation Attack Phase 3",
+            "time_range": "11:52-11:57",
+            "label": "Impersonation Attack",
+            "description": "Brief impersonation attack phase"
+        },
+        {
+            "comment": "Impersonation Attack Phase 4",
+            "time_range": "12:00-12:19",
+            "label": "Impersonation Attack",
+            "description": "Extended impersonation attack phase"
+        },
+        {
+            "comment": "Impersonation Attack Phase 5",
+            "time_range": "12:25-12:44",
+            "label": "Impersonation Attack",
+            "description": "Mid-day impersonation attack phase"
+        },
+        {
+            "comment": "Impersonation Attack Phase 6",
+            "time_range": "12:46-13:18",
+            "label": "Impersonation Attack", 
+            "description": "Extended afternoon impersonation attack"
+        },
+        {
+            "comment": "Impersonation Attack Phase 7",
+            "time_range": "13:34-13:55",
+            "label": "Impersonation Attack",
+            "description": "Late afternoon impersonation phase"
+        },
+        {
+            "comment": "Impersonation Attack Phase 8 - NOTE: Check time overlap",
+            "time_range": "14:10-13:48",
+            "label": "Impersonation Attack",
+            "description": "CAUTION: Time range appears incorrect in source - may be 13:48-14:10"
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target ARP packets for MAC address spoofing",
+            "protocols": ["ARP"],
+            "time_range": "10:53-14:10",
+            "label": "ARP Impersonation",
+            "description": "ARP-based device impersonation attacks"
+        },
+        {
+            "comment": "Target CDP packets for device information spoofing",
+            "protocols": ["CDP"],
+            "time_range": "10:53-14:10", 
+            "label": "CDP Impersonation",
+            "description": "CDP-based device identity spoofing"
+        },
+        {
+            "comment": "Target DHCP packets for IP/MAC binding attacks",
+            "protocols": ["DHCP"],
+            "time_range": "10:53-14:10",
+            "label": "DHCP Impersonation",
+            "description": "DHCP-based device impersonation"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add attacker IP here when known - replace ATTACKER_IP_PLACEHOLDER",
+            "ip": "ATTACKER_IP_PLACEHOLDER",
+            "label": "Impersonation Attacker",
+            "description": "Device performing impersonation attacks"
+        },
+        {
+            "comment": "Add victim/target IP here when known",
+            "ip": "VICTIM_IP_PLACEHOLDER", 
+            "label": "Impersonation Target",
+            "description": "Legitimate device being impersonated"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add attacker MAC here when known - replace ATTACKER_MAC_PLACEHOLDER",
+            "mac": "ATTACKER_MAC_PLACEHOLDER",
+            "label": "Impersonation Attacker",
+            "description": "MAC address of attacking device"
+        },
+        {
+            "comment": "Add victim/target MAC here when known",
+            "mac": "VICTIM_MAC_PLACEHOLDER",
+            "label": "Impersonation Target", 
+            "description": "MAC address being spoofed/impersonated"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols most relevant for impersonation attacks",
+        "primary_protocols": ["ARP", "CDP", "DHCP"],
+        "secondary_protocols": ["LLDP", "STP"]
+    }
+}

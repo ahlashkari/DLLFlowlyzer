@@ -1,0 +1,146 @@
+{
+    "description": "Labeling configuration for ARP Spoofing Attack folder",
+    "attack_type": "ARP Spoofing Attack (ARP Cache Poisoning)",
+    "attack_schedule": "Multiple phases targeting ARP tables for man-in-the-middle attacks",
+    
+    "layer_2_only": true,
+    "comment": "ARP is a Layer 2 protocol - set to true for Layer 2 focus",
+    
+    "time_labels": [
+        {
+            "comment": "ARP Spoofing Attack Phase 1",
+            "time_range": "12:29-13:06",
+            "label": "ARP Spoof Attack",
+            "description": "ARP cache poisoning attack to intercept network communications"
+        },
+        {
+            "comment": "ARP Spoofing Attack Phase 2",
+            "time_range": "13:12-13:43",
+            "label": "ARP Spoof Attack",
+            "description": "Second phase of ARP spoofing attack"
+        },
+        {
+            "comment": "ARP Spoofing Attack Phase 3",
+            "time_range": "13:50-14:26",
+            "label": "ARP Spoof Attack",
+            "description": "Extended ARP spoofing attack phase"
+        },
+        {
+            "comment": "ARP Spoofing Attack Phase 4",
+            "time_range": "14:40-14:59",
+            "label": "ARP Spoof Attack",
+            "description": "Late afternoon ARP spoofing attack"
+        },
+        {
+            "comment": "ARP Spoofing Attack Phase 5",
+            "time_range": "15:18-15:41",
+            "label": "ARP Spoof Attack",
+            "description": "Final ARP spoofing attack phase"
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target ARP packets specifically",
+            "protocols": ["ARP"],
+            "time_range": "12:29-15:41",
+            "label": "ARP Protocol Attack",
+            "description": "Direct ARP packet manipulation for spoofing attacks"
+        },
+        {
+            "comment": "Target gratuitous ARP packets",
+            "protocols": ["ARP"],
+            "arp_type": "gratuitous",
+            "time_range": "12:29-15:41",
+            "label": "Gratuitous ARP Attack",
+            "description": "Unsolicited ARP responses for cache poisoning"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add attacker IP here when known",
+            "ip": "ATTACKER_IP_PLACEHOLDER",
+            "label": "ARP Spoof Attacker",
+            "description": "IP address of device performing ARP spoofing"
+        },
+        {
+            "comment": "Add victim/target IP being spoofed",
+            "ip": "ARP_TARGET_IP_PLACEHOLDER",
+            "label": "ARP Spoof Target",
+            "description": "IP address being spoofed in ARP attacks"
+        },
+        {
+            "comment": "Add gateway/router IP if being spoofed",
+            "ip": "GATEWAY_IP_PLACEHOLDER",
+            "label": "Spoofed Gateway",
+            "description": "Gateway IP address being impersonated"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add attacker MAC here when known - CRITICAL for ARP attack identification",
+            "mac": "ATTACKER_MAC_PLACEHOLDER",
+            "label": "ARP Spoof Attacker MAC",
+            "description": "MAC address of device performing ARP spoofing"
+        },
+        {
+            "comment": "Add legitimate device MAC being spoofed",
+            "mac": "LEGITIMATE_DEVICE_MAC_PLACEHOLDER",
+            "label": "Legitimate Device MAC",
+            "description": "Legitimate MAC address being impersonated"
+        },
+        {
+            "comment": "Add gateway/router MAC being spoofed",
+            "mac": "LEGITIMATE_GATEWAY_MAC_PLACEHOLDER",
+            "label": "Legitimate Gateway MAC",
+            "description": "Legitimate gateway MAC being impersonated"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols most relevant for ARP spoofing attacks",
+        "primary_protocols": ["ARP"],
+        "secondary_protocols": ["ETH"],
+        "frame_types": ["ARP_FRAME"]
+    },
+    
+    "attack_indicators": {
+        "arp_reply_without_request": "ARP replies sent without corresponding ARP requests",
+        "gratuitous_arp_flooding": "Excessive gratuitous ARP packets",
+        "ip_mac_binding_conflict": "Same IP address associated with multiple MAC addresses",
+        "arp_response_rate_anomaly": "Abnormally high ARP response rate from single source",
+        "mac_address_impersonation": "Single MAC claiming multiple IP addresses"
+    },
+    
+    "arp_message_analysis": {
+        "comment": "ARP message characteristics to monitor",
+        "suspicious_patterns": {
+            "arp_opcode": "Monitor for excessive ARP replies (opcode 2)",
+            "hardware_type": "Non-standard hardware type values",
+            "protocol_type": "Non-IP protocol types in ARP",
+            "sender_mac_consistency": "Inconsistent sender MAC addresses for same IP"
+        }
+    },
+    
+    "attack_types": {
+        "gateway_spoofing": "Impersonating default gateway to intercept all traffic",
+        "host_spoofing": "Impersonating specific hosts for targeted interception",
+        "bidirectional_spoofing": "Spoofing both directions of communication",
+        "arp_table_poisoning": "Corrupting ARP tables of multiple network devices"
+    },
+    
+    "detection_thresholds": {
+        "comment": "Suggested thresholds for detecting ARP spoofing",
+        "arp_replies_per_minute": "> 60 ARP replies per minute from single MAC",
+        "gratuitous_arp_rate": "> 10 gratuitous ARP per minute",
+        "ip_mac_conflicts": "> 2 different MACs claiming same IP within 5 minutes"
+    },
+    
+    "impact_indicators": {
+        "man_in_the_middle": "Traffic being redirected through attacker",
+        "network_performance_degradation": "Increased latency due to traffic redirection",
+        "connectivity_issues": "Intermittent connectivity for poisoned devices"
+    }
+}

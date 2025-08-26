@@ -1,0 +1,111 @@
+{
+    "description": "Labeling configuration for CAM Table Flooding Attack folder",
+    "attack_type": "CAM Table Flooding Attack (MAC Flooding)",
+    "attack_schedule": "Multiple intensive flooding phases to exhaust switch MAC learning table",
+    
+    "layer_2_only": true,
+    "comment": "CAM table flooding is a Layer 2 attack - set to true for Layer 2 focus",
+    
+    "time_labels": [
+        {
+            "comment": "CAM Table Flood Phase 1",
+            "time_range": "10:59-11:33",
+            "label": "CAM Table Flood Attack",
+            "description": "Initial CAM table flooding to exhaust switch MAC address learning capacity"
+        },
+        {
+            "comment": "CAM Table Flood Phase 2",
+            "time_range": "12:10-13:50", 
+            "label": "CAM Table Flood Attack",
+            "description": "Extended CAM flooding attack - major phase lasting nearly 2 hours"
+        },
+        {
+            "comment": "CAM Table Flood Phase 3",
+            "time_range": "14:18-15:03",
+            "label": "CAM Table Flood Attack",
+            "description": "Afternoon CAM table flooding attack"
+        },
+        {
+            "comment": "CAM Table Flood Phase 4",
+            "time_range": "15:28-16:03",
+            "label": "CAM Table Flood Attack",
+            "description": "Final CAM table flooding phase"
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target frames with randomized/fake MAC addresses",
+            "protocols": ["ETH", "ARP"],
+            "time_range": "10:59-16:03",
+            "label": "MAC Flood Traffic",
+            "description": "Ethernet frames with fabricated source MAC addresses for CAM flooding"
+        },
+        {
+            "comment": "Monitor ARP packets with fake MAC addresses",
+            "protocols": ["ARP"],
+            "time_range": "10:59-16:03",
+            "label": "ARP MAC Flood",
+            "description": "ARP packets with randomized MAC addresses for flooding"
+        },
+        {
+            "comment": "Monitor any Layer 2 frame flooding patterns",
+            "protocols": ["ETH"],
+            "time_range": "10:59-16:03",
+            "label": "L2 Frame Flood",
+            "description": "High-volume Layer 2 frame transmission for CAM flooding"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add attacker IP here when known - may use fake IPs during attack",
+            "ip": "ATTACKER_IP_PLACEHOLDER",
+            "label": "CAM Flood Attacker",
+            "description": "Device performing CAM table flooding attack"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add attacker's REAL MAC here when known - IMPORTANT for identification",
+            "mac": "ATTACKER_REAL_MAC_PLACEHOLDER",
+            "label": "CAM Flood Attacker Real MAC",
+            "description": "Actual MAC address of attacking device (not the fake ones used in attack)"
+        },
+        {
+            "comment": "Add pattern of fake MACs if identifiable (e.g., OUI pattern)",
+            "mac": "FAKE_MAC_PATTERN_PLACEHOLDER",
+            "label": "CAM Flood Fake MAC Pattern", 
+            "description": "Pattern or range of fabricated MAC addresses used in flooding"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols involved in CAM table flooding",
+        "primary_protocols": ["ETH", "ARP"],
+        "secondary_protocols": ["LLC"],
+        "frame_types": ["ETHERNET_FRAME", "ARP_FRAME"]
+    },
+    
+    "attack_indicators": {
+        "high_mac_diversity": "Abnormally high number of unique source MAC addresses",
+        "frame_rate_spike": "Sudden increase in frame transmission rate",
+        "sequential_mac_pattern": "MAC addresses following sequential or predictable patterns",
+        "arp_flood": "High volume of ARP requests with random MAC addresses",
+        "unicast_flood": "Switch flooding unicast frames to all ports (indication of CAM overflow)"
+    },
+    
+    "detection_thresholds": {
+        "comment": "Suggested thresholds for detecting CAM flooding",
+        "unique_macs_per_minute": "> 1000 unique source MACs per minute",
+        "frames_per_second": "> 10000 frames per second from single source",
+        "mac_learning_failures": "Switch unable to learn new MAC addresses"
+    },
+    
+    "impact_indicators": {
+        "switch_behavior": "Switch operating in hub mode (flooding all traffic)",
+        "network_degradation": "Increased broadcast domain traffic",
+        "legitimate_traffic_impact": "Legitimate devices experiencing connectivity issues"
+    }
+}

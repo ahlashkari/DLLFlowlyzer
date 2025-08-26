@@ -1,0 +1,113 @@
+{
+    "description": "Labeling configuration for CDP Attack folder",
+    "attack_type": "Cisco Discovery Protocol (CDP) Attack",
+    "attack_schedule": "Multiple phases targeting CDP infrastructure discovery",
+    
+    "layer_2_only": true,
+    "comment": "CDP is a Layer 2 protocol - set to true to focus on Layer 2 flows",
+    
+    "time_labels": [
+        {
+            "comment": "CDP Attack Phase 1",
+            "time_range": "10:57-11:33",
+            "label": "CDP Attack",
+            "description": "CDP information gathering and manipulation attack"
+        },
+        {
+            "comment": "CDP Attack Phase 2", 
+            "time_range": "12:07-12:50",
+            "label": "CDP Attack",
+            "description": "Extended CDP attack phase - device enumeration and spoofing"
+        },
+        {
+            "comment": "CDP Attack Phase 3",
+            "time_range": "13:20-14:07",
+            "label": "CDP Attack",
+            "description": "Major CDP attack phase - network topology discovery"
+        },
+        {
+            "comment": "CDP Attack Phase 4",
+            "time_range": "14:29-14:40",
+            "label": "CDP Attack",
+            "description": "Brief intensive CDP attack"
+        },
+        {
+            "comment": "CDP Attack Phase 5",
+            "time_range": "15:00-15:40",
+            "label": "CDP Attack",
+            "description": "Extended afternoon CDP attack"
+        },
+        {
+            "comment": "CDP Attack Phase 6",
+            "time_range": "15:46-16:20",
+            "label": "CDP Attack",
+            "description": "Final CDP attack phase"
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target CDP packets specifically",
+            "protocols": ["CDP"],
+            "time_range": "10:57-16:20",
+            "label": "CDP Protocol Attack",
+            "description": "Direct CDP packet manipulation and information gathering"
+        },
+        {
+            "comment": "Target LLC/SNAP frames carrying CDP",
+            "protocols": ["LLC", "SNAP"],
+            "time_range": "10:57-16:20", 
+            "label": "CDP Frame Attack",
+            "description": "LLC/SNAP frame manipulation for CDP attacks"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add attacker IP here when known - may not be relevant for Layer 2 CDP",
+            "ip": "ATTACKER_IP_PLACEHOLDER",
+            "label": "CDP Attacker Device",
+            "description": "Device performing CDP attacks (if IP-based identification available)"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add attacker MAC here when known - PRIMARY identifier for CDP attacks",
+            "mac": "ATTACKER_MAC_PLACEHOLDER",
+            "label": "CDP Attacker Device",
+            "description": "MAC address of device performing CDP attacks"
+        },
+        {
+            "comment": "Add target/victim device MAC when known",
+            "mac": "CDP_TARGET_MAC_PLACEHOLDER",
+            "label": "CDP Attack Target",
+            "description": "MAC address of device being targeted by CDP attacks"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols most relevant for CDP attacks",
+        "primary_protocols": ["CDP"],
+        "secondary_protocols": ["LLC", "SNAP", "STP"],
+        "frame_types": ["CDP_FRAME", "LLC_FRAME"]
+    },
+    
+    "attack_indicators": {
+        "cdp_flooding": "Excessive CDP advertisement packets",
+        "device_impersonation": "CDP packets claiming to be legitimate infrastructure devices",
+        "information_gathering": "Abnormal CDP request patterns for network discovery",
+        "topology_poisoning": "False CDP neighbor information injection"
+    },
+    
+    "cdp_tlv_analysis": {
+        "comment": "CDP Type-Length-Value fields to monitor",
+        "suspicious_tlvs": [
+            "Device ID spoofing",
+            "Platform information manipulation", 
+            "Port ID falsification",
+            "Capabilities misrepresentation",
+            "Software version spoofing"
+        ]
+    }
+}

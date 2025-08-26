@@ -1,0 +1,150 @@
+{
+    "description": "Labeling configuration for ARP Spoofing Attack 2 folder",
+    "attack_type": "ARP Spoofing Attack 2 (Secondary ARP Cache Poisoning Campaign)",
+    "attack_schedule": "Multiple distinct phases of secondary ARP spoofing attacks",
+    
+    "layer_2_only": true,
+    "comment": "ARP spoofing is a Layer 2 attack - set to true for Layer 2 focus",
+    
+    "time_labels": [
+        {
+            "comment": "ARP Spoof 2 Attack Phase 1",
+            "time_range": "10:09-10:40",
+            "label": "ARP Spoof Attack 2",
+            "description": "Initial phase of secondary ARP spoofing campaign"
+        },
+        {
+            "comment": "ARP Spoof 2 Attack Phase 2", 
+            "time_range": "10:58-11:34",
+            "label": "ARP Spoof Attack 2",
+            "description": "Second phase of secondary ARP spoofing attack"
+        },
+        {
+            "comment": "ARP Spoof 2 Attack Phase 3",
+            "time_range": "12:00-12:36",
+            "label": "ARP Spoof Attack 2",
+            "description": "Extended midday ARP spoofing phase"
+        },
+        {
+            "comment": "ARP Spoof 2 Attack Phase 4",
+            "time_range": "12:47-13:30",
+            "label": "ARP Spoof Attack 2",
+            "description": "Major afternoon ARP spoofing attack phase"
+        },
+        {
+            "comment": "ARP Spoof 2 Attack Phase 5",
+            "time_range": "13:37-13:59",
+            "label": "ARP Spoof Attack 2",
+            "description": "Brief intensive ARP spoofing phase"
+        },
+        {
+            "comment": "ARP Spoof 2 Attack Phase 6", 
+            "time_range": "14:20-14:41",
+            "label": "ARP Spoof Attack 2",
+            "description": "Final ARP spoofing attack phase"
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target ARP packets for secondary spoofing campaign",
+            "protocols": ["ARP"],
+            "time_range": "10:09-14:41",
+            "label": "ARP Protocol Attack 2",
+            "description": "Secondary ARP packet manipulation campaign"
+        },
+        {
+            "comment": "Target gratuitous ARP in secondary campaign",
+            "protocols": ["ARP"],
+            "arp_type": "gratuitous",
+            "time_range": "10:09-14:41",
+            "label": "Gratuitous ARP Attack 2",
+            "description": "Secondary campaign of unsolicited ARP responses"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add secondary attacker IP here when known",
+            "ip": "SECONDARY_ATTACKER_IP_PLACEHOLDER",
+            "label": "ARP Spoof 2 Attacker",
+            "description": "IP address of secondary device performing ARP spoofing"
+        },
+        {
+            "comment": "Add secondary target IP being spoofed",
+            "ip": "SECONDARY_ARP_TARGET_IP_PLACEHOLDER", 
+            "label": "ARP Spoof 2 Target",
+            "description": "IP address being targeted by secondary ARP spoofing campaign"
+        },
+        {
+            "comment": "Add additional victim IPs in secondary campaign",
+            "ip": "ADDITIONAL_VICTIM_IP_PLACEHOLDER",
+            "label": "ARP Spoof 2 Additional Victim",
+            "description": "Additional IP addresses targeted by secondary campaign"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add secondary attacker MAC here when known - ESSENTIAL for identification",
+            "mac": "SECONDARY_ATTACKER_MAC_PLACEHOLDER",
+            "label": "ARP Spoof 2 Attacker MAC",
+            "description": "MAC address of secondary device performing ARP spoofing"
+        },
+        {
+            "comment": "Add secondary legitimate device MAC being spoofed",
+            "mac": "SECONDARY_LEGITIMATE_MAC_PLACEHOLDER",
+            "label": "Secondary Legitimate Device MAC",
+            "description": "Legitimate MAC address being impersonated in secondary campaign"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols involved in secondary ARP spoofing attacks",
+        "primary_protocols": ["ARP"],
+        "secondary_protocols": ["ETH"],
+        "frame_types": ["ARP_FRAME"]
+    },
+    
+    "attack_coordination": {
+        "primary_vs_secondary_campaign": "Distinct from primary ARP spoofing attacks (12:29-15:41)",
+        "timing_analysis": "Secondary campaign has different timing pattern than primary",
+        "target_differentiation": "May target different victims or use different attack vectors",
+        "potential_multi_attacker": "Suggests multiple attacking devices or coordinated campaign"
+    },
+    
+    "attack_characteristics": {
+        "early_start": "Begins much earlier than primary ARP spoofing (10:09 vs 12:29)",
+        "distinct_phases": "Six distinct attack phases with varying durations",
+        "gap_analysis": "Strategic gaps between phases may indicate evasion tactics",
+        "duration_variance": "Phases range from 22 minutes to 43 minutes"
+    },
+    
+    "attack_indicators": {
+        "secondary_cache_poisoning": "ARP cache corruption from second attack source",
+        "overlapping_target_windows": "Some timing overlap with primary ARP attacks",
+        "distributed_poisoning": "Poisoning attacks from multiple sources",
+        "persistent_false_mappings": "Continuous reinforcement of false ARP associations"
+    },
+    
+    "timing_correlation_analysis": {
+        "overlap_with_primary": "Potential overlap during 12:47-13:30 and 13:37-13:59 periods",
+        "switch_spoof_correlation": "Phase 2 (10:58-11:34) overlaps with Switch Spoof 2 pattern",
+        "coordination_indicators": "Timing suggests potential coordination with other Layer 2 attacks",
+        "attack_sequencing": "Strategic sequencing to maximize network disruption"
+    },
+    
+    "detection_signatures": {
+        "dual_arp_spoof_pattern": "Two distinct ARP spoofing campaigns with different timing",
+        "source_differentiation": "Different source MACs for primary vs secondary campaigns",
+        "target_overlap_analysis": "Potential targeting of same victims by both campaigns",
+        "attack_intensity_variation": "Different attack intensities between primary and secondary"
+    },
+    
+    "impact_assessment": {
+        "amplified_network_disruption": "Combined impact of dual ARP spoofing campaigns",
+        "cache_corruption_persistence": "Longer-lasting ARP cache corruption",
+        "detection_evasion": "Distributed attacks may evade single-source detection",
+        "network_trust_degradation": "Systematic undermining of ARP protocol trust"
+    }
+}

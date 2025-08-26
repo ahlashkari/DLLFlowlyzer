@@ -1,0 +1,148 @@
+{
+    "description": "Labeling configuration for Switch Spoofing Attack folder",
+    "attack_type": "Switch Spoofing Attack (Rogue Switch Impersonation)",
+    "attack_schedule": "From 10:20 every 30 minutes with 10 minutes duration, 10 minutes rest till 17:00",
+    
+    "layer_2_only": true,
+    "comment": "Switch spoofing is a Layer 2 attack - set to true for Layer 2 focus",
+    
+    "time_labels": [
+        {
+            "comment": "Switch Spoof - Recurring pattern",
+            "time_range": "10:20-17:00",
+            "label": "Switch Spoof Attack",
+            "description": "Recurring switch spoofing attack every 30 minutes",
+            "recurring_pattern": {
+                "start_time": "10:20",
+                "end_time": "17:00",
+                "interval_minutes": 30,
+                "attack_duration_minutes": 10,
+                "rest_duration_minutes": 10
+            }
+        },
+        {
+            "comment": "Estimated Switch Spoof windows based on 30min pattern from 10:20",
+            "estimated_attack_windows": [
+                "10:20-10:30",
+                "10:50-11:00", 
+                "11:20-11:30",
+                "11:50-12:00",
+                "12:20-12:30",
+                "12:50-13:00",
+                "13:20-13:30",
+                "13:50-14:00",
+                "14:20-14:30",
+                "14:50-15:00",
+                "15:20-15:30",
+                "15:50-16:00",
+                "16:20-16:30",
+                "16:50-17:00"
+            ],
+            "label": "Switch Spoof Attack Windows",
+            "description": "Calculated attack windows based on recurring pattern"
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target STP packets for root bridge claims",
+            "protocols": ["STP", "BPDU"],
+            "time_range": "10:20-17:00",
+            "label": "Switch Spoof STP",
+            "description": "STP BPDU manipulation to claim switch authority"
+        },
+        {
+            "comment": "Target CDP packets for device impersonation",
+            "protocols": ["CDP"],
+            "time_range": "10:20-17:00",
+            "label": "Switch Spoof CDP", 
+            "description": "CDP packet injection to impersonate legitimate switches"
+        },
+        {
+            "comment": "Target LLDP packets if present",
+            "protocols": ["LLDP"],
+            "time_range": "10:20-17:00",
+            "label": "Switch Spoof LLDP",
+            "description": "LLDP-based switch impersonation"
+        },
+        {
+            "comment": "Target DTP packets for VLAN negotiations",
+            "protocols": ["DTP"],
+            "time_range": "10:20-17:00",
+            "label": "Switch Spoof DTP",
+            "description": "Dynamic Trunking Protocol manipulation"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add attacker IP here when known - may not be relevant for pure L2 spoofing",
+            "ip": "ATTACKER_IP_PLACEHOLDER",
+            "label": "Switch Spoof Attacker",
+            "description": "Device performing switch spoofing attacks"
+        },
+        {
+            "comment": "Add management IP of switch being spoofed",
+            "ip": "LEGITIMATE_SWITCH_MGMT_IP_PLACEHOLDER",
+            "label": "Legitimate Switch Management IP",
+            "description": "Management IP of legitimate switch being impersonated"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add attacker MAC here when known - PRIMARY identifier",
+            "mac": "ATTACKER_MAC_PLACEHOLDER",
+            "label": "Switch Spoof Attacker MAC",
+            "description": "MAC address of device performing switch spoofing"
+        },
+        {
+            "comment": "Add legitimate switch MAC being spoofed",
+            "mac": "LEGITIMATE_SWITCH_MAC_PLACEHOLDER",
+            "label": "Legitimate Switch MAC",
+            "description": "MAC address of legitimate switch being impersonated"
+        },
+        {
+            "comment": "Add fake switch MAC used in spoofing",
+            "mac": "FAKE_SWITCH_MAC_PLACEHOLDER",
+            "label": "Fake Switch MAC",
+            "description": "Fabricated MAC address used to impersonate switch"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols most relevant for switch spoofing attacks",
+        "primary_protocols": ["STP", "CDP", "DTP"],
+        "secondary_protocols": ["LLDP", "VTP", "BPDU"],
+        "frame_types": ["STP_FRAME", "CDP_FRAME", "DTP_FRAME"]
+    },
+    
+    "attack_indicators": {
+        "unauthorized_root_bridge_claims": "Claiming root bridge status with superior priority",
+        "fake_switch_advertisements": "CDP/LLDP advertisements claiming to be infrastructure switches",
+        "trunk_negotiation_manipulation": "DTP manipulation to establish unauthorized trunks",
+        "vtp_domain_manipulation": "VTP messages to alter VLAN configuration",
+        "spanning_tree_topology_disruption": "Forcing STP topology recalculation"
+    },
+    
+    "timing_analysis": {
+        "attack_pattern": "30-minute intervals with 10-minute active periods",
+        "coordination_indicators": "Potential coordination with other recurring attacks",
+        "automation_evidence": "Precise timing suggests automated attack tools",
+        "persistence": "Long-duration attack campaign from 10:20 to 17:00"
+    },
+    
+    "switch_impersonation_techniques": {
+        "bridge_priority_manipulation": "Setting abnormally low bridge priority (0-4096)",
+        "device_id_spoofing": "Using legitimate switch identifiers in CDP",
+        "capability_advertisement": "Advertising switch capabilities (routing, switching)",
+        "vlan_database_corruption": "Injecting false VLAN information via VTP"
+    },
+    
+    "detection_signatures": {
+        "periodic_l2_anomalies": "Layer 2 protocol anomalies every 30 minutes",
+        "infrastructure_device_conflicts": "Multiple devices claiming same switch identity",
+        "topology_change_patterns": "Regular topology changes coinciding with attack timing",
+        "unauthorized_trunk_formation": "New trunk links appearing during attack windows"
+    }
+}

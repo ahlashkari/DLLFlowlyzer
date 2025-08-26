@@ -1,0 +1,146 @@
+{
+    "description": "Labeling configuration for STP Attack folder",
+    "attack_type": "Spanning Tree Protocol (STP) Attack",
+    "attack_schedule": "Multiple phases targeting STP topology manipulation",
+    
+    "layer_2_only": true,
+    "comment": "STP is a Layer 2 protocol - set to true for Layer 2 focus",
+    
+    "time_labels": [
+        {
+            "comment": "STP Attack Phase 1",
+            "time_range": "10:50-11:16",
+            "label": "STP Attack",
+            "description": "Initial STP topology manipulation attack"
+        },
+        {
+            "comment": "STP Attack Phase 2",
+            "time_range": "11:22-11:41",
+            "label": "STP Attack",
+            "description": "Second phase of STP bridge priority manipulation"
+        },
+        {
+            "comment": "STP Attack Phase 3",
+            "time_range": "11:58-12:12",
+            "label": "STP Attack",
+            "description": "STP attack targeting root bridge election"
+        },
+        {
+            "comment": "STP Attack Phase 4",
+            "time_range": "12:21-12:37",
+            "label": "STP Attack",
+            "description": "Extended STP topology disruption"
+        },
+        {
+            "comment": "STP Attack Phase 5",
+            "time_range": "12:53-13:29",
+            "label": "STP Attack",
+            "description": "Major STP attack phase - network topology manipulation"
+        },
+        {
+            "comment": "STP Attack Phase 6",
+            "time_range": "13:48-14:02",
+            "label": "STP Attack",
+            "description": "STP convergence disruption attack"
+        },
+        {
+            "comment": "STP Attack Phase 7",
+            "time_range": "14:10-14:34",
+            "label": "STP Attack",
+            "description": "STP BPDU manipulation attack"
+        },
+        {
+            "comment": "STP Attack Phase 8",
+            "time_range": "14:52-15:23",
+            "label": "STP Attack",
+            "description": "Final STP topology poisoning phase"
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target STP BPDU packets specifically",
+            "protocols": ["STP", "BPDU"],
+            "time_range": "10:50-15:23",
+            "label": "STP Protocol Attack",
+            "description": "Direct STP BPDU packet manipulation and injection"
+        },
+        {
+            "comment": "Target Rapid STP (RSTP) if present",
+            "protocols": ["RSTP"],
+            "time_range": "10:50-15:23",
+            "label": "RSTP Attack",
+            "description": "Rapid Spanning Tree Protocol manipulation"
+        },
+        {
+            "comment": "Target Multiple Spanning Tree (MST) if present",
+            "protocols": ["MSTP"],
+            "time_range": "10:50-15:23",
+            "label": "MSTP Attack",
+            "description": "Multiple Spanning Tree Protocol attack"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add attacker IP here when known - may not be relevant for pure STP attacks",
+            "ip": "ATTACKER_IP_PLACEHOLDER",
+            "label": "STP Attacker Device",
+            "description": "Device performing STP attacks (if IP identification available)"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add attacker MAC here when known - PRIMARY identifier for STP attacks",
+            "mac": "ATTACKER_MAC_PLACEHOLDER",
+            "label": "STP Attacker Device",
+            "description": "MAC address of device performing STP attacks"
+        },
+        {
+            "comment": "Add legitimate root bridge MAC for comparison",
+            "mac": "LEGITIMATE_ROOT_BRIDGE_MAC_PLACEHOLDER",
+            "label": "Legitimate Root Bridge",
+            "description": "MAC address of legitimate root bridge being attacked"
+        },
+        {
+            "comment": "Add fake root bridge MAC used in attack",
+            "mac": "FAKE_ROOT_BRIDGE_MAC_PLACEHOLDER",
+            "label": "Malicious Root Bridge",
+            "description": "MAC address used by attacker to claim root bridge status"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols most relevant for STP attacks",
+        "primary_protocols": ["STP", "BPDU"],
+        "secondary_protocols": ["RSTP", "MSTP", "LLC"],
+        "frame_types": ["STP_FRAME", "BPDU_FRAME"]
+    },
+    
+    "attack_indicators": {
+        "bridge_priority_manipulation": "Abnormally low bridge priority values to claim root status",
+        "bpdu_flooding": "Excessive BPDU packet transmission",
+        "topology_change_flooding": "Rapid topology change notifications causing network instability",
+        "root_bridge_impersonation": "Claiming to be root bridge with superior priority",
+        "port_state_manipulation": "Forcing ports into forwarding state bypassing STP convergence"
+    },
+    
+    "stp_field_analysis": {
+        "comment": "STP BPDU fields to monitor for manipulation",
+        "suspicious_values": {
+            "bridge_priority": "Values lower than 32768 (especially 0-4096)",
+            "message_age": "Abnormally low or zero message age values",
+            "max_age": "Manipulated max age to force topology changes",
+            "forward_delay": "Modified forward delay values",
+            "topology_change": "Frequent topology change flag setting"
+        }
+    },
+    
+    "attack_types": {
+        "root_bridge_attack": "Claiming root bridge status with superior priority",
+        "topology_change_attack": "Forcing frequent topology recalculations",
+        "bpdu_guard_bypass": "Attempting to bypass BPDU guard protection",
+        "spanning_tree_disable": "Attempting to disable STP on network segments"
+    }
+}

@@ -36,8 +36,9 @@ class UDPPacket(BasePacket):
             else:
                 self.features['is_dns'] = False
             
-            # Check for DHCP
-            if self.features.get('src_port') in [67, 68] or self.features.get('dst_port') in [67, 68]:
+            # Check for DHCP - must be on DHCP ports AND have DHCP/BOOTP layer
+            if (self.features.get('src_port') in [67, 68] or self.features.get('dst_port') in [67, 68]) and \
+               (self.packet.haslayer('DHCP') or self.packet.haslayer('BOOTP')):
                 self.features['is_dhcp'] = True
                 self._extract_dhcp_features()
             else:

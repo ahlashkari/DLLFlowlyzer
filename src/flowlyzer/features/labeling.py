@@ -17,11 +17,13 @@ class AttackLabel:
         
         Args:
             label: The label string to assign
-            attack_type: Type of attack (IP, MAC, or TIME based)
+            attack_type: Type of attack (IP, MAC, TIME, PROTOCOL based)
         """
         self.label = label
         self.attack_type = attack_type
         self.criteria = {}
+        self.layer_2_only = False  # New: Apply only to Layer 2 flows
+        self.target_protocols = []  # New: Specific protocols to target
     
     def set_ip_criteria(self, attacker_ips: List[str]):
         """Set IP-based attack criteria."""
@@ -48,8 +50,28 @@ class AttackLabel:
                 self.criteria['time_ranges'].append((start_time, end_time))
             except ValueError as e:
                 logging.warning(f"Invalid time range {start_str}-{end_str}: {e}")
+    
+    def set_layer_2_only(self, layer_2_only: bool):
+        """
+        Set whether this label should only apply to Layer 2 flows.
         
-        self.attack_type = 'TIME'
+        Args:
+            layer_2_only: If True, only apply label to Layer 2 flows
+        """
+        self.layer_2_only = layer_2_only
+    
+    def set_protocol_criteria(self, protocols: List[str], port_filter: Optional[List[int]] = None):
+        """
+        Set protocol-specific attack criteria.
+        
+        Args:
+            protocols: List of protocols to target (e.g., ['ARP', 'CDP', 'STP'])
+            port_filter: Optional list of port numbers for TCP/UDP protocols
+        """
+        self.target_protocols = [proto.upper() for proto in protocols]
+        if port_filter:
+            self.criteria['port_filter'] = port_filter
+        self.attack_type = 'PROTOCOL'
     
     def _parse_time_string(self, time_str: str) -> time:
         """Parse time string in format 'HH:MM AM/PM' to time object."""
@@ -75,12 +97,23 @@ class AttackLabel:
             True if flow matches attack criteria
         """
         try:
+            # Check Layer 2 only restriction first
+            if self.layer_2_only and not self._is_layer_2_flow(flow_features):
+                return False
+            
+            # Check protocol-specific targeting
+            if self.target_protocols and not self._matches_protocol_criteria(flow_features):
+                return False
+            
+            # Check main criteria
             if self.attack_type == 'IP':
                 return self._matches_ip_criteria(flow_features)
             elif self.attack_type == 'MAC':
                 return self._matches_mac_criteria(flow_features)
             elif self.attack_type == 'TIME':
                 return self._matches_time_criteria(flow_timestamp)
+            elif self.attack_type == 'PROTOCOL':
+                return self._matches_protocol_criteria(flow_features)
             else:
                 return False
         except Exception:
@@ -124,6 +157,85 @@ class AttackLabel:
             return start_time <= check_time <= end_time
         else: 
             return check_time >= start_time or check_time <= end_time
+    
+    def _is_layer_2_flow(self, flow_features: Dict[str, Any]) -> bool:
+        """
+        Check if flow is a Layer 2 flow based on protocol type.
+        
+        Args:
+            flow_features: Flow feature dictionary
+            
+        Returns:
+            True if this is a Layer 2 flow
+        """
+        protocol = flow_features.get('protocol', '').upper()
+        layer_2_protocols = {
+            'ARP', 'STP', 'CDP', 'LLDP', 'DTP', 'VTP', 'BPDU', 
+            'LLC', 'SNAP', 'ETH', 'VLAN', 'DHCP', 'BOOTP'
+        }
+        
+        # Check if protocol is explicitly Layer 2
+        if protocol in layer_2_protocols:
+            return True
+            
+        # Check if flow has Layer 2 frame indicators
+        l2_indicators = [
+            'num_stp_frame', 'num_cdp_frame', 'num_arp_frame', 
+            'num_dhcp_frame', 'num_llc_frame', 'num_lldp_frame',
+            'num_dtp_frame', 'num_vtp_frame'
+        ]
+        
+        for indicator in l2_indicators:
+            if flow_features.get(indicator, 0) > 0:
+                return True
+                
+        return False
+    
+    def _matches_protocol_criteria(self, flow_features: Dict[str, Any]) -> bool:
+        """
+        Check if flow matches protocol-specific criteria.
+        
+        Args:
+            flow_features: Flow feature dictionary
+            
+        Returns:
+            True if flow matches protocol criteria
+        """
+        if not self.target_protocols:
+            return True  # No protocol restriction
+            
+        flow_protocol = flow_features.get('protocol', '').upper()
+        
+        # Direct protocol match
+        if flow_protocol in self.target_protocols:
+            return True
+            
+        # Check protocol-specific frame counters
+        protocol_mappings = {
+            'ARP': ['num_arp_frame'],
+            'STP': ['num_stp_frame'], 
+            'CDP': ['num_cdp_frame'],
+            'LLDP': ['num_lldp_frame'],
+            'DHCP': ['num_dhcp_frame'],
+            'LLC': ['num_llc_frame'],
+            'DTP': ['num_dtp_frame'],
+            'VTP': ['num_vtp_frame']
+        }
+        
+        for target_protocol in self.target_protocols:
+            if target_protocol in protocol_mappings:
+                for frame_counter in protocol_mappings[target_protocol]:
+                    if flow_features.get(frame_counter, 0) > 0:
+                        return True
+        
+        # Check port-based criteria for TCP/UDP protocols
+        port_filter = self.criteria.get('port_filter', [])
+        if port_filter and flow_protocol in ['TCP', 'UDP']:
+            src_port = flow_features.get('src_port', 0)
+            dst_port = flow_features.get('dst_port', 0)
+            return src_port in port_filter or dst_port in port_filter
+            
+        return False
 
 
 class FlowLabeler:
@@ -165,19 +277,48 @@ class FlowLabeler:
         
         self.logger.info(f"Added MAC-based attack rule: {label} for MACs {attacker_macs}")
     
-    def add_time_attack(self, label: str, time_ranges: List[Tuple[str, str]]):
+    def add_time_attack(self, label: str, time_ranges: List[Tuple[str, str]], layer_2_only: bool = False):
         """
         Add time-based attack labeling rule.
         
         Args:
             label: Attack label (e.g., "DHCP Starvation")
             time_ranges: List of (start_time, end_time) tuples in "HH:MM AM/PM" format
+            layer_2_only: If True, only apply to Layer 2 flows
         """
         attack_label = AttackLabel(label, 'TIME')
         attack_label.set_time_criteria(time_ranges)
+        attack_label.set_layer_2_only(layer_2_only)
         self.attack_labels.append(attack_label)
         
-        self.logger.info(f"Added time-based attack rule: {label} for time ranges {time_ranges}")
+        l2_info = " (Layer 2 only)" if layer_2_only else ""
+        self.logger.info(f"Added time-based attack rule: {label} for time ranges {time_ranges}{l2_info}")
+    
+    def add_protocol_attack(self, label: str, protocols: List[str], time_ranges: Optional[List[Tuple[str, str]]] = None, 
+                           port_filter: Optional[List[int]] = None, layer_2_only: bool = True):
+        """
+        Add protocol-specific attack labeling rule.
+        
+        Args:
+            label: Attack label (e.g., "ARP Protocol Attack")
+            protocols: List of protocols to target (e.g., ['ARP', 'CDP'])
+            time_ranges: Optional time ranges when attack occurs
+            port_filter: Optional port numbers for TCP/UDP protocols
+            layer_2_only: If True, only apply to Layer 2 flows (default True for protocol attacks)
+        """
+        attack_label = AttackLabel(label, 'PROTOCOL')
+        attack_label.set_protocol_criteria(protocols, port_filter)
+        attack_label.set_layer_2_only(layer_2_only)
+        
+        if time_ranges:
+            attack_label.set_time_criteria(time_ranges)
+            
+        self.attack_labels.append(attack_label)
+        
+        port_info = f" on ports {port_filter}" if port_filter else ""
+        time_info = f" during {time_ranges}" if time_ranges else ""
+        l2_info = " (Layer 2 only)" if layer_2_only else ""
+        self.logger.info(f"Added protocol-specific attack rule: {label} for protocols {protocols}{port_info}{time_info}{l2_info}")
     
     def label_flows(self, flows_df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -282,7 +423,7 @@ class LabelingConfig:
     @staticmethod
     def load_from_config(config_dict: Dict[str, Any]) -> List[AttackLabel]:
         """
-        Load attack labels from configuration dictionary.
+        Load attack labels from configuration dictionary with enhanced Layer 2 and protocol support.
         
         Args:
             config_dict: Configuration dictionary with attack definitions
@@ -292,33 +433,133 @@ class LabelingConfig:
         """
         attack_labels = []
         
-        # IP-based attacks
-        if 'ip_attacks' in config_dict:
-            for attack_config in config_dict['ip_attacks']:
-                label = attack_config.get('label', 'Unknown')
-                ips = attack_config.get('ips', [])
+        # Global Layer 2 only setting
+        global_layer_2_only = config_dict.get('layer_2_only', False)
+        
+        # Time-based attacks (enhanced)
+        if 'time_labels' in config_dict:
+            for attack_config in config_dict['time_labels']:
+                label = attack_config.get('label', 'Unknown Attack')
+                time_range = attack_config.get('time_range', '')
+                layer_2_only = attack_config.get('layer_2_only', global_layer_2_only)
                 
+                # Parse time range (format: "HH:MM-HH:MM")
+                time_tuples = []
+                if '-' in time_range:
+                    start_time, end_time = time_range.split('-', 1)
+                    # Convert 24-hour format to 12-hour format for existing parser
+                    start_time = LabelingConfig._convert_24h_to_12h(start_time.strip())
+                    end_time = LabelingConfig._convert_24h_to_12h(end_time.strip())
+                    time_tuples.append((start_time, end_time))
+                
+                if time_tuples:
+                    attack_label = AttackLabel(label, 'TIME')
+                    attack_label.set_time_criteria(time_tuples)
+                    attack_label.set_layer_2_only(layer_2_only)
+                    attack_labels.append(attack_label)
+        
+        # Protocol-specific attacks (new)
+        if 'protocol_specific_labels' in config_dict:
+            for attack_config in config_dict['protocol_specific_labels']:
+                label = attack_config.get('label', 'Protocol Attack')
+                protocols = attack_config.get('protocols', [])
+                time_range = attack_config.get('time_range', '')
+                port_filter = attack_config.get('port_filter', None)
+                layer_2_only = attack_config.get('layer_2_only', global_layer_2_only)
+                
+                # Parse time range if provided
+                time_tuples = []
+                if time_range and '-' in time_range:
+                    start_time, end_time = time_range.split('-', 1)
+                    start_time = LabelingConfig._convert_24h_to_12h(start_time.strip())
+                    end_time = LabelingConfig._convert_24h_to_12h(end_time.strip())
+                    time_tuples.append((start_time, end_time))
+                
+                attack_label = AttackLabel(label, 'PROTOCOL')
+                attack_label.set_protocol_criteria(protocols, port_filter)
+                attack_label.set_layer_2_only(layer_2_only)
+                
+                if time_tuples:
+                    attack_label.set_time_criteria(time_tuples)
+                
+                attack_labels.append(attack_label)
+        
+        # IP-based attacks (enhanced)
+        if 'ip_labels' in config_dict:
+            for attack_config in config_dict['ip_labels']:
+                ip = attack_config.get('ip', '')
+                label = attack_config.get('label', 'IP Attack')
+                layer_2_only = attack_config.get('layer_2_only', global_layer_2_only)
+                
+                if ip and not ip.endswith('_PLACEHOLDER'):
+                    attack_label = AttackLabel(label, 'IP')
+                    attack_label.set_ip_criteria([ip])
+                    attack_label.set_layer_2_only(layer_2_only)
+                    attack_labels.append(attack_label)
+        
+        # MAC-based attacks (enhanced)
+        if 'mac_labels' in config_dict:
+            for attack_config in config_dict['mac_labels']:
+                mac = attack_config.get('mac', '')
+                label = attack_config.get('label', 'MAC Attack')
+                layer_2_only = attack_config.get('layer_2_only', global_layer_2_only)
+                
+                if mac and not mac.endswith('_PLACEHOLDER'):
+                    attack_label = AttackLabel(label, 'MAC')
+                    attack_label.set_mac_criteria([mac])
+                    attack_label.set_layer_2_only(layer_2_only)
+                    attack_labels.append(attack_label)
+        
+        # Legacy support for old format
+        for legacy_key in ['ip_attacks', 'mac_attacks', 'time_attacks']:
+            if legacy_key in config_dict:
+                attack_labels.extend(LabelingConfig._load_legacy_format(config_dict[legacy_key], legacy_key))
+        
+        return attack_labels
+    
+    @staticmethod
+    def _convert_24h_to_12h(time_str: str) -> str:
+        """Convert 24-hour time format to 12-hour format."""
+        try:
+            if ':' in time_str:
+                hour, minute = time_str.split(':', 1)
+                hour = int(hour)
+                minute = int(minute)
+                
+                if hour == 0:
+                    return f"12:{minute:02d} AM"
+                elif hour < 12:
+                    return f"{hour}:{minute:02d} AM"
+                elif hour == 12:
+                    return f"12:{minute:02d} PM"
+                else:
+                    return f"{hour-12}:{minute:02d} PM"
+        except:
+            pass
+        return time_str  # Return as-is if parsing fails
+    
+    @staticmethod
+    def _load_legacy_format(config_list: List[Dict], attack_type: str) -> List[AttackLabel]:
+        """Load legacy configuration format for backward compatibility."""
+        attack_labels = []
+        
+        for attack_config in config_list:
+            label = attack_config.get('label', 'Unknown')
+            
+            if attack_type == 'ip_attacks':
+                ips = attack_config.get('ips', [])
                 attack_label = AttackLabel(label, 'IP')
                 attack_label.set_ip_criteria(ips)
                 attack_labels.append(attack_label)
-        
-        # MAC-based attacks
-        if 'mac_attacks' in config_dict:
-            for attack_config in config_dict['mac_attacks']:
-                label = attack_config.get('label', 'Unknown')
-                macs = attack_config.get('macs', [])
                 
+            elif attack_type == 'mac_attacks':
+                macs = attack_config.get('macs', [])
                 attack_label = AttackLabel(label, 'MAC')
                 attack_label.set_mac_criteria(macs)
                 attack_labels.append(attack_label)
-        
-        # Time-based attacks
-        if 'time_attacks' in config_dict:
-            for attack_config in config_dict['time_attacks']:
-                label = attack_config.get('label', 'Unknown')
-                time_ranges = attack_config.get('time_ranges', [])
                 
-                # Convert time ranges to tuples
+            elif attack_type == 'time_attacks':
+                time_ranges = attack_config.get('time_ranges', [])
                 time_tuples = []
                 for time_range in time_ranges:
                     if isinstance(time_range, dict):

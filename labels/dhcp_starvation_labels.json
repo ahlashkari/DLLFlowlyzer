@@ -1,0 +1,163 @@
+{
+    "description": "Labeling configuration for DHCP Starvation Attack folder",
+    "attack_type": "DHCP Starvation Attack (DHCP Pool Exhaustion)",
+    "attack_schedule": "Multiple phases to exhaust DHCP server IP address pool",
+    
+    "layer_2_only": false,
+    "comment": "DHCP starvation affects both L2/L3 - set to false for complete coverage",
+    
+    "time_labels": [
+        {
+            "comment": "DHCP Starvation Phase 1",
+            "time_range": "10:43-10:55",
+            "label": "DHCP Starvation Attack",
+            "description": "Initial DHCP pool exhaustion attack using fake MAC addresses"
+        },
+        {
+            "comment": "DHCP Starvation Phase 2",
+            "time_range": "11:11-11:25",
+            "label": "DHCP Starvation Attack",
+            "description": "Second wave of DHCP address pool exhaustion"
+        },
+        {
+            "comment": "DHCP Starvation Phase 3",
+            "time_range": "11:32-11:57",
+            "label": "DHCP Starvation Attack",
+            "description": "Extended DHCP starvation attack phase"
+        },
+        {
+            "comment": "DHCP Starvation Phase 4",
+            "time_range": "12:20-12:46",
+            "label": "DHCP Starvation Attack",
+            "description": "Major DHCP pool exhaustion attack"
+        },
+        {
+            "comment": "DHCP Starvation Phase 5",
+            "time_range": "12:53-13:07",
+            "label": "DHCP Starvation Attack",
+            "description": "Brief intensive DHCP starvation"
+        },
+        {
+            "comment": "DHCP Starvation Phase 6",
+            "time_range": "13:15-13:40",
+            "label": "DHCP Starvation Attack",
+            "description": "Afternoon DHCP exhaustion attack"
+        },
+        {
+            "comment": "DHCP Starvation Phase 7",
+            "time_range": "13:54-14:24",
+            "label": "DHCP Starvation Attack",
+            "description": "Extended afternoon DHCP starvation"
+        },
+        {
+            "comment": "DHCP Starvation Phase 8",
+            "time_range": "14:37-14:58",
+            "label": "DHCP Starvation Attack",
+            "description": "Late afternoon DHCP pool exhaustion"
+        },
+        {
+            "comment": "DHCP Starvation Phase 9",
+            "time_range": "15:23-16:12",
+            "label": "DHCP Starvation Attack",
+            "description": "Final extended DHCP starvation attack"
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target DHCP DISCOVER/REQUEST packets",
+            "protocols": ["DHCP", "BOOTP"],
+            "time_range": "10:43-16:12",
+            "label": "DHCP Starvation Traffic",
+            "description": "Rapid-fire DHCP requests from multiple fake MAC addresses"
+        },
+        {
+            "comment": "Target UDP port 67/68 traffic for DHCP",
+            "protocols": ["UDP"],
+            "port_filter": [67, 68],
+            "time_range": "10:43-16:12",
+            "label": "DHCP UDP Flood",
+            "description": "UDP-based DHCP request flooding"
+        },
+        {
+            "comment": "Target ARP packets for IP conflict detection",
+            "protocols": ["ARP"],
+            "time_range": "10:43-16:12",
+            "label": "DHCP-Related ARP",
+            "description": "ARP requests related to DHCP starvation (checking IP availability)"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add attacker IP here when known - may use multiple IPs",
+            "ip": "ATTACKER_IP_PLACEHOLDER",
+            "label": "DHCP Starvation Attacker",
+            "description": "Device performing DHCP starvation attack"
+        },
+        {
+            "comment": "Add DHCP server IP being targeted",
+            "ip": "DHCP_SERVER_IP_PLACEHOLDER",
+            "label": "DHCP Server Target",
+            "description": "DHCP server being targeted by starvation attack"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add attacker's REAL MAC here when known",
+            "mac": "ATTACKER_REAL_MAC_PLACEHOLDER",
+            "label": "DHCP Starvation Attacker Real MAC",
+            "description": "Actual MAC address of device performing starvation attack"
+        },
+        {
+            "comment": "Add pattern of fake MACs used in requests",
+            "mac": "FAKE_DHCP_MAC_PATTERN_PLACEHOLDER",
+            "label": "DHCP Starvation Fake MAC Pattern",
+            "description": "Pattern of fabricated MAC addresses used in DHCP requests"
+        },
+        {
+            "comment": "Add DHCP server MAC address",
+            "mac": "DHCP_SERVER_MAC_PLACEHOLDER",
+            "label": "DHCP Server MAC",
+            "description": "MAC address of DHCP server being attacked"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols involved in DHCP starvation attacks",
+        "primary_protocols": ["DHCP", "ARP"],
+        "secondary_protocols": ["UDP", "ETH"]
+    },
+    
+    "attack_indicators": {
+        "dhcp_request_flood": "Abnormally high rate of DHCP DISCOVER/REQUEST packets",
+        "mac_address_diversity": "High number of unique client MAC addresses in short time",
+        "dhcp_pool_exhaustion": "DHCP server responding with DHCPNAK (no addresses available)",
+        "sequential_mac_pattern": "MAC addresses following predictable sequential patterns",
+        "rapid_lease_acquisition": "Multiple IP leases acquired rapidly by same source"
+    },
+    
+    "detection_thresholds": {
+        "comment": "Suggested thresholds for detecting DHCP starvation",
+        "dhcp_requests_per_minute": "> 100 DHCP requests per minute from single source",
+        "unique_macs_per_minute": "> 50 unique client MACs per minute",
+        "dhcp_discover_rate": "> 10 DHCP DISCOVER packets per second"
+    },
+    
+    "dhcp_message_analysis": {
+        "comment": "DHCP message types to monitor",
+        "attack_messages": [
+            "DHCP DISCOVER flooding",
+            "DHCP REQUEST with fake client identifiers",
+            "Abnormal client identifier patterns",
+            "Missing or malformed DHCP options"
+        ]
+    },
+    
+    "impact_indicators": {
+        "legitimate_clients_affected": "Legitimate devices unable to obtain IP addresses",
+        "dhcp_server_performance": "DHCP server showing high CPU/memory usage",
+        "network_connectivity_issues": "New devices unable to join network"
+    }
+}

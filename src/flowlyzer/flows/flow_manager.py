@@ -378,7 +378,7 @@ class FlowManager:
         if len(self.active_flows) >= self.max_flows:
             # Sort flows by last activity time and close oldest ones
             sorted_flows = sorted(
-                self.active_flows.items(),
+                list(self.active_flows.items()),
                 key=lambda x: x[1].last_activity
             )
             
@@ -461,7 +461,7 @@ class FlowManager:
         if len(self.active_flows) > max_active_flows:
             # Sort by last activity and force completion of oldest flows
             sorted_flows = sorted(
-                self.active_flows.items(),
+                list(self.active_flows.items()),
                 key=lambda x: x[1].last_activity
             )
             

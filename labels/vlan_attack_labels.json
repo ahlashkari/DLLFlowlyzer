@@ -1,0 +1,57 @@
+{
+    "description": "Labeling configuration for VLAN Attack folder",
+    "attack_type": "VLAN Hopping/Manipulation Attack",
+    "attack_schedule": "From 11:12 each 2 minutes till 17:00",
+    
+    "layer_2_only": true,
+    "comment": "Set to true to apply labels only to Layer 2 flows, false for all flows",
+    
+    "time_labels": [
+        {
+            "comment": "VLAN Attack - Recurring pattern every 2 minutes",
+            "time_range": "11:12-17:00",
+            "label": "VLAN Attack",
+            "description": "VLAN hopping or double-tagging attack to access unauthorized VLANs",
+            "recurring_pattern": {
+                "start_time": "11:12",
+                "end_time": "17:00", 
+                "interval_minutes": 2,
+                "attack_duration_seconds": 30
+            }
+        }
+    ],
+    
+    "protocol_specific_labels": [
+        {
+            "comment": "Target 802.1Q VLAN tagged packets specifically",
+            "protocols": ["ETH", "VLAN", "DTP"],
+            "time_range": "11:12-17:00",
+            "label": "VLAN Protocol Attack",
+            "description": "Attack targeting VLAN protocols specifically"
+        }
+    ],
+    
+    "ip_labels": [
+        {
+            "comment": "Add attacker IP here when known - replace ATTACKER_IP_PLACEHOLDER",
+            "ip": "ATTACKER_IP_PLACEHOLDER",
+            "label": "VLAN Attacker Device",
+            "description": "Device performing VLAN manipulation attacks"
+        }
+    ],
+    
+    "mac_labels": [
+        {
+            "comment": "Add attacker MAC here when known - replace ATTACKER_MAC_PLACEHOLDER",
+            "mac": "ATTACKER_MAC_PLACEHOLDER",
+            "label": "VLAN Attacker Device", 
+            "description": "MAC address of device performing VLAN attacks"
+        }
+    ],
+    
+    "layer_2_protocols": {
+        "comment": "Protocols most relevant for VLAN attacks",
+        "primary_protocols": ["DTP", "VTP", "VLAN"],
+        "secondary_protocols": ["STP", "CDP"]
+    }
+}

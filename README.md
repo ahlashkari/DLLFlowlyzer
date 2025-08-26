@@ -63,6 +63,17 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 
 ## Recent Updates (2025)
 
+### Critical Bug Fixes & New Features (August 2025)
+- **Fixed Dictionary Iteration Error**: Resolved runtime crashes during flow cleanup that caused incomplete processing
+- **Enhanced DHCP Detection Accuracy**: Fixed false positive DHCP classification - reduced incorrect DHCP flows from thousands to actual DHCP packets only
+- **Improved System Stability**: Eliminated "dictionary changed size during iteration" crashes during large PCAP processing
+- **Enhanced Data Quality**: More accurate protocol detection and feature extraction for better ML model training
+- **🆕 Layer 2-Only Labeling**: New option to apply labels only to Layer 2 flows for focused Layer 2 attack analysis
+- **🆕 Protocol-Specific Labeling**: Target specific protocols (ARP, STP, CDP, etc.) during specific time windows
+- **🆕 Enhanced JSON Configuration**: Comprehensive labeling configuration files for all Layer 2 attack types
+
+See `BUG_FIXES_AND_IMPROVEMENTS_AUG2025.md` for detailed technical information.
+
 ### PyShark Integration Enhancement
 - **Deep Protocol Inspection**: Real protocol feature extraction using PyShark instead of default values
 - **Enhanced Protocol Support**: STP, CDP, ARP, DHCP, DTP with actual protocol field parsing
@@ -119,8 +130,28 @@ python -m src.flowlyzer.main -i Input/ --csv-file my_features
 ```
 
 ### Attack Labeling
+
+#### Enhanced JSON Configuration (New!)
 ```bash
-# Text file configuration (recommended)
+# Layer 2-specific attack labeling with pre-configured files
+python -m src.flowlyzer.main -i arp_attack_data/ --label-config labels/arp_spoof_labels.json --separate-layers
+
+# Protocol-specific labeling for CDP attacks
+python -m src.flowlyzer.main -i cdp_attack_data/ --label-config labels/cdp_attack_labels.json --separate-layers
+
+# DHCP attacks (affects both Layer 2 and Layer 3)
+python -m src.flowlyzer.main -i dhcp_attack_data/ --label-config labels/dhcp_spoof_attack_labels.json --separate-layers
+
+# Combine JSON config with manual MAC labeling
+python -m src.flowlyzer.main -i vlan_attack_data/ \
+    --label-config labels/vlan_attack_labels.json \
+    --label-mac "aa:bb:cc:dd:ee:ff=VLAN Attacker" \
+    --separate-layers
+```
+
+#### Traditional Configuration
+```bash
+# Text file configuration
 python -m src.flowlyzer.main -i Input/ --label-file sample_labeling.txt
 
 # Direct command-line labeling
