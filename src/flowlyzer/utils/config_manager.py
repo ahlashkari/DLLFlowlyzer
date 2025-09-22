@@ -98,7 +98,7 @@ Examples:
         parser.add_argument('--feature-threads', type=int, default=4, help='Number of threads for feature extraction')
         parser.add_argument('--folder-threads', type=int, default=1, help='Number of threads for parallel folder processing')
         parser.add_argument('--batch-size', type=int, default=30, help='Number of flows to process in each batch for memory optimization')
-        parser.add_argument('--csv-batch-size', type=int, default=30, help='Number of flows to write to CSV file in each batch (default: 30)')
+        parser.add_argument('--csv-batch-size', type=int, default=50, help='Number of flows to write to CSV file in each batch (default: 50)')
         parser.add_argument('--disable-batching', action='store_true', help='Disable batched processing and CSV creation')
         parser.add_argument('--missing-value', choices=['nan', '-100'], default='-100', help='Value to use for missing feature data (default: -100)')
         parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], default='INFO', help='Logging level')
@@ -312,10 +312,10 @@ Examples:
                 config['batch_size'] = self.args.batch_size
             else:
                 config['batch_size'] = 30
-            if hasattr(self.args, 'csv_batch_size') and self.args.csv_batch_size != 30:
+            if hasattr(self.args, 'csv_batch_size') and self.args.csv_batch_size != 50:
                 config['csv_batch_size'] = self.args.csv_batch_size
             else:
-                config['csv_batch_size'] = 30
+                config['csv_batch_size'] = 50  # Save every 50 flows as requested
             if hasattr(self.args, 'disable_batching') and self.args.disable_batching:
                 config['enable_batching'] = False
             else:

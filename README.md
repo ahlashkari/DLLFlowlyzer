@@ -1,6 +1,6 @@
-# DLL Flowlyzer
+# DLL Flowlyzer - DataLink Layer Network Flow Analyzer
 
-Comprehensive DataLink Layer Network Flow Analyzer for extracting 282 features from PCAP files for machine learning analysis. Specializes in Layer 2 protocol analysis with direct packet parsing and robust attack detection capabilities using consistent -100 missing value handling.
+A comprehensive network flow analysis tool focused on Layer 2 (DataLink Layer) protocol feature extraction. DLL Flowlyzer analyzes PCAP files to extract 343+ detailed features from network flows, supporting all major Layer 2 protocols including STP, CDP, ARP, DHCP, DTP, ISL, LLDP, and more with real-time batched processing and advanced visualization capabilities.
 
 ## Quick Start
 

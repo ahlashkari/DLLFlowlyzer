@@ -828,6 +828,7 @@ def main():
             quiet=log_config.get('quiet', False)
         )
         
+<<<<<<< HEAD
         logger.logger.info("="*60)
         logger.logger.info("Layer 2 Network Traffic Feature Extractor Started")
         logger.logger.info("="*60)
@@ -885,6 +886,46 @@ def main():
             return 1
 =======
         # Use standard flow manager with full feature extraction
+=======
+        if processing_config.get('multi_folder', False):
+            return process_multi_folders(config_manager, processing_config, log_config, labeling_config, logger)
+        else:
+            # Single file/folder processing - USE BATCHED VERSION for real-time CSV saving
+            pcap_files = config_manager.get_pcap_files()
+            logger.log_start(pcap_files, processing_config)
+            
+            # Process with real-time batching to prevent data loss and memory issues
+            result = process_single_folder_batched(
+                "analysis", pcap_files, processing_config, log_config, labeling_config, logger
+            )
+            
+            # Create visualizations from the batched results
+            if 'batch_files' in result and os.path.exists(result['batch_files']['combined']):
+                import pandas as pd
+                final_flows_df = pd.read_csv(result['batch_files']['combined'])
+                
+                print("📊 Generating visualization plots...")
+                plotter = FlowlyzerPlotter(processing_config['output_dir'])
+                plot_files = plotter.create_all_plots(final_flows_df, result['final_stats'])
+                
+                if plot_files:
+                    logger.logger.info(f"Generated {len(plot_files)} visualization files:")
+                    for plot_file in plot_files:
+                        logger.logger.info(f"  - {Path(plot_file).name}")
+            
+            # Log completion
+            logger.log_completion(result['processing_time'], result['final_stats'])
+            
+            print(f"\n✅ Analysis completed successfully!")
+            print(f"📊 Total packets: {result['total_packets']:,}")
+            print(f"🌊 Total flows: {result.get('total_flows_processed', 0):,}")
+            print(f"💾 Results saved to: {processing_config['output_dir']}")
+            print(f"📝 Log file: {Path(processing_config['output_dir']) / log_config['log_file']}")
+            
+            return 0
+        
+        # This code below should never be reached now
+>>>>>>> d1f1959 (new code 2)
         flow_manager = FlowManager(
             flow_timeout=processing_config['flow_timeout'],
             max_flows=processing_config.get('max_flows', 100000)
