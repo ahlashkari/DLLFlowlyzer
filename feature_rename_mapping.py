@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate mapping for feature renaming from stat_protocol to protocol_stat format."""
 
+
 # Current features that need renaming to put protocol first
 feature_renames = {
     # LLC features
