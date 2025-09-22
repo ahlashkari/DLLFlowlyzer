@@ -56,6 +56,202 @@ class Layer2OnlyPacket(BasePacket):
             self.features['dst_mac'] = str(MISSING_VALUE) 
             self.features['eth_type'] = MISSING_VALUE
     
+    
+    def _extract_ethernet_features(self):
+        """Extract comprehensive Ethernet layer features."""
+        try:
+            if self.packet.haslayer('Ether'):
+                eth_layer = self.packet['Ether']
+                
+                # Basic Ethernet fields (already set in _extract_basic_ethernet_info)
+                # Additional Ethernet analysis
+                self.features['eth_dst_mac_addr'] = str(eth_layer.dst)
+                self.features['eth_src_mac_addr'] = str(eth_layer.src)
+                self.features['eth_ethertype'] = int(eth_layer.type)
+                
+                # Ethernet frame size analysis
+                self.features['eth_frame_length'] = len(self.packet)
+                
+                # Ethernet payload analysis
+                if hasattr(eth_layer, 'payload') and eth_layer.payload:
+                    self.features['eth_payload_length'] = len(eth_layer.payload)
+                else:
+                    self.features['eth_payload_length'] = 0
+                
+                # MAC address type analysis (using existing methods)
+                self.features['dst_mac_is_multicast'] = self._is_multicast_mac(str(eth_layer.dst))
+                self.features['dst_mac_is_broadcast'] = (str(eth_layer.dst).lower() == 'ff:ff:ff:ff:ff:ff')
+                self.features['dst_mac_is_local'] = self._is_local_mac(str(eth_layer.dst))
+                
+                # Extract detailed MAC features using base class method
+                self._extract_detailed_mac_features('dst_mac', str(eth_layer.dst))
+                self._extract_detailed_mac_features('src_mac', str(eth_layer.src))
+                
+            else:
+                # Set defaults for non-Ethernet frames
+                self.features['eth_dst_mac_addr'] = str(MISSING_VALUE)
+                self.features['eth_src_mac_addr'] = str(MISSING_VALUE)
+                self.features['eth_ethertype'] = MISSING_VALUE
+                self.features['eth_frame_length'] = len(self.packet) if self.packet else MISSING_VALUE
+                self.features['eth_payload_length'] = MISSING_VALUE
+                self.features['dst_mac_is_multicast'] = False
+                self.features['dst_mac_is_broadcast'] = False
+                self.features['dst_mac_is_local'] = False
+                
+        except Exception as e:
+            self.logger.debug(f"Error extracting Ethernet features: {e}")
+            # Set all Ethernet features to defaults
+            for key in ['eth_dst_mac_addr', 'eth_src_mac_addr', 'eth_ethertype', 'eth_frame_length',
+                       'eth_payload_length', 'dst_mac_is_multicast', 'dst_mac_is_broadcast', 'dst_mac_is_local']:
+                self.features[key] = MISSING_VALUE
+    
+    def _extract_detailed_mac_features(self, prefix: str, mac_addr: str):
+        """Extract detailed MAC address features."""
+        try:
+            if not isinstance(mac_addr, str) or mac_addr == str(MISSING_VALUE):
+                return
+            
+            # Clean MAC address
+            mac_clean = mac_addr.replace(':', '').replace('-', '').upper()
+            
+            # OUI (first 3 bytes)
+            oui = mac_clean[:6] if len(mac_clean) >= 6 else ''
+            self.features[f'{prefix}_oui'] = oui
+            
+            # Individual/Group bit (bit 0 of first byte)
+            if len(mac_clean) >= 2:
+                try:
+                    first_byte = int(mac_clean[:2], 16)
+                    self.features[f'{prefix}_ig'] = (first_byte & 0x01) == 1
+                    self.features[f'{prefix}_lg'] = (first_byte & 0x02) == 2
+                except ValueError:
+                    self.features[f'{prefix}_ig'] = False
+                    self.features[f'{prefix}_lg'] = False
+            else:
+                self.features[f'{prefix}_ig'] = False
+                self.features[f'{prefix}_lg'] = False
+            
+            # Vendor information
+            self.features[f'{prefix}_vendor'] = self._get_mac_vendor(oui)
+            self.features[f'{prefix}_vendor_known'] = (self.features[f'{prefix}_vendor'] != 'Unknown')
+            
+        except Exception as e:
+            self.logger.debug(f"Error extracting detailed MAC features for {prefix}: {e}")
+            # Set defaults
+            self.features[f'{prefix}_oui'] = str(MISSING_VALUE)
+            self.features[f'{prefix}_ig'] = False
+            self.features[f'{prefix}_lg'] = False
+            self.features[f'{prefix}_vendor'] = 'Unknown'
+            self.features[f'{prefix}_vendor_known'] = False
+    
+    def _extract_vlan_features(self):
+        """Extract comprehensive VLAN features."""
+        try:
+            vlan_tags = []
+            current_layer = self.packet
+            
+            # Check for multiple VLAN tags (QinQ)
+            while current_layer and hasattr(current_layer, 'payload'):
+                if current_layer.haslayer('Dot1Q'):
+                    vlan_layer = current_layer['Dot1Q']
+                    vlan_info = {
+                        'id': int(vlan_layer.vlan) if hasattr(vlan_layer, 'vlan') else MISSING_VALUE,
+                        'priority': int(vlan_layer.prio) if hasattr(vlan_layer, 'prio') else MISSING_VALUE,
+                        'dei': int(vlan_layer.id) if hasattr(vlan_layer, 'id') else MISSING_VALUE
+                    }
+                    vlan_tags.append(vlan_info)
+                    current_layer = vlan_layer.payload
+                else:
+                    break
+            
+            if vlan_tags:
+                # Primary VLAN (outermost)
+                self.features['vlan_id'] = vlan_tags[0]['id']
+                self.features['vlan_priority'] = vlan_tags[0]['priority']
+                self.features['vlan_dei'] = vlan_tags[0]['dei']
+                self.features['vlan_present'] = 1
+                self.features['vlan_count'] = len(vlan_tags)
+                
+                # QinQ information
+                if len(vlan_tags) > 1:
+                    self.features['qinq_present'] = 1
+                    self.features['inner_vlan_id'] = vlan_tags[1]['id']
+                    self.features['inner_vlan_priority'] = vlan_tags[1]['priority']
+                else:
+                    self.features['qinq_present'] = 0
+                    self.features['inner_vlan_id'] = MISSING_VALUE
+                    self.features['inner_vlan_priority'] = MISSING_VALUE
+            else:
+                # No VLAN tags
+                for key in ['vlan_id', 'vlan_priority', 'vlan_dei', 'inner_vlan_id', 'inner_vlan_priority']:
+                    self.features[key] = MISSING_VALUE
+                self.features['vlan_present'] = 0
+                self.features['vlan_count'] = 0
+                self.features['qinq_present'] = 0
+                
+        except Exception as e:
+            self.logger.debug(f"Error extracting VLAN features: {e}")
+            # Set defaults
+            for key in ['vlan_id', 'vlan_priority', 'vlan_dei', 'inner_vlan_id', 'inner_vlan_priority']:
+                self.features[key] = MISSING_VALUE
+            self.features['vlan_present'] = 0
+            self.features['vlan_count'] = 0
+            self.features['qinq_present'] = 0
+    
+    def _extract_quality_metrics(self):
+        """Extract comprehensive Layer 2 quality and performance metrics."""
+        try:
+            # Frame quality metrics
+            frame_size = len(self.packet) if self.packet else 0
+            self.features['frame_size'] = frame_size
+            
+            # Frame size classification
+            if frame_size < 64:
+                self.features['frame_size_class'] = 'runt'
+            elif frame_size <= 1518:
+                self.features['frame_size_class'] = 'standard'
+            elif frame_size <= 9000:
+                self.features['frame_size_class'] = 'jumbo'
+            else:
+                self.features['frame_size_class'] = 'super_jumbo'
+            
+            # Timing metrics
+            if hasattr(self.packet, 'time'):
+                self.features['packet_timestamp'] = float(self.packet.time)
+                self.features['has_timestamp'] = 1
+            else:
+                self.features['packet_timestamp'] = MISSING_VALUE
+                self.features['has_timestamp'] = 0
+            
+            # Layer 2 protocol overhead calculation
+            header_overhead = 14  # Standard Ethernet header
+            if self.features.get('vlan_present', 0):
+                header_overhead += 4 * self.features.get('vlan_count', 1)
+            
+            self.features['l2_header_overhead'] = header_overhead
+            self.features['l2_efficiency'] = ((frame_size - header_overhead) / frame_size) if frame_size > 0 else 0
+            
+            # Protocol type analysis
+            protocol_type = self.get_protocol_type()
+            self.features['dominant_l2_protocol'] = protocol_type
+            
+            # Frame validation metrics
+            self.features['is_valid_ethernet'] = 1 if self.packet.haslayer('Ether') else 0
+            self.features['has_fcs'] = 1 if hasattr(self.packet, 'fcs') else 0
+            
+        except Exception as e:
+            self.logger.debug(f"Error extracting quality metrics: {e}")
+            # Set defaults
+            self.features['frame_size'] = len(self.packet) if self.packet else MISSING_VALUE
+            self.features['frame_size_class'] = 'unknown'
+            self.features['packet_timestamp'] = MISSING_VALUE
+            self.features['has_timestamp'] = 0
+            self.features['l2_header_overhead'] = 14
+            self.features['l2_efficiency'] = MISSING_VALUE
+            self.features['dominant_l2_protocol'] = 'Layer2'
+            self.features['is_valid_ethernet'] = 0
+            self.features['has_fcs'] = 0
+    
     def _analyze_mac_addresses(self):
         """Analyze MAC addresses for vendor info and characteristics."""
         try:

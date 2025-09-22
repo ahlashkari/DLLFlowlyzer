@@ -97,9 +97,12 @@ class Layer2OnlyFlowManager:
             key=lambda x: x[1].last_activity
         )
         
-        for i in range(flows_to_complete):
-            flow_key, flow = sorted_flows[i]
-            self._complete_flow(flow_key, 'forced_cleanup')
+        for i in range(min(flows_to_complete, len(sorted_flows))):
+            try:
+                flow_key, flow = sorted_flows[i]
+                self._complete_flow(flow_key, 'forced_cleanup')
+            except (IndexError, TypeError):
+                break
     
     def _cleanup_timed_out_flows(self):
         """Remove flows that have timed out."""
@@ -137,9 +140,12 @@ class Layer2OnlyFlowManager:
                 key=lambda x: x[1].last_activity
             )
             
-            for i in range(flows_to_complete):
-                flow_key, flow = sorted_flows[i]
-                self._complete_flow(flow_key, 'forced_memory_cleanup')
+            for i in range(min(flows_to_complete, len(sorted_flows))):
+                try:
+                    flow_key, flow = sorted_flows[i]
+                    self._complete_flow(flow_key, 'forced_memory_cleanup')
+                except (IndexError, TypeError):
+                    break
             
             self.logger.info(f"Force completed {flows_to_complete} flows for memory management")
     
