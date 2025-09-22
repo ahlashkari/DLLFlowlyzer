@@ -162,22 +162,41 @@ def parse_dhcp_packet(scapy_packet: Packet) -> dict:
                        'dhcp_secs', 'dhcp_flags', 'dhcp_flags_bc', 'dhcp_flags_reserved', 'dhcp_cookie']:
                 features[key] = MISSING_VALUE
         
-        # Count DHCP options
+        # Count DHCP options and extract message type
         if dhcp_layer and hasattr(dhcp_layer, 'options') and dhcp_layer.options:
             options_count = len(dhcp_layer.options)
-            options_total_len = sum(len(str(opt)) for opt in dhcp_layer.options if opt)
+            options_total_len = 0
+            message_type = MISSING_VALUE
+            
+            # Parse DHCP options
+            for option in dhcp_layer.options:
+                if isinstance(option, tuple) and len(option) >= 2:
+                    option_name, option_value = option[0], option[1]
+                    
+                    # Extract message type
+                    if option_name == 'message-type':
+                        message_type = int(option_value) if isinstance(option_value, int) else MISSING_VALUE
+                    
+                    # Calculate option length
+                    if isinstance(option_value, (str, bytes)):
+                        options_total_len += len(option_value)
+                    else:
+                        options_total_len += 4  # Approximate for non-string options
+            
             features['dhcp_options'] = options_count
             features['dhcp_options_len'] = options_total_len
+            features['dhcp_message_type'] = message_type
         else:
             features['dhcp_options'] = MISSING_VALUE
             features['dhcp_options_len'] = MISSING_VALUE
+            features['dhcp_message_type'] = MISSING_VALUE
             
     except Exception as e:
         logger.debug(f"DHCP parsing error: {e}")
         # Set all to missing on error
         for key in ['dhcp_op', 'dhcp_hw_type', 'dhcp_hw_len', 'dhcp_hops', 'dhcp_xid',
                    'dhcp_secs', 'dhcp_flags', 'dhcp_flags_bc', 'dhcp_flags_reserved', 'dhcp_cookie',
-                   'dhcp_options', 'dhcp_options_len']:
+                   'dhcp_options', 'dhcp_options_len', 'dhcp_message_type']:
             features[key] = MISSING_VALUE
     
     return features

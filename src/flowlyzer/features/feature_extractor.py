@@ -554,13 +554,13 @@ class FeatureExtractor:
         # Boolean columns
         elif any(keyword in column for keyword in ['known', 'ig', 'lg', 'percent']):
             if 'percent' in column:
-                return np.nan  # Use NaN instead of 0.0 for missing percentage data
+                return -100  # Use -100 for missing percentage data
             else:
                 return False
         
-        # Numeric columns - use NaN instead of 0 for missing data
+        # Numeric columns - use -100 for missing data
         else:
-            return np.nan
+            return -100
     
     def _fill_missing_values(self, df: pd.DataFrame) -> pd.DataFrame:
         """Fill missing values in DataFrame with appropriate defaults."""

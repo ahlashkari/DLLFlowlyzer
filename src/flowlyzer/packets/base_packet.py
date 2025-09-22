@@ -9,6 +9,9 @@ from typing import Dict, Any, Optional
 from scapy.all import Packet
 import numpy as np
 
+# Missing value constant
+MISSING_VALUE = -100
+
 
 class BasePacket:
     """
@@ -61,8 +64,8 @@ class BasePacket:
                 self.features['dst_ip_addr'] = str(ipv6_layer.dst)
                 self.features['src_ip_addr'] = str(ipv6_layer.src)
             else:
-                self.features['dst_ip_addr'] = None
-                self.features['src_ip_addr'] = None
+                self.features['dst_ip_addr'] = str(MISSING_VALUE)
+                self.features['src_ip_addr'] = str(MISSING_VALUE)
             
             # Port features
             self._extract_port_features()
@@ -130,16 +133,16 @@ class BasePacket:
                 self.features['dst_port'] = int(udp_layer.dport)
                 self.features['src_port'] = int(udp_layer.sport)
             else:
-                self.features['dst_port'] = None
-                self.features['src_port'] = None
+                self.features['dst_port'] = MISSING_VALUE
+                self.features['src_port'] = MISSING_VALUE
         except Exception:
-            self.features['dst_port'] = None
-            self.features['src_port'] = None
+            self.features['dst_port'] = MISSING_VALUE
+            self.features['src_port'] = MISSING_VALUE
     
     def _set_default_mac_features(self):
         """Set default values for MAC features when Ethernet layer is not present."""
         for prefix in ['dst_mac', 'src_mac']:
-            self.features[f'{prefix}_addr'] = None
+            self.features[f'{prefix}_addr'] = str(MISSING_VALUE)
             self.features[f'{prefix}_oui'] = 'Unknown'
             self.features[f'{prefix}_ig'] = False
             self.features[f'{prefix}_lg'] = False
@@ -155,13 +158,13 @@ class BasePacket:
             'num_frame': self.frame_number,
             'frame_len': 0,
             'timestamp': self.timestamp,
-            'dst_mac_addr': None,
-            'src_mac_addr': None,
-            'eth_type': 0,
-            'dst_ip_addr': None,
-            'src_ip_addr': None,
-            'dst_port': None,
-            'src_port': None,
+            'dst_mac_addr': str(MISSING_VALUE),
+            'src_mac_addr': str(MISSING_VALUE),
+            'eth_type': MISSING_VALUE,
+            'dst_ip_addr': str(MISSING_VALUE),
+            'src_ip_addr': str(MISSING_VALUE),
+            'dst_port': MISSING_VALUE,
+            'src_port': MISSING_VALUE,
         }
         self.features.update(default_features)
         self._set_default_mac_features()

@@ -77,6 +77,8 @@ Examples:
         parser.add_argument('--multi-folder', action='store_true', help='Process multiple folders with related PCAP files')
         parser.add_argument('-o', '--output', default='Results', help='Output directory')
         parser.add_argument('--separate-layers', action='store_true', help='Create separate L2/L3 CSV files')
+        parser.add_argument('--justlayertwo', action='store_true', help='Extract only Layer 2 features from all packets (MAC addresses, Layer 2 protocols, etc.)')
+        parser.add_argument('--plot', action='store_true', help='Generate visualization plots and charts')
         
         parser.add_argument('--label-ip', action='append', metavar='IP=LABEL', help='Label flows by attacker IP')
         parser.add_argument('--label-mac', action='append', metavar='MAC=LABEL', help='Label flows by attacker MAC')

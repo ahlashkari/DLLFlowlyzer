@@ -503,19 +503,19 @@ class Flow:
                 tlv_counts = [p.get_features()['dtp_tlv_count'] for p in dtp_packets if 'dtp_tlv_count' in p.get_features()]
                 domain_lengths = [p.get_features()['dtp_domain_length'] for p in dtp_packets if 'dtp_domain_length' in p.get_features()]
                 
-                # DTP version statistics (use null if no data)
-                features['dtp_sum_version'] = sum(versions) if versions else None
-                features['dtp_mean_version'] = float(np.mean(versions)) if versions else None
+                # DTP version statistics (use -100 for missing data)
+                features['dtp_sum_version'] = sum(versions) if versions else -100
+                features['dtp_mean_version'] = float(np.mean(versions)) if versions else -100
                 
                 # TLV count statistics
-                features['dtp_sum_tlv_count'] = sum(tlv_counts) if tlv_counts else None
-                features['dtp_mean_tlv_count'] = float(np.mean(tlv_counts)) if tlv_counts else None
-                features['dtp_max_tlv_count'] = max(tlv_counts) if tlv_counts else None
-                features['dtp_min_tlv_count'] = min(tlv_counts) if tlv_counts else None
+                features['dtp_sum_tlv_count'] = sum(tlv_counts) if tlv_counts else -100
+                features['dtp_mean_tlv_count'] = float(np.mean(tlv_counts)) if tlv_counts else -100
+                features['dtp_max_tlv_count'] = max(tlv_counts) if tlv_counts else -100
+                features['dtp_min_tlv_count'] = min(tlv_counts) if tlv_counts else -100
                 
                 # Domain length statistics
-                features['dtp_sum_domain_length'] = sum(domain_lengths) if domain_lengths else None
-                features['dtp_mean_domain_length'] = float(np.mean(domain_lengths)) if domain_lengths else None
+                features['dtp_sum_domain_length'] = sum(domain_lengths) if domain_lengths else -100
+                features['dtp_mean_domain_length'] = float(np.mean(domain_lengths)) if domain_lengths else -100
                 
                 # Frame type counts (count features should be 0, not null when no data)
                 isl_count = sum(1 for p in dtp_packets if p.get_features().get('dtp_frame_isl') is True)
@@ -523,7 +523,7 @@ class Flow:
                 
                 features['dtp_frame_isl_count'] = isl_count
                 features['dtp_frame_802dot1q_count'] = dot1q_count
-                features['dtp_frame_isl_ratio'] = (isl_count / len(dtp_packets)) * 100 if dtp_packets else None
+                features['dtp_frame_isl_ratio'] = (isl_count / len(dtp_packets)) * 100 if dtp_packets else -100
                 
             else:
                 self._set_default_dtp_aggregated_features(features)

@@ -63,6 +63,12 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 
 ## Recent Updates (2025)
 
+### 🚀 NEW: --justlayertwo Option (September 2025)
+- **🎯 Layer 2-Only Analysis**: New specialized mode that extracts only Layer 2 features from all packets (MAC addresses, Layer 2 protocols, frame analysis)
+- **⚡ Enhanced Performance**: Optimized processing for Layer 2-focused security analysis and network infrastructure monitoring
+- **📊 Specialized Visualization**: Dedicated Layer 2 charts for MAC analysis, protocol distribution, and security indicators
+- **🔍 Attack Detection**: Perfect for detecting ARP spoofing, MAC flooding, VLAN attacks, and other Layer 2 threats
+
 ### Critical Layer 2 Feature Extraction Fixes (September 2025)
 - **🚨 MAJOR FIX**: Completely resolved Layer 2 feature extraction issues - CDP, DHCP, and ISL features now contain actual extracted values instead of empty/null data
 - **🔧 Consistent Missing Values**: Implemented global -100 missing value standard across ALL output files (layer2, layer3, combined)
@@ -116,6 +122,9 @@ python -m src.flowlyzer.main -i Input/
 
 # Generate visualization plots
 python -m src.flowlyzer.main -i Input/ --plot
+
+# Layer 2-only analysis (NEW!)
+python -m src.flowlyzer.main -i Input/ --justlayertwo --plot
 ```
 
 ### Multi-Folder Processing
@@ -130,18 +139,33 @@ python -m src.flowlyzer.main -i Input_Directory --multi-folder --separate-layers
 python -m src.flowlyzer.main -i Input_Directory --multi-folder --label-file attack_config.txt
 ```
 
-### Layer Separation
+### Layer Separation & Layer 2-Only Analysis
 ```bash
 # Separate Layer 2 and Layer 3 flows
 python -m src.flowlyzer.main -i Input/ --separate-layers
 
-# Custom output filename
-python -m src.flowlyzer.main -i Input/ --csv-file my_features
+# Layer 2-only analysis with specialized features
+python -m src.flowlyzer.main -i Input/ --justlayertwo
+
+# Layer 2 analysis with visualization and custom output
+python -m src.flowlyzer.main -i Input/ --justlayertwo --plot --csv-file layer2_analysis
 ```
 
 ### Attack Labeling
 
-#### Enhanced JSON Configuration (New!)
+#### Layer 2 Attack Detection (NEW!)
+```bash
+# Layer 2-only analysis with attack detection
+python -m src.flowlyzer.main -i arp_attack_data/ --justlayertwo --label-config arp_attack.json --plot
+
+# MAC flooding detection
+python -m src.flowlyzer.main -i cam_flood_data/ --justlayertwo --label-mac "aa:bb:cc:dd:ee:ff=MAC Flooder" --plot
+
+# VLAN hopping attack analysis
+python -m src.flowlyzer.main -i vlan_attack_data/ --justlayertwo --label-time "14:00-15:00=VLAN Attack" --plot
+```
+
+#### Enhanced JSON Configuration
 ```bash
 # Layer 2-specific attack labeling with pre-configured files
 python -m src.flowlyzer.main -i arp_attack_data/ --label-config labels/arp_spoof_labels.json --separate-layers
@@ -219,19 +243,30 @@ mac: 19:1A:12:1C:FF:12 ip: 192.168.1.19 DHCP Starvation
 
 ## Output Files
 
-### CSV Files
-- `features_combined_YYYYMMDD_HHMMSS.csv` - All flows with 228+ features
+### Standard Mode CSV Files
+- `features_combined_YYYYMMDD_HHMMSS.csv` - All flows with 282+ features
 - `features_layer2_YYYYMMDD_HHMMSS.csv` - Layer 2 flows only (optional)
 - `features_layer3_YYYYMMDD_HHMMSS.csv` - Layer 3 flows only (optional)
 
-### Visualization Files (Optional)
+### Layer 2-Only Mode (--justlayertwo) Files
+- `layer2_features_YYYYMMDD_HHMMSS.csv` - Layer 2-only features (MAC addresses, protocols, frame analysis)
+- `layer2_statistics_YYYYMMDD_HHMMSS.csv` - Layer 2-specific statistics
+
+### Standard Visualization Files (--plot)
 - Protocol distribution charts
 - Flow characteristics analysis
 - Layer 2 protocol detailed breakdown
 - Attack distribution and timeline plots
 - Bidirectional traffic analysis
 
-## Feature Categories (228+ Total)
+### Layer 2-Only Visualization Files (--justlayertwo --plot)
+- MAC address analysis charts
+- Layer 2 protocol distribution and activity
+- Frame size and timing analysis
+- Security indicator visualizations
+- Layer 2 feature correlation heatmaps
+
+## Feature Categories (282+ Total)
 
 ### Basic Flow Features (15)
 - Connection identifiers, protocol types, endpoint information
@@ -415,6 +450,7 @@ python -m src.flowlyzer.main -i Input/ --multi-folder \
 - **Memory Optimization**: Better handling of large datasets with NaN values
 - **Enhanced Logging**: More detailed CDP detection and protocol statistics
 
-See `CRITICAL_LAYER2_FIXES_SEP2025.md` for comprehensive technical details on the latest Layer 2 fixes.
+See `ADVANCED_LAYER2_UPDATE_SEP2025.md` for complete documentation on the new --justlayertwo option and enhancements.
+See `CRITICAL_LAYER2_FIXES_SEP2025.md` for comprehensive technical details on the Layer 2 fixes.
 See `BUG_FIXES_AND_IMPROVEMENTS_AUG2025.md` for previous stability improvements.
 See `PROJECT_STRUCTURE.md` for detailed technical documentation.

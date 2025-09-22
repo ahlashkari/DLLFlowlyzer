@@ -22,20 +22,38 @@ def load_folder_labeling_config(folder_path: str) -> dict:
     import json
     folder_path = Path(folder_path)
     
-    # First try to load JSON file
+    # First try to load JSON file (highest priority)
     labeling_json_file = folder_path / "labeling.json"
     if labeling_json_file.exists():
         try:
             with open(labeling_json_file, 'r') as f:
                 labeling_config = json.load(f)
-            print(f"Loaded JSON labeling config from {labeling_json_file}")
+            print(f"✅ Loaded JSON labeling config from {labeling_json_file}")
+            
+            # Validate required structure
+            if not isinstance(labeling_config, dict):
+                print(f"❌ JSON labeling config must be a dictionary, got {type(labeling_config)}")
+                return None
+            
+            # Set default benign label if no labeling rules found
+            has_labeling_rules = (
+                labeling_config.get('ip_attacks', []) or
+                labeling_config.get('mac_attacks', []) or 
+                labeling_config.get('time_attacks', [])
+            )
+            
+            if not has_labeling_rules:
+                print(f"📝 No labeling rules found in JSON config - all traffic will be labeled as 'Benign'")
+            
             return labeling_config
         except Exception as e:
-            print(f"Error loading JSON labeling config from {labeling_json_file}: {e}")
+            print(f"❌ Error loading JSON labeling config from {labeling_json_file}: {e}")
+            print(f"📋 Falling back to text file labeling...")
     
     # Fallback to text file
     labeling_txt_file = folder_path / "labeling.txt"
     if not labeling_txt_file.exists():
+        print(f"📁 No labeling config found in {folder_path} - all traffic will be labeled as 'Benign'")
         return None
     
     try:
@@ -69,11 +87,12 @@ def load_folder_labeling_config(folder_path: str) -> dict:
                     'time_ranges': time_ranges
                 })
         
-        print(f"Loaded text labeling config from {labeling_txt_file}")
+        print(f"✅ Loaded text labeling config from {labeling_txt_file}")
         return labeling_config
     
     except Exception as e:
-        print(f"Error loading folder labeling config from {labeling_txt_file}: {e}")
+        print(f"❌ Error loading text labeling config from {labeling_txt_file}: {e}")
+        print(f"📝 All traffic will be labeled as 'Benign'")
         return None
 
 
