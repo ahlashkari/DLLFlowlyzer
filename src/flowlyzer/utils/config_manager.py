@@ -67,8 +67,7 @@ class ConfigManager:
             epilog="""
 Examples:
   %(prog)s -i single_file.pcap
-  %(prog)s -i Input/ --separate-layers
-  %(prog)s -i Input/ --justlayertwo --separate-layers
+  %(prog)s -i Input/
   %(prog)s -i Input/ --multi-folder
   %(prog)s -i Input/ --label-ip "192.168.1.100=ARP Spoofing"
             """
@@ -77,8 +76,6 @@ Examples:
         parser.add_argument('-i', '--input', required=True, help='Input PCAP file or directory')
         parser.add_argument('--multi-folder', action='store_true', help='Process multiple folders with related PCAP files')
         parser.add_argument('-o', '--output', default='Results', help='Output directory')
-        parser.add_argument('--separate-layers', action='store_true', help='Create separate L2/L3 CSV files')
-        parser.add_argument('--justlayertwo', action='store_true', help='Extract only Layer 2 features from all packets (MAC addresses, Layer 2 protocols, etc.)')
         
         parser.add_argument('--label-ip', action='append', metavar='IP=LABEL', help='Label flows by attacker IP')
         parser.add_argument('--label-mac', action='append', metavar='MAC=LABEL', help='Label flows by attacker MAC')
@@ -315,14 +312,8 @@ Examples:
                 config['enable_batching'] = False
             else:
                 config['enable_batching'] = True
-            if self.args.separate_layers:
-                config['separate_l2_l3'] = True
             if hasattr(self.args, 'multi_folder') and self.args.multi_folder:
                 config['multi_folder'] = True
-            if hasattr(self.args, 'justlayertwo') and self.args.justlayertwo:
-                config['justlayertwo'] = True
-            else:
-                config['justlayertwo'] = False
             if self.args.output != 'Results':
                 config['output_dir'] = self.args.output
         
@@ -480,8 +471,6 @@ Examples:
             print(f"Input: {self.args.input}")
             print(f"Output: {self.args.output}")
             print(f"Multi-folder Mode: {getattr(self.args, 'multi_folder', False)}")
-            print(f"Just Layer 2 Mode: {getattr(self.args, 'justlayertwo', False)}")
-            print(f"Separate Layers: {self.args.separate_layers}")
             print(f"Flow Timeout: {self.args.flow_timeout}s")
             print(f"Max Flows: {self.args.max_flows}")
             print(f"Queue Size: {self.args.queue_size}")
