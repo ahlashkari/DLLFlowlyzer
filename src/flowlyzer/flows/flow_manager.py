@@ -12,6 +12,7 @@ from ..packets.base_packet import BasePacket
 from ..packets.tcp_packet import TCPPacket
 from ..packets.udp_packet import UDPPacket
 from ..packets.layer2_packet import STPPacket, CDPPacket, LLDPPacket, ARPPacket, DHCPPacket
+from ..packets.fixed_layer2_packet import FixedSTPPacket, FixedCDPPacket, FixedDHCPPacket, FixedARPPacket, FixedISLPacket
 from ..packets.llc_packet import LLCPacket, VTPPacket, DTPPacket, ISLPacket, LoopPacket
 
 
@@ -109,17 +110,17 @@ class FlowManager:
             
             # Check for Layer 2 protocols
             elif scapy_packet.haslayer('STP'):
-                return STPPacket(scapy_packet, frame_number)
+                return FixedSTPPacket(scapy_packet, frame_number)
             
             elif scapy_packet.haslayer('ARP'):
-                return ARPPacket(scapy_packet, frame_number)
+                return FixedARPPacket(scapy_packet, frame_number)
             
             # Check for LLC frames
             elif scapy_packet.haslayer('LLC'):
                 # Check for specific LLC-based protocols
                 if self._is_cdp_packet(scapy_packet):
                     self.logger.debug(f"CDP packet detected at frame {frame_number}")
-                    return CDPPacket(scapy_packet, frame_number)
+                    return FixedCDPPacket(scapy_packet, frame_number)
                 elif self._is_lldp_packet(scapy_packet):
                     self.logger.debug(f"LLDP packet detected at frame {frame_number}")
                     return LLDPPacket(scapy_packet, frame_number)
@@ -131,7 +132,7 @@ class FlowManager:
                     return VTPPacket(scapy_packet, frame_number)
                 elif self._is_isl_packet(scapy_packet):
                     self.logger.debug(f"ISL packet detected at frame {frame_number}")
-                    return ISLPacket(scapy_packet, frame_number)
+                    return FixedISLPacket(scapy_packet, frame_number)
                 else:
                     return LLCPacket(scapy_packet, frame_number)
             
@@ -143,11 +144,11 @@ class FlowManager:
             # Check for CDP by MAC address and payload (enhanced detection)
             elif self._is_cdp_packet(scapy_packet):
                 self.logger.debug(f"CDP packet detected by enhanced analysis at frame {frame_number}")
-                return CDPPacket(scapy_packet, frame_number)
+                return FixedCDPPacket(scapy_packet, frame_number)
             
             # Check for ISL by characteristics
             elif self._is_isl_packet(scapy_packet):
-                return ISLPacket(scapy_packet, frame_number)
+                return FixedISLPacket(scapy_packet, frame_number)
             
             # Check for DTP by MAC
             elif self._is_dtp_packet(scapy_packet):

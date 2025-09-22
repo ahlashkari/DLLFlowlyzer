@@ -40,7 +40,10 @@ class UDPPacket(BasePacket):
             if (self.features.get('src_port') in [67, 68] or self.features.get('dst_port') in [67, 68]) and \
                (self.packet.haslayer('DHCP') or self.packet.haslayer('BOOTP')):
                 self.features['is_dhcp'] = True
-                self._extract_dhcp_features()
+                # Use the fixed DHCP parsing instead
+                from ..packets.fixed_layer2_packet import parse_dhcp_packet
+                dhcp_features = parse_dhcp_packet(self.packet)
+                self.features.update(dhcp_features)
             else:
                 self.features['is_dhcp'] = False
                 

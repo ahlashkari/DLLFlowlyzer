@@ -1,6 +1,6 @@
 # DLL Flowlyzer
 
-Comprehensive DataLink Layer Network Flow Analyzer for extracting 282 features from PCAP files for machine learning analysis. Specializes in Layer 2 protocol analysis with PyShark-enhanced deep protocol inspection and attack detection capabilities.
+Comprehensive DataLink Layer Network Flow Analyzer for extracting 282 features from PCAP files for machine learning analysis. Specializes in Layer 2 protocol analysis with direct packet parsing and robust attack detection capabilities using consistent -100 missing value handling.
 
 ## Quick Start
 
@@ -63,6 +63,16 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 
 ## Recent Updates (2025)
 
+### Critical Layer 2 Feature Extraction Fixes (September 2025)
+- **🚨 MAJOR FIX**: Completely resolved Layer 2 feature extraction issues - CDP, DHCP, and ISL features now contain actual extracted values instead of empty/null data
+- **🔧 Consistent Missing Values**: Implemented global -100 missing value standard across ALL output files (layer2, layer3, combined)
+- **⚡ ISL Aggregation Fixed**: Added missing ISL flow aggregation functionality with 17 comprehensive ISL features
+- **📊 Enhanced Visualization**: Fixed plotting system to properly handle -100 missing values in all charts
+- **📁 JSON Folder Labeling**: Enhanced per-folder labeling with JSON priority over text files
+- **🎯 Direct Packet Parsing**: Replaced broken PyShark integration with robust direct packet parsing for all Layer 2 protocols
+
+See `CRITICAL_LAYER2_FIXES_SEP2025.md` for comprehensive technical details.
+
 ### Critical Bug Fixes & New Features (August 2025)
 - **Fixed Dictionary Iteration Error**: Resolved runtime crashes during flow cleanup that caused incomplete processing
 - **Enhanced DHCP Detection Accuracy**: Fixed false positive DHCP classification - reduced incorrect DHCP flows from thousands to actual DHCP packets only
@@ -74,19 +84,19 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 
 See `BUG_FIXES_AND_IMPROVEMENTS_AUG2025.md` for detailed technical information.
 
-### PyShark Integration Enhancement
-- **Deep Protocol Inspection**: Real protocol feature extraction using PyShark instead of default values
-- **Enhanced Protocol Support**: STP, CDP, ARP, DHCP, DTP with actual protocol field parsing
-- **Null Value Handling**: Missing protocol features now show as `null` instead of default values (0, '')
-- **Global Percentage Calculations**: Protocol percentages now calculated against total Layer 2 packets across all flows
-- **Protocol-First Naming**: All features renamed to protocol-first format (e.g., `arp_mean_hw_type` instead of `mean_arp_hw_type`)
+### Direct Packet Parsing Enhancement (Latest)
+- **Fixed Layer 2 Extraction**: Replaced broken PyShark integration with direct packet parsing for reliable feature extraction
+- **Real Protocol Values**: CDP, DHCP, ISL, STP, and ARP features now extract actual protocol field values instead of defaults
+- **Consistent Missing Values**: All missing protocol features now use -100 consistently across layer2, layer3, and combined output files
+- **Complete ISL Support**: Added missing ISL aggregation functionality with comprehensive VLAN and frame analysis
+- **Enhanced Detection**: Multi-method protocol detection using SNAP OUI/PID analysis, payload structure validation, and layer presence confirmation
 
-### New Protocol Features
-- **STP**: Real message age, bridge IDs, timing values from BPDU parsing
-- **CDP**: Actual device information, capabilities, power consumption from TLV analysis
-- **ARP**: Hardware/protocol types, addresses, operation codes from ARP headers
-- **DHCP**: Transaction IDs, lease times, options from DHCP/BOOTP parsing
-- **DTP**: Domain information, frame types, TLV data from DTP analysis
+### Fixed Protocol Features (September 2025)
+- **CDP**: Complete TLV parsing with actual device information, capabilities, and power data from direct packet analysis
+- **DHCP**: Real BOOTP fields, transaction IDs, flags, and options from enhanced Scapy integration  
+- **ISL**: NEW - VLAN IDs, frame types, user bits, and BPDU flags from direct frame parsing
+- **STP**: Actual timing values, bridge IDs, and topology flags from BPDU analysis
+- **ARP**: Real hardware/protocol types, addresses, and operation codes from header parsing
 
 ### Enhanced Feature Set
 - **Total Features**: Increased from 240+ to 282 features per flow
@@ -181,9 +191,9 @@ python -m src.flowlyzer.main -i Input/ --csv-batch-size 15 --batch-size 30
 # Disable batching for small datasets
 python -m src.flowlyzer.main -i Input/ --disable-batching
 
-# Configure missing value handling (New!)
+# Configure missing value handling (Fixed!)
 python -m src.flowlyzer.main -i Input/ --missing-value nan    # Use NaN for missing features
-python -m src.flowlyzer.main -i Input/ --missing-value -100   # Use -100 for missing features (default)
+python -m src.flowlyzer.main -i Input/ --missing-value -100   # Use -100 for missing features (default and recommended)
 ```
 
 ## Text File Labeling Format
@@ -385,25 +395,26 @@ python -m src.flowlyzer.main -i Input/ --multi-folder \
 - **Enhanced Multi-folder Error Handling**: Improved resilience when processing multiple directories
 - **Better Data Quality**: Replace zero values with NaN for missing packet data to improve ML model accuracy
 
-### Null Value Fixes and Feature Quality (Latest)
-- **Fixed Protocol Feature Extraction**: Resolved critical issue where CDP, ARP, STP, and DHCP packets were detected but features appeared as null/empty in CSV output
-- **Enhanced CDP Features**: Fixed flow aggregation issue where CDP flows showed `num_cdp_frame = 0` despite detection
-- **Robust ARP Parsing**: Multiple fallback methods for ARP feature extraction when layer detection fails
-- **Complete DHCP Fields**: Added missing `dhcp_op` field and enhanced DHCP feature completeness
-- **Improved Statistical Features**: Replaced uninformative std deviation ratios with meaningful protocol count ratios
-- **Enhanced Default Values**: Protocol-specific realistic defaults instead of zeros/nulls for better ML analysis
+### Layer 2 Feature Extraction - Completely Fixed (September 2025)
+- **🎯 CRITICAL FIX**: Completely resolved the core issue where Layer 2 features (CDP, DHCP, ISL) appeared empty/null despite packet detection
+- **Direct Packet Parsing**: Replaced broken PyShark integration with robust direct parsing using SNAP OUI/PID analysis and raw byte processing
+- **ISL Aggregation Added**: Fixed missing ISL flow aggregation functionality - ISL features now properly calculated across flows
+- **Consistent -100 Values**: All missing values now consistently use -100 across layer2, layer3, and combined CSV outputs
+- **Enhanced Flow Detection**: Multi-method protocol detection ensures packets are properly classified and features extracted
+- **Fixed Visualization**: All charts and plots now properly handle -100 missing values with automatic filtering
 
-### Enhanced CDP Packet Analysis
-- **PyShark Integration**: Dual-mode CDP extraction using PyShark with native fallback
-- **Comprehensive Feature Extraction**: Enhanced TLV parsing for device info, capabilities, VLAN data, and power management
-- **Improved Protocol Detection**: Better separation between CDP, DTP, and LLDP packets
-- **Automatic Fallback**: Gracefully handles missing PyShark dependency
+### Enhanced Layer 2 Protocol Analysis (Fixed)
+- **Direct Parsing**: Robust packet parsing without PyShark dependency using raw byte analysis
+- **Complete Feature Extraction**: All Layer 2 protocols now extract actual field values instead of defaults
+- **ISL Protocol Fixed**: Added comprehensive ISL parsing with VLAN analysis and frame type detection
+- **Reliable Detection**: Multi-method protocol detection using SNAP headers, payload analysis, and structure validation
+- **Production Ready**: All Layer 2 features now provide meaningful data for machine learning analysis
 
 ### Performance and Reliability
 - **Robust Error Handling**: Processing continues even when individual files fail
 - **Memory Optimization**: Better handling of large datasets with NaN values
 - **Enhanced Logging**: More detailed CDP detection and protocol statistics
 
-See `BUG_FIXES_IMPROVEMENTS_2025.md` for detailed technical information about recent improvements.
-See `NULL_VALUE_FIXES_2025.md` for comprehensive details on the latest feature extraction improvements.
-See PROJECT_STRUCTURE.md for detailed technical documentation.
+See `CRITICAL_LAYER2_FIXES_SEP2025.md` for comprehensive technical details on the latest Layer 2 fixes.
+See `BUG_FIXES_AND_IMPROVEMENTS_AUG2025.md` for previous stability improvements.
+See `PROJECT_STRUCTURE.md` for detailed technical documentation.

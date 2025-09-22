@@ -95,9 +95,11 @@ class FlowlyzerPlotter:
                     axes[0, 2].text(0.5, 0.5, 'No Layer 2 data', ha='center', va='center')
                     axes[0, 2].set_title('Layer 2 Protocol Packet Counts')
             
-            # 4. Frame size distribution
+            # 4. Frame size distribution (filter out -100 values)
             if not flows_df.empty and 'mean_frame_len' in flows_df.columns:
-                frame_sizes = flows_df['mean_frame_len'].dropna()
+                frame_sizes = flows_df['mean_frame_len']
+                # Filter out missing values (-100) and NaN
+                frame_sizes = frame_sizes[(frame_sizes != -100) & (frame_sizes.notna())]
                 if len(frame_sizes) > 0:
                     axes[1, 0].hist(frame_sizes, bins=50, alpha=0.7, edgecolor='black')
                     axes[1, 0].set_title('Frame Size Distribution')
@@ -162,18 +164,21 @@ class FlowlyzerPlotter:
             # Select numeric columns only
             numeric_cols = flows_df.select_dtypes(include=[np.number]).columns
             
-            # Remove highly sparse columns (>90% zeros)
+            # Remove highly sparse columns (>90% missing values)
             dense_cols = []
             for col in numeric_cols:
-                if (flows_df[col] != 0).sum() / len(flows_df) > 0.1:
+                # Filter out both zeros and -100 (missing values)
+                valid_data = flows_df[col][(flows_df[col] != 0) & (flows_df[col] != -100) & (flows_df[col].notna())]
+                if len(valid_data) / len(flows_df) > 0.1:
                     dense_cols.append(col)
             
             if len(dense_cols) < 2:
                 self.logger.warning("Not enough dense numeric columns for correlation analysis")
                 return ""
             
-            # Calculate correlation matrix
-            corr_matrix = flows_df[dense_cols].corr()
+            # Calculate correlation matrix (replace -100 with NaN for correlation calculation)
+            correlation_data = flows_df[dense_cols].replace(-100, np.nan)
+            corr_matrix = correlation_data.corr()
             
             # Create heatmap
             plt.figure(figsize=(20, 16))
@@ -240,8 +245,8 @@ class FlowlyzerPlotter:
                     sample_size = min(50, len(flows_df))
                     sampled_flows = flows_df.sample(n=sample_size, random_state=42)
                     
-                    # Normalize features for better visualization
-                    feature_data = sampled_flows[l2_feature_cols].fillna(0)
+                    # Normalize features for better visualization (handle -100 missing values)
+                    feature_data = sampled_flows[l2_feature_cols].replace(-100, 0).fillna(0)
                     if len(feature_data.columns) > 0 and len(feature_data) > 0:
                         # Normalize each column to 0-1 range
                         normalized_data = (feature_data - feature_data.min()) / (feature_data.max() - feature_data.min() + 1e-8)
@@ -386,10 +391,16 @@ class FlowlyzerPlotter:
             if not flows_df.empty and 'sum_stp_msg_age' in flows_df.columns and 'stp_age_div_max_age' in flows_df.columns:
                 stp_flows = flows_df[flows_df['num_stp_frame'] > 0]
                 if len(stp_flows) > 0:
-                    axes[0, 0].scatter(stp_flows['sum_stp_msg_age'], stp_flows['stp_age_div_max_age'], alpha=0.6)
-                    axes[0, 0].set_title('STP Message Age Analysis')
-                    axes[0, 0].set_xlabel('Total Message Age')
-                    axes[0, 0].set_ylabel('Age/Max Age Ratio')
+                    # Filter out -100 missing values
+                    valid_stp = stp_flows[(stp_flows['sum_stp_msg_age'] != -100) & (stp_flows['stp_age_div_max_age'] != -100)]
+                    if len(valid_stp) > 0:
+                        axes[0, 0].scatter(valid_stp['sum_stp_msg_age'], valid_stp['stp_age_div_max_age'], alpha=0.6)
+                        axes[0, 0].set_title('STP Message Age Analysis')
+                        axes[0, 0].set_xlabel('Total Message Age')
+                        axes[0, 0].set_ylabel('Age/Max Age Ratio')
+                    else:
+                        axes[0, 0].text(0.5, 0.5, 'No valid STP data', ha='center', va='center')
+                        axes[0, 0].set_title('STP Message Age Analysis')
                 else:
                     axes[0, 0].text(0.5, 0.5, 'No STP flows', ha='center', va='center')
                     axes[0, 0].set_title('STP Message Age Analysis')
@@ -420,13 +431,19 @@ class FlowlyzerPlotter:
             # 3. ARP operation type distribution
             if not flows_df.empty:
                 arp_flows = flows_df[flows_df['num_arp_frame'] > 0]
-                if len(arp_flows) > 0 and 'arp_type' in flows_df.columns:
-                    arp_types = arp_flows['arp_type'].value_counts()
-                    type_labels = {1: 'Request', 2: 'Reply', 3: 'RARP Request', 4: 'RARP Reply'}
-                    
-                    labels = [type_labels.get(t, f'Type {t}') for t in arp_types.index]
-                    axes[1, 0].pie(list(arp_types.values), labels=labels, autopct='%1.1f%%', startangle=90)
-                    axes[1, 0].set_title('ARP Operation Types')
+                if len(arp_flows) > 0 and 'arp_opcode' in flows_df.columns:
+                    # Filter out -100 missing values
+                    valid_arp = arp_flows[arp_flows['arp_opcode'] != -100]
+                    if len(valid_arp) > 0:
+                        arp_types = valid_arp['arp_opcode'].value_counts()
+                        type_labels = {1: 'Request', 2: 'Reply', 3: 'RARP Request', 4: 'RARP Reply'}
+                        
+                        labels = [type_labels.get(t, f'Type {t}') for t in arp_types.index]
+                        axes[1, 0].pie(list(arp_types.values), labels=labels, autopct='%1.1f%%', startangle=90)
+                        axes[1, 0].set_title('ARP Operation Types')
+                    else:
+                        axes[1, 0].text(0.5, 0.5, 'No valid ARP data', ha='center', va='center')
+                        axes[1, 0].set_title('ARP Operation Types')
                 else:
                     axes[1, 0].text(0.5, 0.5, 'No ARP flows', ha='center', va='center')
                     axes[1, 0].set_title('ARP Operation Types')
@@ -435,21 +452,27 @@ class FlowlyzerPlotter:
             if not flows_df.empty:
                 dhcp_flows = flows_df[flows_df['num_dhcp_frame'] > 0]
                 if len(dhcp_flows) > 0 and 'dhcp_message_type' in flows_df.columns:
-                    dhcp_types = dhcp_flows['dhcp_message_type'].value_counts()
-                    type_labels = {1: 'DISCOVER', 2: 'OFFER', 3: 'REQUEST', 4: 'DECLINE', 
-                                  5: 'ACK', 6: 'NAK', 7: 'RELEASE', 8: 'INFORM'}
-                    
-                    labels = [type_labels.get(t, f'Type {t}') for t in dhcp_types.index if t > 0]
-                    values = [count for t, count in dhcp_types.items() if t > 0]
-                    
-                    if labels and values:
-                        axes[1, 1].bar(labels, values)
-                        axes[1, 1].set_title('DHCP Message Types')
-                        axes[1, 1].set_xlabel('Message Type')
-                        axes[1, 1].set_ylabel('Count')
-                        axes[1, 1].tick_params(axis='x', rotation=45)
+                    # Filter out -100 missing values
+                    valid_dhcp = dhcp_flows[dhcp_flows['dhcp_message_type'] != -100]
+                    if len(valid_dhcp) > 0:
+                        dhcp_types = valid_dhcp['dhcp_message_type'].value_counts()
+                        type_labels = {1: 'DISCOVER', 2: 'OFFER', 3: 'REQUEST', 4: 'DECLINE', 
+                                      5: 'ACK', 6: 'NAK', 7: 'RELEASE', 8: 'INFORM'}
+                        
+                        labels = [type_labels.get(t, f'Type {t}') for t in dhcp_types.index if t > 0]
+                        values = [count for t, count in dhcp_types.items() if t > 0]
+                        
+                        if labels and values:
+                            axes[1, 1].bar(labels, values)
+                            axes[1, 1].set_title('DHCP Message Types')
+                            axes[1, 1].set_xlabel('Message Type')
+                            axes[1, 1].set_ylabel('Count')
+                            axes[1, 1].tick_params(axis='x', rotation=45)
+                        else:
+                            axes[1, 1].text(0.5, 0.5, 'No DHCP message data', ha='center', va='center')
+                            axes[1, 1].set_title('DHCP Message Types')
                     else:
-                        axes[1, 1].text(0.5, 0.5, 'No DHCP message data', ha='center', va='center')
+                        axes[1, 1].text(0.5, 0.5, 'No valid DHCP data', ha='center', va='center')
                         axes[1, 1].set_title('DHCP Message Types')
                 else:
                     axes[1, 1].text(0.5, 0.5, 'No DHCP flows', ha='center', va='center')
@@ -593,11 +616,14 @@ class FlowlyzerPlotter:
                 if len(benign_flows) > 0 and len(attack_flows) > 0:
                     # Compare mean frame length
                     if 'mean_frame_len' in flows_df.columns:
-                        benign_frame_len = benign_flows['mean_frame_len'].dropna()
-                        attack_frame_len = attack_flows['mean_frame_len'].dropna()
+                        benign_frame_len = benign_flows['mean_frame_len'][(benign_flows['mean_frame_len'] != -100) & (benign_flows['mean_frame_len'].notna())]
+                        attack_frame_len = attack_flows['mean_frame_len'][(attack_flows['mean_frame_len'] != -100) & (attack_flows['mean_frame_len'].notna())]
                         
-                        axes[0, 1].hist([benign_frame_len, attack_frame_len], 
-                                       label=['Benign', 'Attack'], alpha=0.7, bins=30)
+                        if len(benign_frame_len) > 0 and len(attack_frame_len) > 0:
+                            axes[0, 1].hist([benign_frame_len, attack_frame_len], 
+                                           label=['Benign', 'Attack'], alpha=0.7, bins=30)
+                        else:
+                            axes[0, 1].text(0.5, 0.5, 'No valid frame length data', ha='center', va='center')
                         axes[0, 1].set_title('Frame Length: Benign vs Attack')
                         axes[0, 1].set_xlabel('Mean Frame Length (bytes)')
                         axes[0, 1].set_ylabel('Count')
