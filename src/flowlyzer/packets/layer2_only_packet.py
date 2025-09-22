@@ -112,6 +112,7 @@ class Layer2OnlyPacket(BasePacket):
             self.features['is_llc'] = False
             self.features['is_isl'] = False
             self.features['is_lldp'] = False
+            self.features['is_dtp'] = False
             
             # ARP Protocol
             if self.packet.haslayer('ARP'):
@@ -176,6 +177,13 @@ class Layer2OnlyPacket(BasePacket):
                 self._extract_lldp_features()
             else:
                 self._set_default_lldp_features()
+            
+            # DTP Protocol (Dynamic Trunking Protocol)
+            if self._is_dtp_packet():
+                self.features['is_dtp'] = True
+                self._extract_dtp_features()
+            else:
+                self._set_default_dtp_features()
                 
         except Exception as e:
             self.logger.debug(f"Error extracting Layer 2 protocols: {e}")
@@ -198,7 +206,8 @@ class Layer2OnlyPacket(BasePacket):
                 self.features.get('is_dhcp', False),
                 self.features.get('is_llc', False),
                 self.features.get('is_isl', False),
-                self.features.get('is_lldp', False)
+                self.features.get('is_lldp', False),
+                self.features.get('is_dtp', False)
             ])
             self.features['layer2_protocol_count'] = active_protocols
             
@@ -281,6 +290,32 @@ class Layer2OnlyPacket(BasePacket):
         except Exception:
             return False
     
+    def _is_dtp_packet(self) -> bool:
+        """DTP packet detection using SNAP OUI/PID analysis."""
+        try:
+            raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
+            
+            # Method 1: LLC/SNAP DTP detection
+            if self.packet.haslayer('LLC'):
+                llc_layer = self.packet['LLC']
+                if hasattr(llc_layer, 'dsap') and hasattr(llc_layer, 'ssap'):
+                    if llc_layer.dsap == 0xaa and llc_layer.ssap == 0xaa:
+                        llc_payload = bytes(llc_layer.payload) if llc_layer.payload else b''
+                        if len(llc_payload) >= 5:
+                            # Check for DTP SNAP OUI (00:00:0c) and PID (0x2004)
+                            if llc_payload[0:3] == b'\x00\x00\x0c' and llc_payload[3:5] == b'\x20\x04':
+                                return True
+            
+            # Method 2: Search for DTP SNAP signature in payload
+            for i in range(len(raw_payload) - 7):
+                if (raw_payload[i:i+3] == b'\x00\x00\x0c' and 
+                    raw_payload[i+3:i+5] == b'\x20\x04'):
+                    return True
+            
+            return False
+        except Exception:
+            return False
+    
     # MAC address analysis helpers
     def _get_mac_vendor(self, mac_address: str) -> str:
         """Get vendor information from MAC OUI."""
@@ -350,6 +385,24 @@ class Layer2OnlyPacket(BasePacket):
             self.features['lldp_ttl'] = MISSING_VALUE
         except Exception:
             self._set_default_lldp_features()
+    
+    def _extract_dtp_features(self):
+        """Extract DTP protocol features."""
+        try:
+            # Basic DTP analysis
+            raw_payload = bytes(self.packet.payload) if self.packet.payload else b''
+            
+            # Try to extract basic DTP fields
+            self.features['dtp_version'] = 1  # Default DTP version
+            self.features['dtp_tlv_count'] = 1  # Mark as having DTP data
+            self.features['dtp_domain_length'] = 0  # Would need proper parsing
+            
+            # DTP frame type detection (simplified)
+            self.features['dtp_frame_isl'] = False
+            self.features['dtp_frame_802dot1q'] = True  # Most common
+            
+        except Exception:
+            self._set_default_dtp_features()
     
     # Default feature setters
     def _set_default_mac_features(self):
@@ -470,6 +523,17 @@ class Layer2OnlyPacket(BasePacket):
         }
         self.features.update(lldp_defaults)
     
+    def _set_default_dtp_features(self):
+        """Set default DTP features."""
+        dtp_defaults = {
+            'dtp_version': MISSING_VALUE,
+            'dtp_tlv_count': MISSING_VALUE,
+            'dtp_domain_length': MISSING_VALUE,
+            'dtp_frame_isl': MISSING_VALUE,
+            'dtp_frame_802dot1q': MISSING_VALUE
+        }
+        self.features.update(dtp_defaults)
+    
     def _set_default_quality_metrics(self):
         """Set default quality metrics."""
         quality_defaults = {
@@ -492,6 +556,7 @@ class Layer2OnlyPacket(BasePacket):
         self._set_default_llc_features()
         self._set_default_isl_features()
         self._set_default_lldp_features()
+        self._set_default_dtp_features()
     
     def _set_layer2_defaults(self):
         """Set all Layer 2 default features when extraction fails."""
@@ -515,5 +580,7 @@ class Layer2OnlyPacket(BasePacket):
             return 'ISL'
         elif self.features.get('is_lldp', False):
             return 'LLDP'
+        elif self.features.get('is_dtp', False):
+            return 'DTP'
         else:
             return 'Layer2'

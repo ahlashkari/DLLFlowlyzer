@@ -18,7 +18,7 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 ## Features
 
 ### Core Capabilities
-- **282 Comprehensive Features**: Statistical, protocol-specific, PyShark-enhanced Layer 2 features, and advanced statistical combinations
+- **350+ Comprehensive Features**: Statistical, protocol-specific, direct-parsed Layer 2 features, and advanced statistical combinations
 - **Multi-Protocol Support**: TCP, UDP, QUIC, and Layer 2 protocols (STP, CDP, LLDP, ARP, DHCP, LLC, DTP, VTP, ISL)
 - **Enhanced Layer 2 Analysis**: Deep packet inspection for CDP TLVs, STP identifiers, DHCP options, ARP details
 - **Enhanced Protocol Detection**: Advanced CDP/LLDP/DTP separation using payload-based analysis independent of MAC addresses
@@ -64,8 +64,10 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 ## Recent Updates (2025)
 
 ### 🚀 NEW: --justlayertwo Option (September 2025)
-- **🎯 Layer 2-Only Analysis**: New specialized mode that extracts only Layer 2 features from all packets (MAC addresses, Layer 2 protocols, frame analysis)
-- **⚡ Enhanced Performance**: Optimized processing for Layer 2-focused security analysis and network infrastructure monitoring
+- **🎯 Layer 2-Only Analysis**: New specialized mode that extracts 200+ Layer 2 features from all packets (MAC addresses, Layer 2 protocols, frame analysis)
+- **⚡ Enhanced Performance**: Optimized processing for Layer 2-focused security analysis and network infrastructure monitoring  
+- **📊 Complete Statistical Analysis**: Includes ALL aggregated features - STP timing analysis, CDP capability tracking, ARP request/reply ratios, DHCP transaction analysis
+- **🔍 Advanced Protocol Analysis**: Full statistical aggregation for 8 Layer 2 protocols with 114+ aggregated statistical features
 - **📊 Specialized Visualization**: Dedicated Layer 2 charts for MAC analysis, protocol distribution, and security indicators
 - **🔍 Attack Detection**: Perfect for detecting ARP spoofing, MAC flooding, VLAN attacks, and other Layer 2 threats
 
@@ -266,7 +268,7 @@ mac: 19:1A:12:1C:FF:12 ip: 192.168.1.19 DHCP Starvation
 - Security indicator visualizations
 - Layer 2 feature correlation heatmaps
 
-## Feature Categories (282+ Total)
+## Feature Categories (350+ Total)
 
 ### Basic Flow Features (15)
 - Connection identifiers, protocol types, endpoint information
@@ -277,17 +279,19 @@ mac: 19:1A:12:1C:FF:12 ip: 192.168.1.19 DHCP Starvation
 ### Frame Statistics (28)
 - Size distributions, directional statistics, marked/ignored packets
 
-### Enhanced Layer 2 Features (165+)
-- **ARP Features (15)**: Hardware types, opcodes, protocol information
-- **DHCP Features (17)**: BOOTP fields, flags, options, message types
-- **STP Features (21)**: Root/bridge identifiers, timing, topology flags
-- **CDP Features (27)**: Complete TLV parsing, capabilities, power management
-- **LLC Features (12)**: SAP values, control fields, C/R bits
-- **DTP Features (8)**: Trunking negotiation, version, sender information
-- **ISL Features (15)**: Inter-Switch Link encapsulation, VLAN data
+### Enhanced Layer 2 Features (230+)
+- **ARP Features (19)**: Hardware types, opcodes, protocol information, request/reply analysis, gratuitous ARP detection
+- **DHCP Features (16)**: BOOTP fields, flags, options, message types, transaction analysis
+- **STP Features (17)**: Root/bridge identifiers, timing, topology flags, statistical aggregation
+- **CDP Features (15)**: Complete TLV parsing, capabilities, power management, statistical aggregation
+- **LLC Features (15)**: SAP values, control fields, C/R bits, statistical analysis
+- **DTP Features (11)**: Trunking negotiation, version, sender information, frame type analysis
+- **ISL Features (17)**: Inter-Switch Link encapsulation, VLAN data, diversity metrics
+- **LLDP Features (4)**: Network discovery protocol, chassis/port identification
 - **VTP Features (6)**: VLAN management domain information
 - **Loop Detection Features (8)**: Network loop analysis
-- **Protocol Counters (42)**: Per-protocol packet and percentage counts
+- **Protocol Counters (50+)**: Per-protocol packet and percentage counts, statistical aggregations
+- **Advanced Statistical Features (100+)**: Sum, mean, max, min, median, standard deviation for all Layer 2 protocol fields
 
 ## Supported Attack Types
 

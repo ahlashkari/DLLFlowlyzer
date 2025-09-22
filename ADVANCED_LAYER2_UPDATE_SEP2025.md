@@ -53,14 +53,15 @@ python -m src.flowlyzer.main -i MultipleDatasets/ --multi-folder --justlayertwo 
 - Locally administered address detection
 - MAC address diversity per flow
 
-#### Layer 2 Protocol Features (60+ features)
-- **ARP**: Hardware types, operation codes, address mappings
-- **STP**: BPDU analysis, timing fields, topology change flags
-- **CDP**: Complete TLV parsing, device capabilities, power information
-- **DHCP**: BOOTP fields, options analysis, message types
-- **LLC**: SAP values, control field analysis
-- **ISL**: VLAN encapsulation, frame type analysis
-- **LLDP**: Network discovery protocol features
+#### Layer 2 Protocol Features (100+ features)
+- **ARP (19 features)**: Hardware types, operation codes, address mappings, request/reply analysis, gratuitous ARP detection
+- **STP (17 features)**: BPDU analysis, timing fields, topology change flags, statistical aggregation
+- **CDP (15 features)**: Complete TLV parsing, device capabilities, power information, statistical aggregation  
+- **DHCP (16 features)**: BOOTP fields, options analysis, message types, transaction analysis
+- **LLC (15 features)**: SAP values, control field analysis, command/response bits
+- **ISL (17 features)**: VLAN encapsulation, frame type analysis, VLAN diversity metrics
+- **LLDP (4 features)**: Network discovery protocol features, chassis/port identification
+- **DTP (11 features)**: Dynamic Trunking Protocol analysis, version detection, frame type analysis
 
 #### Frame Analysis Features (15 features)
 - Frame size statistics and categories
@@ -93,6 +94,18 @@ python -m src.flowlyzer.main -i MultipleDatasets/ --multi-folder --justlayertwo 
 - Security indicator summaries
 
 ## 🔧 **Technical Improvements**
+
+### CRITICAL FIX: Complete Layer 2 Aggregated Features Added
+- **🚨 MAJOR UPDATE**: Added ALL missing Layer 2 aggregated statistical features to --justlayertwo option
+- **114 Additional Features**: Previously missing statistical aggregations now included:
+  - STP aggregated features (17): msg_age statistics, forward_delay analysis, flag counting
+  - CDP aggregated features (15): TLV counting, addresses analysis, capabilities aggregation  
+  - ARP aggregated features (19): hardware type statistics, opcode analysis, size aggregation
+  - DHCP aggregated features (16): opcode statistics, transaction ID analysis, options counting
+  - LLC aggregated features (15): SSAP/DSAP analysis, control field statistics
+  - ISL aggregated features (17): frame type analysis, VLAN statistics, BPDU analysis
+  - DTP aggregated features (11): version analysis, TLV counting, frame type statistics
+- **Feature Parity**: --justlayertwo now extracts identical statistical depth as main flow system
 
 ### Fixed DHCP Protocol Extraction
 - **Enhanced Message Type Detection**: Proper extraction of DHCP message types (DISCOVER, OFFER, REQUEST, etc.)

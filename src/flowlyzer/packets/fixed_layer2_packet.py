@@ -278,12 +278,24 @@ def parse_arp_packet(scapy_packet: Packet) -> dict:
             features['arp_src_proto_addr'] = str(arp_layer.psrc) if hasattr(arp_layer, 'psrc') else str(MISSING_VALUE)
             features['arp_dst_proto_addr'] = str(arp_layer.pdst) if hasattr(arp_layer, 'pdst') else str(MISSING_VALUE)
             
+            # ARP analysis features for flow aggregation
+            opcode = int(arp_layer.op) if hasattr(arp_layer, 'op') else 0
+            features['arp_is_request'] = (opcode == 1)  # ARP request
+            features['arp_is_reply'] = (opcode == 2)    # ARP reply
+            
+            # Gratuitous ARP detection (same source and destination IP)
+            src_ip = str(arp_layer.psrc) if hasattr(arp_layer, 'psrc') else ''
+            dst_ip = str(arp_layer.pdst) if hasattr(arp_layer, 'pdst') else ''
+            features['arp_is_gratuitous'] = (src_ip == dst_ip and src_ip != str(MISSING_VALUE))
+            
         else:
             # No ARP layer, set all to missing
             for key in ['arp_hw_type', 'arp_proto_type', 'arp_hw_len', 'arp_proto_len', 'arp_opcode']:
                 features[key] = MISSING_VALUE
             for key in ['arp_src_hw_addr', 'arp_dst_hw_addr', 'arp_src_proto_addr', 'arp_dst_proto_addr']:
                 features[key] = str(MISSING_VALUE)
+            for key in ['arp_is_request', 'arp_is_reply', 'arp_is_gratuitous']:
+                features[key] = MISSING_VALUE
                 
     except Exception as e:
         logger.debug(f"ARP parsing error: {e}")
@@ -292,6 +304,8 @@ def parse_arp_packet(scapy_packet: Packet) -> dict:
             features[key] = MISSING_VALUE
         for key in ['arp_src_hw_addr', 'arp_dst_hw_addr', 'arp_src_proto_addr', 'arp_dst_proto_addr']:
             features[key] = str(MISSING_VALUE)
+        for key in ['arp_is_request', 'arp_is_reply', 'arp_is_gratuitous']:
+            features[key] = MISSING_VALUE
     
     return features
 

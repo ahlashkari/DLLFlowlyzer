@@ -176,7 +176,7 @@ class Layer2OnlyPlotter:
             
             # 1. Layer 2 protocol distribution
             l2_protocols = ['arp_count', 'stp_count', 'cdp_count', 'dhcp_count', 
-                          'llc_count', 'isl_count', 'lldp_count']
+                          'llc_count', 'isl_count', 'lldp_count', 'dtp_count']
             
             if not flows_df.empty:
                 protocol_totals = {}
@@ -323,7 +323,7 @@ class Layer2OnlyPlotter:
             
             # Protocol counts
             protocol_cols = ['arp_count', 'stp_count', 'cdp_count', 'dhcp_count', 
-                           'llc_count', 'isl_count', 'lldp_count']
+                           'llc_count', 'isl_count', 'lldp_count', 'dtp_count']
             l2_numeric_cols.extend([col for col in protocol_cols if col in flows_df.columns])
             
             # MAC and frame features
@@ -387,7 +387,7 @@ class Layer2OnlyPlotter:
             if not flows_df.empty:
                 # Protocol statistics
                 protocol_cols = ['arp_count', 'stp_count', 'cdp_count', 'dhcp_count', 
-                               'llc_count', 'isl_count', 'lldp_count']
+                               'llc_count', 'isl_count', 'lldp_count', 'dtp_count']
                 
                 for col in protocol_cols:
                     if col in flows_df.columns:
