@@ -6,7 +6,7 @@ Uses MAC addresses for flow identification instead of IP addresses.
 from typing import Dict, List, Optional, Any
 from scapy.all import Packet
 from .layer2_only_flow import Layer2OnlyFlow
-from ..packets.layer2_only_packet import Layer2OnlyPacket
+from ..packets.simple_layer2_packet import SimpleLayer2Packet
 import time
 import logging
 
@@ -37,8 +37,8 @@ class Layer2OnlyFlowManager:
         try:
             self.total_packets_processed += 1
             
-            # Create Layer 2-only packet
-            packet = Layer2OnlyPacket(scapy_packet, frame_number)
+            # Create simple Layer 2-only packet
+            packet = SimpleLayer2Packet(scapy_packet, frame_number)
             
             # Update protocol statistics
             protocol = packet.get_protocol_type()
@@ -71,7 +71,7 @@ class Layer2OnlyFlowManager:
             self.logger.error(f"Error processing packet {frame_number}: {e}")
             return None
     
-    def _create_mac_flow_key(self, packet: Layer2OnlyPacket) -> str:
+    def _create_mac_flow_key(self, packet: SimpleLayer2Packet) -> str:
         """Create flow key based on MAC addresses."""
         src_mac = packet.features.get('src_mac', 'unknown')
         dst_mac = packet.features.get('dst_mac', 'unknown')

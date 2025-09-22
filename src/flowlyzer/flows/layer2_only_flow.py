@@ -5,16 +5,17 @@ Focuses exclusively on Layer 2 features and MAC-based flow identification.
 
 from typing import List, Dict, Any, Tuple
 import numpy as np
-from ..packets.layer2_only_packet import Layer2OnlyPacket, MISSING_VALUE
+from ..packets.simple_layer2_packet import SimpleLayer2Packet
+from ..packets.fixed_layer2_packet import MISSING_VALUE
 import logging
 
 
 class Layer2OnlyFlow:
     """Flow class that extracts only Layer 2 features."""
     
-    def __init__(self, flow_key: str, first_packet: Layer2OnlyPacket):
+    def __init__(self, flow_key: str, first_packet: SimpleLayer2Packet):
         self.flow_key = flow_key
-        self.packets: List[Layer2OnlyPacket] = [first_packet]
+        self.packets: List[SimpleLayer2Packet] = [first_packet]
         self.start_time = first_packet.timestamp
         self.end_time = first_packet.timestamp
         self.last_activity = first_packet.timestamp
@@ -24,7 +25,7 @@ class Layer2OnlyFlow:
         self.src_mac = first_packet.features.get('src_mac', str(MISSING_VALUE))
         self.dst_mac = first_packet.features.get('dst_mac', str(MISSING_VALUE))
     
-    def add_packet(self, packet: Layer2OnlyPacket):
+    def add_packet(self, packet: SimpleLayer2Packet):
         """Add a packet to the flow."""
         self.packets.append(packet)
         self.end_time = max(self.end_time, packet.timestamp)
