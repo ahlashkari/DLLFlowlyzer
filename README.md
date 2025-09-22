@@ -147,6 +147,10 @@ python -m src.flowlyzer.main -i vlan_attack_data/ \
     --label-config labels/vlan_attack_labels.json \
     --label-mac "aa:bb:cc:dd:ee:ff=VLAN Attacker" \
     --separate-layers
+
+# Per-folder labeling with JSON files (New!)
+# Place labeling.json files in each data folder for automatic detection
+python -m src.flowlyzer.main -i multi_attack_data/ --multi-folder --separate-layers
 ```
 
 #### Traditional Configuration
@@ -176,6 +180,10 @@ python -m src.flowlyzer.main -i Input/ --csv-batch-size 15 --batch-size 30
 
 # Disable batching for small datasets
 python -m src.flowlyzer.main -i Input/ --disable-batching
+
+# Configure missing value handling (New!)
+python -m src.flowlyzer.main -i Input/ --missing-value nan    # Use NaN for missing features
+python -m src.flowlyzer.main -i Input/ --missing-value -100   # Use -100 for missing features (default)
 ```
 
 ## Text File Labeling Format

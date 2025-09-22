@@ -153,7 +153,32 @@ python -m src.flowlyzer.main -i Input/ \
 ### Scenario 7: Per-Folder Attack Labeling
 **Use Case**: Different attack types for different days/sessions
 
-**Setup per-folder labeling:**
+**Setup per-folder labeling with JSON (New!):**
+```bash
+# Create JSON labeling files for each folder
+cat > Captures/Day1/labeling.json << 'EOF'
+{
+  "layer_2_only": true,
+  "mac_labels": [
+    {"mac": "aa:bb:cc:dd:ee:ff", "label": "ARP Spoofing Attack"}
+  ]
+}
+EOF
+
+cat > Captures/Day2/labeling.json << 'EOF'
+{
+  "time_labels": [
+    {"time_range": "10:00-12:00", "label": "DHCP Starvation Attack"}
+  ]
+}
+EOF
+# Day3 has no labeling file (all flows will be "Benign")
+
+# Run multi-folder analysis
+python -m src.flowlyzer.main -i Captures/ --multi-folder
+```
+
+**Setup per-folder labeling with text files (Traditional):**
 ```bash
 # Create folder-specific labeling files
 echo "mac: aa:bb:cc:dd:ee:ff ARP Spoofing" > Captures/Day1/labeling.txt

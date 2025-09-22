@@ -93,6 +93,7 @@ Examples:
         parser.add_argument('--batch-size', type=int, default=30, help='Number of flows to process in each batch for memory optimization')
         parser.add_argument('--csv-batch-size', type=int, default=30, help='Number of flows to write to CSV file in each batch (default: 30)')
         parser.add_argument('--disable-batching', action='store_true', help='Disable batched processing and CSV creation')
+        parser.add_argument('--missing-value', choices=['nan', '-100'], default='-100', help='Value to use for missing feature data (default: -100)')
         parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], default='INFO', help='Logging level')
         parser.add_argument('--quiet', action='store_true', help='Suppress progress logging')
         parser.add_argument('--config', default='config.ini', help='Configuration file path')

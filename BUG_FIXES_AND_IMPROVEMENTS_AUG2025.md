@@ -243,3 +243,73 @@ python -m src.flowlyzer.main -i dhcp_attack_data/ \
 **Testing**: Validated with 131K+ packet sample + Layer 2 labeling system  
 **Impact**: Critical stability, accuracy, and advanced Layer 2 attack analysis improvements  
 **Compatibility**: Fully backward compatible with enhanced JSON labeling support
+
+---
+
+## Additional Enhancements (September 2025)
+
+### Per-Folder JSON Labeling Support
+- **Enhanced Folder Processing**: Added automatic detection and loading of `labeling.json` files from each folder
+- **Priority System**: JSON files take priority over text files when both are present
+- **Backward Compatibility**: All existing text file labeling continues to work
+- **File**: `src/flowlyzer/main.py` - Updated `load_folder_labeling_config()` function
+
+### Configurable Missing Value Handling
+- **New Command-Line Option**: `--missing-value {nan,-100}` to choose missing data representation
+- **ML Framework Compatibility**: NaN for pandas/scikit-learn, -100 for other frameworks
+- **Global Configuration**: Runtime configuration of missing value handling
+- **Files Added**:
+  - `src/flowlyzer/utils/constants.py` - Global missing value management
+  - `src/flowlyzer/utils/config_manager.py` - Enhanced argument parsing
+
+### Improved Feature Extraction System
+- **Proven Methodology**: Implemented successful feature extraction approach from DLFlowlyzer project
+- **Enhanced Error Handling**: Comprehensive try/except blocks for all protocol features
+- **Better Feature Quality**: More reliable extraction with configurable missing values
+- **Files Added**:
+  - `src/flowlyzer/utils/improved_feature_extractor.py` - Enhanced extraction functions
+  - `src/flowlyzer/packets/enhanced_layer2_packet.py` - Improved packet analysis classes
+
+### Project Cleanup
+- **Debug File Removal**: Removed all debug_*.py files from project
+- **Test File Cleanup**: Removed test_sample.py and other temporary files
+- **Enhanced .gitignore**: Already properly configured to ignore unnecessary files
+
+### Usage Examples with New Features
+
+#### Per-Folder JSON Labeling
+```bash
+# Create JSON labeling file in attack data folder
+cat > AttackData/Day1/labeling.json << 'EOF'
+{
+  "layer_2_only": true,
+  "mac_labels": [
+    {"mac": "aa:bb:cc:dd:ee:ff", "label": "ARP Spoofing Attack"}
+  ],
+  "time_labels": [
+    {"time_range": "10:00-11:30", "label": "Network Attack Window"}
+  ]
+}
+EOF
+
+# Run analysis - JSON file will be automatically detected
+python -m src.flowlyzer.main -i AttackData/ --multi-folder --separate-layers
+```
+
+#### Missing Value Configuration
+```bash
+# Use NaN for missing features (pandas/scikit-learn compatibility)
+python -m src.flowlyzer.main -i Input/ --missing-value nan
+
+# Use -100 for missing features (default, general ML compatibility)
+python -m src.flowlyzer.main -i Input/ --missing-value -100
+```
+
+### Benefits of September 2025 Updates
+- **Enhanced Workflow Flexibility**: JSON labeling provides structured, version-controllable configurations
+- **Better ML Pipeline Integration**: Choose appropriate missing value representation for your ML framework
+- **Improved Reliability**: More robust feature extraction with proven error handling approaches
+- **Cleaner Codebase**: Removed unnecessary files and improved project organization
+- **Full Compatibility**: All existing workflows continue to work without changes
+
+These updates build upon the solid foundation of DLL Flowlyzer while incorporating proven improvements from successful network analysis projects.

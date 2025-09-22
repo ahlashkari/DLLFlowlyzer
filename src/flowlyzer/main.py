@@ -18,16 +18,29 @@ from .features.csv_exporter import CSVExporter
 
 
 def load_folder_labeling_config(folder_path: str) -> dict:
-    """Load labeling configuration specific to a folder by looking for labeling.txt"""
+    """Load labeling configuration specific to a folder by looking for labeling.json or labeling.txt"""
+    import json
     folder_path = Path(folder_path)
-    labeling_file = folder_path / "labeling.txt"
     
-    if not labeling_file.exists():
+    # First try to load JSON file
+    labeling_json_file = folder_path / "labeling.json"
+    if labeling_json_file.exists():
+        try:
+            with open(labeling_json_file, 'r') as f:
+                labeling_config = json.load(f)
+            print(f"Loaded JSON labeling config from {labeling_json_file}")
+            return labeling_config
+        except Exception as e:
+            print(f"Error loading JSON labeling config from {labeling_json_file}: {e}")
+    
+    # Fallback to text file
+    labeling_txt_file = folder_path / "labeling.txt"
+    if not labeling_txt_file.exists():
         return None
     
     try:
         from .features.labeling import LabelingConfig
-        text_labels = LabelingConfig.load_from_text_file(str(labeling_file))
+        text_labels = LabelingConfig.load_from_text_file(str(labeling_txt_file))
         
         labeling_config = {
             'ip_attacks': [],
@@ -56,10 +69,11 @@ def load_folder_labeling_config(folder_path: str) -> dict:
                     'time_ranges': time_ranges
                 })
         
+        print(f"Loaded text labeling config from {labeling_txt_file}")
         return labeling_config
     
     except Exception as e:
-        print(f"Error loading folder labeling config from {labeling_file}: {e}")
+        print(f"Error loading folder labeling config from {labeling_txt_file}: {e}")
         return None
 
 
@@ -640,12 +654,17 @@ def main():
         config_manager = ConfigManager()
         args = config_manager.parse_arguments()
         
+        # Set global missing value configuration
+        from .utils.constants import set_missing_value
+        set_missing_value(args.missing_value)
+        
         if not config_manager.validate_config():
             sys.exit(1)
         
         config_manager.print_config_summary()
         
         processing_config = config_manager.get_processing_config()
+        processing_config['missing_value_type'] = args.missing_value  # Add to config
         log_config = config_manager.get_log_config()
         labeling_config = config_manager.get_labeling_config()
         
