@@ -17,17 +17,17 @@ The new `--justlayertwo` option provides a specialized analysis mode that focuse
 
 ### Usage Examples
 ```bash
-# Basic Layer 2-only analysis
+# Basic Layer 2-only analysis (includes automatic plotting)
 python -m src.flowlyzer.main -i Input/ --justlayertwo
 
-# Layer 2 analysis with visualization
-python -m src.flowlyzer.main -i Input/ --justlayertwo --plot
+# Layer 2 analysis with separate layer files  
+python -m src.flowlyzer.main -i Input/ --justlayertwo --separate-layers
 
 # Layer 2 analysis with attack detection
 python -m src.flowlyzer.main -i Input/ --justlayertwo --label-config arp_attack.json
 
 # Multi-folder Layer 2 analysis
-python -m src.flowlyzer.main -i MultipleDatasets/ --multi-folder --justlayertwo --plot
+python -m src.flowlyzer.main -i MultipleDatasets/ --multi-folder --justlayertwo
 ```
 
 ## 🛠 **Core Functionality**
@@ -100,12 +100,14 @@ python -m src.flowlyzer.main -i MultipleDatasets/ --multi-folder --justlayertwo 
 - **114 Additional Features**: Previously missing statistical aggregations now included:
   - STP aggregated features (17): msg_age statistics, forward_delay analysis, flag counting
   - CDP aggregated features (15): TLV counting, addresses analysis, capabilities aggregation  
-  - ARP aggregated features (19): hardware type statistics, opcode analysis, size aggregation
+  - ARP aggregated features (19): hardware type statistics, opcode analysis, size aggregation, gratuitous ARP detection
   - DHCP aggregated features (16): opcode statistics, transaction ID analysis, options counting
   - LLC aggregated features (15): SSAP/DSAP analysis, control field statistics
   - ISL aggregated features (17): frame type analysis, VLAN statistics, BPDU analysis
   - DTP aggregated features (11): version analysis, TLV counting, frame type statistics
 - **Feature Parity**: --justlayertwo now extracts identical statistical depth as main flow system
+- **--separate-layers Support**: Full integration with separate layer file generation
+- **Automatic Plotting**: Specialized Layer 2 visualization generated automatically
 
 ### Fixed DHCP Protocol Extraction
 - **Enhanced Message Type Detection**: Proper extraction of DHCP message types (DISCOVER, OFFER, REQUEST, etc.)

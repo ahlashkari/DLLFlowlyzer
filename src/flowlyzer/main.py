@@ -10,8 +10,10 @@ from .utils.config_manager import ConfigManager
 from .utils.logger import FlowlyzerLogger
 from .utils.packet_queue import PacketQueue
 from .utils.plotting import FlowlyzerPlotter
+from .utils.layer2_plotting import Layer2OnlyPlotter
 from .utils.memory_monitor import MemoryMonitor
 from .flows.flow_manager import FlowManager
+from .flows.layer2_only_flow_manager import Layer2OnlyFlowManager
 from .features.feature_extractor import FeatureExtractor
 from .features.labeling import FlowLabeler, LabelingConfig
 from .features.csv_exporter import CSVExporter
@@ -115,10 +117,16 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
         actual_labeling_config = global_labeling_config
     
     # Setup flow manager with smaller max_flows for batching
-    flow_manager = FlowManager(
-        flow_timeout=processing_config['flow_timeout'],
-        max_flows=min(processing_config.get('max_flows', 100000), 10000)  # Limit for memory
-    )
+    if processing_config.get('justlayertwo', False):
+        flow_manager = Layer2OnlyFlowManager(
+            flow_timeout=processing_config['flow_timeout'],
+            max_flows=min(processing_config.get('max_flows', 100000), 10000)  # Limit for memory
+        )
+    else:
+        flow_manager = FlowManager(
+            flow_timeout=processing_config['flow_timeout'],
+            max_flows=min(processing_config.get('max_flows', 100000), 10000)  # Limit for memory
+        )
     
     packet_queue = PacketQueue(
         maxsize=processing_config['queue_size'],
@@ -353,8 +361,19 @@ def process_flow_batch(flows: list, feature_extractor, flow_labeler, csv_exporte
         return 0
     
     try:
-        # Extract features from batch with global protocol statistics
-        flows_df = feature_extractor.extract_features(flows, global_protocol_stats)
+        # Extract features based on mode
+        if processing_config.get('justlayertwo', False):
+            # Layer 2-only mode - extract features directly from flows
+            flows_data = []
+            for flow in flows:
+                flow_features = flow.get_features()
+                flows_data.append(flow_features)
+            
+            import pandas as pd
+            flows_df = pd.DataFrame(flows_data)
+        else:
+            # Standard mode - use feature extractor
+            flows_df = feature_extractor.extract_features(flows, global_protocol_stats)
         
         # Apply labeling
         if flow_labeler:
@@ -570,8 +589,14 @@ def process_folder_complete(folder_name: str, pcap_files: list, processing_confi
                 import pandas as pd
                 final_flows_df = pd.read_csv(result['batch_files']['combined'])
                 folder_output_dir = Path(processing_config['output_dir']) / folder_name
-                plotter = FlowlyzerPlotter(str(folder_output_dir))
-                plot_files = plotter.create_all_plots(final_flows_df, result['final_stats'])
+                
+                # Choose appropriate plotter based on mode
+                if processing_config.get('justlayertwo', False):
+                    layer2_plotter = Layer2OnlyPlotter(str(folder_output_dir))
+                    plot_files = layer2_plotter.create_all_layer2_plots(final_flows_df)
+                else:
+                    plotter = FlowlyzerPlotter(str(folder_output_dir))
+                    plot_files = plotter.create_all_plots(final_flows_df, result['final_stats'])
                 
                 if plot_files:
                     logger.logger.info(f"Generated {len(plot_files)} visualization files for {folder_name}")
@@ -598,8 +623,13 @@ def process_folder_complete(folder_name: str, pcap_files: list, processing_confi
         }
         logger.log_export_results(export_info_dict)
         
-        plotter = FlowlyzerPlotter(str(folder_output_dir))
-        plot_files = plotter.create_all_plots(result['flows_df'], result['final_stats'])
+        # Choose appropriate plotter based on mode
+        if processing_config.get('justlayertwo', False):
+            layer2_plotter = Layer2OnlyPlotter(str(folder_output_dir))
+            plot_files = layer2_plotter.create_all_layer2_plots(result['flows_df'])
+        else:
+            plotter = FlowlyzerPlotter(str(folder_output_dir))
+            plot_files = plotter.create_all_plots(result['flows_df'], result['final_stats'])
         
         if plot_files:
             logger.logger.info(f"Generated {len(plot_files)} visualization files for {folder_name}")
@@ -700,10 +730,18 @@ def main():
             pcap_files = config_manager.get_pcap_files()
             logger.log_start(pcap_files, processing_config)
         
-        flow_manager = FlowManager(
-            flow_timeout=processing_config['flow_timeout'],
-            max_flows=processing_config.get('max_flows', 100000)
-        )
+        # Choose the appropriate flow manager based on --justlayertwo mode
+        if processing_config.get('justlayertwo', False):
+            print("🎯 Layer 2-Only Analysis Mode Enabled")
+            flow_manager = Layer2OnlyFlowManager(
+                flow_timeout=processing_config['flow_timeout'],
+                max_flows=processing_config.get('max_flows', 100000)
+            )
+        else:
+            flow_manager = FlowManager(
+                flow_timeout=processing_config['flow_timeout'],
+                max_flows=processing_config.get('max_flows', 100000)
+            )
         
         packet_queue = PacketQueue(
             maxsize=processing_config['queue_size'],
@@ -756,12 +794,30 @@ def main():
         final_stats = flow_manager.get_statistics()
         logger.log_flow_statistics(final_stats)
         
-        # Extract features
-        logger.log_feature_extraction(final_stats['total_flows'], len(FeatureExtractor().feature_columns))
-        
-        feature_extractor = FeatureExtractor(num_threads=processing_config.get('feature_threads', 4))
-        all_flows = flow_manager.get_all_flows()
-        flows_df = feature_extractor.extract_features(all_flows)
+        # Extract features based on mode
+        if processing_config.get('justlayertwo', False):
+            # Layer 2-only mode - extract features directly from Layer2OnlyFlow objects
+            print("📊 Extracting Layer 2-only features...")
+            all_flows = flow_manager.get_all_flows()
+            flows_data = []
+            
+            for flow in all_flows:
+                flow_features = flow.get_features()
+                flows_data.append(flow_features)
+            
+            import pandas as pd
+            flows_df = pd.DataFrame(flows_data)
+            
+            # Set number of features for logging
+            feature_count = len(flows_df.columns) if not flows_df.empty else 0
+            logger.log_feature_extraction(final_stats['total_flows'], feature_count)
+        else:
+            # Standard mode
+            logger.log_feature_extraction(final_stats['total_flows'], len(FeatureExtractor().feature_columns))
+            
+            feature_extractor = FeatureExtractor(num_threads=processing_config.get('feature_threads', 4))
+            all_flows = flow_manager.get_all_flows()
+            flows_df = feature_extractor.extract_features(all_flows)
         
         # Apply labeling
         if labeling_config:
@@ -779,13 +835,34 @@ def main():
                 label_stats = flows_df['label'].value_counts().to_dict()
                 logger.log_labeling_results(label_stats)
         
-        # Export to CSV (CSV only, no txt metadata)
+        # Export to CSV based on mode
         csv_exporter = CSVExporter(processing_config['output_dir'])
-        export_info = csv_exporter.export_flows(
-            flows_df,
-            separate_layers=processing_config['separate_l2_l3'],
-            base_filename=processing_config.get('csv_file', 'features').replace('.csv', '')
-        )
+        
+        if processing_config.get('justlayertwo', False):
+            # Layer 2-only mode - special handling for Layer 2 CSV export
+            print("💾 Exporting Layer 2-only CSV...")
+            import pandas as pd
+            timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+            
+            if processing_config['separate_l2_l3']:
+                # In Layer 2-only mode with separate layers, create layer2 file
+                layer2_file = Path(processing_config['output_dir']) / f"layer2_features_{timestamp}.csv"
+                flows_df.to_csv(layer2_file, index=False)
+                export_info = (None, str(layer2_file), None)
+                print(f"✅ Layer 2 features exported: {layer2_file}")
+            else:
+                # Single Layer 2-only file
+                layer2_file = Path(processing_config['output_dir']) / f"layer2_features_{timestamp}.csv"
+                flows_df.to_csv(layer2_file, index=False)
+                export_info = (str(layer2_file), None, None)
+                print(f"✅ Layer 2-only features exported: {layer2_file}")
+        else:
+            # Standard mode
+            export_info = csv_exporter.export_flows(
+                flows_df,
+                separate_layers=processing_config['separate_l2_l3'],
+                base_filename=processing_config.get('csv_file', 'features').replace('.csv', '')
+            )
         
         # Update export_info format for logging
         combined_file, layer2_file, layer3_file = export_info
@@ -798,14 +875,26 @@ def main():
         
         logger.log_export_results(export_info_dict)
         
-        # Create plots and statistics
-        plotter = FlowlyzerPlotter(processing_config['output_dir'])
-        plot_files = plotter.create_all_plots(flows_df, final_stats)
-        
-        if plot_files:
-            logger.logger.info(f"Generated {len(plot_files)} visualization files:")
-            for plot_file in plot_files:
-                logger.logger.info(f"  - {Path(plot_file).name}")
+        # Create plots and statistics (automatic plotting)
+        print("📊 Generating visualization plots...")
+        if processing_config.get('justlayertwo', False):
+            # Layer 2-only plotting
+            layer2_plotter = Layer2OnlyPlotter(processing_config['output_dir'])
+            plot_files = layer2_plotter.create_all_layer2_plots(flows_df)
+            
+            if plot_files:
+                print(f"✅ Generated {len(plot_files)} Layer 2 visualization files:")
+                for plot_file in plot_files:
+                    print(f"  📈 {Path(plot_file).name}")
+        else:
+            # Standard plotting
+            plotter = FlowlyzerPlotter(processing_config['output_dir'])
+            plot_files = plotter.create_all_plots(flows_df, final_stats)
+            
+            if plot_files:
+                logger.logger.info(f"Generated {len(plot_files)} visualization files:")
+                for plot_file in plot_files:
+                    logger.logger.info(f"  - {Path(plot_file).name}")
         
         # Log completion
         total_time = time.time() - start_time

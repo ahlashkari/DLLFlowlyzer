@@ -68,7 +68,8 @@ python -m src.flowlyzer.main -i Input/your_capture.pcap
 - **⚡ Enhanced Performance**: Optimized processing for Layer 2-focused security analysis and network infrastructure monitoring  
 - **📊 Complete Statistical Analysis**: Includes ALL aggregated features - STP timing analysis, CDP capability tracking, ARP request/reply ratios, DHCP transaction analysis
 - **🔍 Advanced Protocol Analysis**: Full statistical aggregation for 8 Layer 2 protocols with 114+ aggregated statistical features
-- **📊 Specialized Visualization**: Dedicated Layer 2 charts for MAC analysis, protocol distribution, and security indicators
+- **🔧 Works with --separate-layers**: Generate separate Layer 2 CSV files with specialized Layer 2 flow analysis
+- **📊 Automatic Visualization**: Dedicated Layer 2 charts automatically generated for MAC analysis, protocol distribution, and security indicators
 - **🔍 Attack Detection**: Perfect for detecting ARP spoofing, MAC flooding, VLAN attacks, and other Layer 2 threats
 
 ### Critical Layer 2 Feature Extraction Fixes (September 2025)
@@ -122,11 +123,11 @@ python -m src.flowlyzer.main -i Input/capture.pcap
 # Analyze directory of PCAP files
 python -m src.flowlyzer.main -i Input/
 
-# Generate visualization plots
-python -m src.flowlyzer.main -i Input/ --plot
+# Layer 2-only analysis with separate layer files (NEW!)
+python -m src.flowlyzer.main -i Input/ --justlayertwo --separate-layers
 
 # Layer 2-only analysis (NEW!)
-python -m src.flowlyzer.main -i Input/ --justlayertwo --plot
+python -m src.flowlyzer.main -i Input/ --justlayertwo
 ```
 
 ### Multi-Folder Processing
@@ -149,8 +150,8 @@ python -m src.flowlyzer.main -i Input/ --separate-layers
 # Layer 2-only analysis with specialized features
 python -m src.flowlyzer.main -i Input/ --justlayertwo
 
-# Layer 2 analysis with visualization and custom output
-python -m src.flowlyzer.main -i Input/ --justlayertwo --plot --csv-file layer2_analysis
+# Layer 2 analysis with custom output filename
+python -m src.flowlyzer.main -i Input/ --justlayertwo --csv-file layer2_analysis
 ```
 
 ### Attack Labeling
@@ -158,13 +159,13 @@ python -m src.flowlyzer.main -i Input/ --justlayertwo --plot --csv-file layer2_a
 #### Layer 2 Attack Detection (NEW!)
 ```bash
 # Layer 2-only analysis with attack detection
-python -m src.flowlyzer.main -i arp_attack_data/ --justlayertwo --label-config arp_attack.json --plot
+python -m src.flowlyzer.main -i arp_attack_data/ --justlayertwo --label-config arp_attack.json
 
-# MAC flooding detection
-python -m src.flowlyzer.main -i cam_flood_data/ --justlayertwo --label-mac "aa:bb:cc:dd:ee:ff=MAC Flooder" --plot
+# MAC flooding detection with separate layer files
+python -m src.flowlyzer.main -i cam_flood_data/ --justlayertwo --label-mac "aa:bb:cc:dd:ee:ff=MAC Flooder" --separate-layers
 
 # VLAN hopping attack analysis
-python -m src.flowlyzer.main -i vlan_attack_data/ --justlayertwo --label-time "14:00-15:00=VLAN Attack" --plot
+python -m src.flowlyzer.main -i vlan_attack_data/ --justlayertwo --label-time "14:00-15:00=VLAN Attack"
 ```
 
 #### Enhanced JSON Configuration
@@ -261,7 +262,7 @@ mac: 19:1A:12:1C:FF:12 ip: 192.168.1.19 DHCP Starvation
 - Attack distribution and timeline plots
 - Bidirectional traffic analysis
 
-### Layer 2-Only Visualization Files (--justlayertwo --plot)
+### Layer 2-Only Visualization Files (--justlayertwo automatic plotting)
 - MAC address analysis charts
 - Layer 2 protocol distribution and activity
 - Frame size and timing analysis
