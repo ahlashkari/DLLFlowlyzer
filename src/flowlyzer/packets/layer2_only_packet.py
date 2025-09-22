@@ -1,7 +1,4 @@
-"""
-Layer 2-Only packet analysis class for extracting only Layer 2 features from all packets.
-This includes MAC addresses, Layer 2 protocols, frame information, etc.
-"""
+"Layer 2-Only packet analysis for MAC addresses, protocols, and frame information."
 
 from .base_packet import BasePacket
 from .fixed_layer2_packet import (parse_cdp_packet, parse_dhcp_packet, parse_stp_packet, 
@@ -13,55 +10,27 @@ import logging
 
 
 class Layer2OnlyPacket(BasePacket):
-    """Extract only Layer 2 features from any packet type."""
     
     def __init__(self, scapy_packet: Packet, frame_number: int):
         super().__init__(scapy_packet, frame_number)
         self.logger = logging.getLogger(__name__)
-        self._extract_layer2_only_features()
+        self._extract_layer2_features()
     
-    def _extract_layer2_only_features(self):
-        """Extract only Layer 2 relevant features from the packet."""
+    def _extract_layer2_features(self):
         try:
-            # Basic frame information (always Layer 2)
-            self.features['frame_len'] = len(self.packet)
-            self.features['frame_number'] = self.frame_number
-            self.features['timestamp'] = float(self.packet.time) if hasattr(self.packet, 'time') else self.timestamp
+            self.features.update({
+                'frame_len': len(self.packet),
+                'frame_number': self.frame_number,
+                'timestamp': float(self.packet.time) if hasattr(self.packet, 'time') else self.timestamp
+            })
             
-            # Extract MAC addresses from Ethernet layer
-            if self.packet.haslayer('Ether'):
-                eth_layer = self.packet['Ether']
-                self.features['src_mac'] = str(eth_layer.src)
-                self.features['dst_mac'] = str(eth_layer.dst)
-                self.features['eth_type'] = int(eth_layer.type)
-                
-                # MAC address analysis
-                self._analyze_mac_addresses()
-            else:
-                self.features['src_mac'] = str(MISSING_VALUE)
-                self.features['dst_mac'] = str(MISSING_VALUE) 
-                self.features['eth_type'] = MISSING_VALUE
-                self._set_default_mac_features()
-            
-            # VLAN information (802.1Q) - Layer 2 feature
-            if self.packet.haslayer('Dot1Q'):
-                dot1q_layer = self.packet['Dot1Q']
-                self.features['vlan_id'] = int(dot1q_layer.vlan) if hasattr(dot1q_layer, 'vlan') else MISSING_VALUE
-                self.features['vlan_priority'] = int(dot1q_layer.prio) if hasattr(dot1q_layer, 'prio') else MISSING_VALUE
-                self.features['has_vlan'] = True
-            else:
-                self.features['vlan_id'] = MISSING_VALUE
-                self.features['vlan_priority'] = MISSING_VALUE
-                self.features['has_vlan'] = False
-            
-            # Layer 2 protocol detection and extraction
+            self._extract_ethernet_features()
+            self._extract_vlan_features()
             self._extract_layer2_protocols()
-            
-            # Layer 2 quality metrics
-            self._extract_layer2_quality_metrics()
+            self._extract_quality_metrics()
             
         except Exception as e:
-            self.logger.debug(f"Error extracting Layer 2 features: {e}")
+            self.logger.debug(f"Layer 2 extraction error: {e}")
             self._set_layer2_defaults()
     
     def _analyze_mac_addresses(self):

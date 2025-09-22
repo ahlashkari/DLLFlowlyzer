@@ -317,13 +317,13 @@ def parse_isl_packet(raw_data: bytes) -> dict:
     try:
         # ISL header is at the beginning of the frame
         if len(raw_data) >= 30:  # ISL header is 26 bytes + Ethernet header
-            # Parse ISL fields
-            features['isl_frame_type'] = (raw_data[0] & 0xF0) >> 4
-            features['isl_user_bits'] = raw_data[0] & 0x0F
-            features['isl_src_vlan_id'] = ((raw_data[1] & 0x0F) << 8) | raw_data[2]
+            # Parse ISL fields safely with int conversion
+            features['isl_frame_type'] = int((raw_data[0] & 0xF0) >> 4)
+            features['isl_user_bits'] = int(raw_data[0] & 0x0F)
+            features['isl_src_vlan_id'] = int(((raw_data[1] & 0x0F) << 8) | raw_data[2])
             features['isl_bpdu'] = bool(raw_data[3] & 0x80)
-            features['isl_index'] = raw_data[3] & 0x1F
-            features['isl_reserved'] = raw_data[4]
+            features['isl_index'] = int(raw_data[3] & 0x1F)
+            features['isl_reserved'] = int(raw_data[4])
             
         else:
             # Not enough data for ISL

@@ -173,6 +173,7 @@ class Layer2OnlyFlowManager:
         
         return {
             'total_packets': self.total_packets_processed,
+            'total_flows': len(self.active_flows) + len(self.completed_flows),
             'active_flows': len(self.active_flows),
             'completed_flows': len(self.completed_flows),
             'flow_stats': self.flow_stats.copy(),
