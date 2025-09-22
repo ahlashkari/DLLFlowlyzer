@@ -119,8 +119,16 @@ Examples:
         if input_path.is_file():
             pcap_files.append(str(input_path))
         elif input_path.is_dir():
+            # Standard extensions
             for ext in ['.pcap', '.pcapng', '.cap']:
                 pcap_files.extend([str(f) for f in input_path.glob(f'*{ext}')])
+            
+            # Numbered pcap files (e.g., .pcap1, .pcap2, .pcapng1, etc.)
+            for base_ext in ['.pcap', '.pcapng', '.cap']:
+                pcap_files.extend([str(f) for f in input_path.glob(f'*{base_ext}[0-9]*')])
+            
+            # Additional flexible pattern matching
+            for ext in ['.pcap', '.pcapng', '.cap']:
                 pcap_files.extend([str(f) for f in input_path.glob(f'*{ext}*')])
             pcap_files = sorted(set(pcap_files), key=self._natural_sort_key)
         else:
@@ -144,8 +152,16 @@ Examples:
         for subdir in input_path.iterdir():
             if subdir.is_dir():
                 pcap_files = []
+                # Standard extensions
                 for ext in ['.pcap', '.pcapng', '.cap']:
                     pcap_files.extend([str(f) for f in subdir.glob(f'*{ext}')])
+                
+                # Numbered pcap files (e.g., .pcap1, .pcap2, .pcapng1, etc.)
+                for base_ext in ['.pcap', '.pcapng', '.cap']:
+                    pcap_files.extend([str(f) for f in subdir.glob(f'*{base_ext}[0-9]*')])
+                
+                # Additional flexible pattern matching
+                for ext in ['.pcap', '.pcapng', '.cap']:
                     pcap_files.extend([str(f) for f in subdir.glob(f'*{ext}*')])
                 
                 if pcap_files:
