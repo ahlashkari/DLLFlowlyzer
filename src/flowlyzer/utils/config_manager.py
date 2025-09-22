@@ -67,7 +67,11 @@ class ConfigManager:
             epilog="""
 Examples:
   %(prog)s -i single_file.pcap
+<<<<<<< HEAD
   %(prog)s -i Input/
+=======
+  %(prog)s -i Input/ --separate-layers
+>>>>>>> 58d8b89 (new code 1)
   %(prog)s -i Input/ --multi-folder
   %(prog)s -i Input/ --label-ip "192.168.1.100=ARP Spoofing"
             """
@@ -76,6 +80,10 @@ Examples:
         parser.add_argument('-i', '--input', required=True, help='Input PCAP file or directory')
         parser.add_argument('--multi-folder', action='store_true', help='Process multiple folders with related PCAP files')
         parser.add_argument('-o', '--output', default='Results', help='Output directory')
+<<<<<<< HEAD
+=======
+        parser.add_argument('--separate-layers', action='store_true', help='Create separate L2/L3 CSV files')
+>>>>>>> 58d8b89 (new code 1)
         
         parser.add_argument('--label-ip', action='append', metavar='IP=LABEL', help='Label flows by attacker IP')
         parser.add_argument('--label-mac', action='append', metavar='MAC=LABEL', help='Label flows by attacker MAC')
@@ -471,6 +479,10 @@ Examples:
             print(f"Input: {self.args.input}")
             print(f"Output: {self.args.output}")
             print(f"Multi-folder Mode: {getattr(self.args, 'multi_folder', False)}")
+<<<<<<< HEAD
+=======
+            print(f"Separate Layers: {self.args.separate_layers}")
+>>>>>>> 58d8b89 (new code 1)
             print(f"Flow Timeout: {self.args.flow_timeout}s")
             print(f"Max Flows: {self.args.max_flows}")
             print(f"Queue Size: {self.args.queue_size}")

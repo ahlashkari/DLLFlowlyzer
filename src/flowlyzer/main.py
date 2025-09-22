@@ -330,12 +330,125 @@ def load_folder_labeling_config(folder_path: str) -> dict:
         except Exception as e:
             print(f"Error loading JSON labeling: {e}")
     
+<<<<<<< HEAD
     # Try text file
     labeling_txt = folder_path / "labeling.txt"
     if labeling_txt.exists():
         try:
             from .features.labeling import LabelingConfig
             text_labels = LabelingConfig.load_from_text_file(str(labeling_txt))
+=======
+    # Fallback to text file
+    labeling_txt_file = folder_path / "labeling.txt"
+    if not labeling_txt_file.exists():
+        print(f"📁 No labeling config found in {folder_path} - all traffic will be labeled as 'Benign'")
+        return None
+    
+    try:
+        from .features.labeling import LabelingConfig
+        text_labels = LabelingConfig.load_from_text_file(str(labeling_txt_file))
+        
+        labeling_config = {
+            'ip_attacks': [],
+            'mac_attacks': [],
+            'time_attacks': [],
+        }
+        
+        for attack_label in text_labels:
+            if attack_label.attack_type == 'IP':
+                labeling_config['ip_attacks'].append({
+                    'label': attack_label.label,
+                    'ips': attack_label.criteria.get('attacker_ips', [])
+                })
+            elif attack_label.attack_type == 'MAC':
+                labeling_config['mac_attacks'].append({
+                    'label': attack_label.label,
+                    'macs': attack_label.criteria.get('attacker_macs', [])
+                })
+            elif attack_label.attack_type == 'TIME':
+                time_ranges = []
+                for start_time, end_time in attack_label.criteria.get('time_ranges', []):
+                    time_ranges.append({'start': start_time.strftime('%I:%M %p'), 'end': end_time.strftime('%I:%M %p')})
+                
+                labeling_config['time_attacks'].append({
+                    'label': attack_label.label,
+                    'time_ranges': time_ranges
+                })
+        
+        print(f"✅ Loaded text labeling config from {labeling_txt_file}")
+        return labeling_config
+    
+    except Exception as e:
+        print(f"❌ Error loading text labeling config from {labeling_txt_file}: {e}")
+        print(f"📝 All traffic will be labeled as 'Benign'")
+        return None
+
+
+def process_single_folder_batched(folder_name: str, pcap_files: list, processing_config: dict, 
+                                 log_config: dict, global_labeling_config: dict, logger) -> dict:
+    """Process folder with batched CSV export and memory optimization."""
+    logger.logger.info(f"Processing folder (batched): {folder_name} ({len(pcap_files)} files)")
+    
+    # Check for folder-specific labeling configuration
+    if pcap_files:
+        folder_path = Path(pcap_files[0]).parent
+        folder_labeling_config = load_folder_labeling_config(folder_path)
+        if folder_labeling_config:
+            logger.logger.info(f"Using folder-specific labeling config for {folder_name}")
+            actual_labeling_config = folder_labeling_config
+        else:
+            logger.logger.info(f"No folder-specific labeling found for {folder_name}, using global config")
+            actual_labeling_config = global_labeling_config
+    else:
+        actual_labeling_config = global_labeling_config
+    
+    # Setup flow manager with smaller max_flows for batching
+    flow_manager = FlowManager(
+        flow_timeout=processing_config['flow_timeout'],
+        max_flows=min(processing_config.get('max_flows', 100000), 10000)  # Limit for memory
+    )
+    
+    packet_queue = PacketQueue(
+        maxsize=processing_config['queue_size'],
+        num_workers=processing_config.get('workers', 4)
+    )
+    
+    packet_queue.set_packet_processor(flow_manager.process_packet)
+    packet_queue.start()
+    start_time = time.time()
+    total_packets = 0
+    total_flows_processed = 0
+    
+    # Setup CSV batching
+    folder_output_dir = Path(processing_config['output_dir']) / folder_name
+    folder_output_dir.mkdir(parents=True, exist_ok=True)
+    csv_exporter = CSVExporter(str(folder_output_dir))
+    
+    batch_files = csv_exporter.create_batch_files(
+        f"{folder_name}_features", 
+        processing_config['separate_l2_l3']
+    )
+    
+    # Initialize feature extractor and labeler
+    feature_extractor = FeatureExtractor(num_threads=processing_config.get('feature_threads', 4))
+    flow_labeler = FlowLabeler() if actual_labeling_config else None
+    if flow_labeler and actual_labeling_config:
+        attack_labels = LabelingConfig.load_from_config(actual_labeling_config)
+        flow_labeler.attack_labels = attack_labels
+    
+    # Initialize memory monitor
+    memory_monitor = MemoryMonitor(
+        warning_threshold_mb=processing_config.get('memory_warning_mb', 1024),
+        critical_threshold_mb=processing_config.get('memory_critical_mb', 2048)
+    )
+    
+    BATCH_SIZE = processing_config.get('batch_size', 30)  # Process flows in configurable batches
+    CSV_BATCH_SIZE = processing_config.get('csv_batch_size', 30)  # Number of flows per CSV batch
+    
+    try:
+        for file_index, pcap_file in enumerate(pcap_files, 1):
+            logger.log_file_progress(file_index, len(pcap_files), pcap_file, 0)
+>>>>>>> 58d8b89 (new code 1)
             
             config = {'ip_attacks': [], 'mac_attacks': [], 'time_attacks': []}
             
@@ -369,9 +482,115 @@ def load_folder_labeling_config(folder_path: str) -> dict:
     return None
 
 
+<<<<<<< HEAD
 def process_pcap_files(pcap_files: list, folder_name: str, output_dir: Path, 
                       labeling_config: dict, logger) -> dict:
     """Process PCAP files and extract features"""
+=======
+def perform_aggressive_cleanup(flow_manager, logger, memory_monitor=None):
+    """Perform aggressive memory cleanup when memory usage is high."""
+    try:
+        # Get memory stats before cleanup
+        if memory_monitor:
+            before_stats = memory_monitor.get_memory_stats()
+            logger.logger.info(f"Pre-cleanup memory: {before_stats.process_mb:.1f} MB")
+        
+        # Force completion of oldest 70% of active flows
+        stats = flow_manager.get_statistics()
+        current_active = stats['active_flows']
+        target_active = max(500, current_active // 3)  # Keep at least 500, or 1/3 current
+        
+        flow_manager.force_flow_completion(max_active_flows=target_active)
+        logger.logger.info(f"Aggressive cleanup: reduced active flows from {current_active} to {target_active}")
+        
+        # Clear completed flows that have accumulated
+        completed_flows = stats.get('completed_flows', 0)
+        if completed_flows > 100:
+            # Get and clear completed flows without processing (emergency)
+            emergency_flows = flow_manager.get_batch_completed_flows(completed_flows)
+            if emergency_flows:
+                # Just clear packet data without feature extraction
+                for flow in emergency_flows:
+                    if hasattr(flow, 'packets'):
+                        flow.packets.clear()
+                    if hasattr(flow, '_features_cache'):
+                        flow._features_cache = None
+                del emergency_flows
+                logger.logger.warning(f"Emergency: cleared {len(emergency_flows) if 'emergency_flows' in locals() else completed_flows} flows without processing")
+        
+        # Intensive garbage collection
+        if memory_monitor:
+            collected = memory_monitor.force_garbage_collection()
+            logger.logger.info(f"Garbage collection: {collected} objects collected")
+        else:
+            for _ in range(3):
+                gc.collect()
+        
+        # Log memory stats after cleanup
+        if memory_monitor:
+            after_stats = memory_monitor.get_memory_stats()
+            memory_freed = before_stats.process_mb - after_stats.process_mb
+            logger.logger.info(f"Post-cleanup memory: {after_stats.process_mb:.1f} MB (freed {memory_freed:.1f} MB)")
+        
+        new_flow_stats = flow_manager.get_memory_usage_estimate()
+        logger.logger.info(f"Flow manager memory estimate: {new_flow_stats['estimated_memory_mb']:.1f} MB")
+        
+    except Exception as e:
+        logger.logger.error(f"Error in aggressive cleanup: {e}")
+
+
+def process_flow_batch(flows: list, feature_extractor, flow_labeler, csv_exporter, 
+                      batch_files: dict, processing_config: dict, logger, 
+                      global_protocol_stats: dict = None) -> int:
+    """Process a batch of flows: extract features, apply labels, and export to CSV."""
+    if not flows:
+        return 0
+    
+    try:
+        # Extract features using standard feature extractor
+        flows_df = feature_extractor.extract_features(flows, global_protocol_stats)
+        
+        # Apply labeling
+        if flow_labeler:
+            flows_df = flow_labeler.label_flows(flows_df)
+        else:
+            flows_df['label'] = 'Benign'
+        
+        # Export batch to CSV (append to existing files)
+        csv_exporter.export_flows_batch(
+            flows_df, batch_files, processing_config['separate_l2_l3']
+        )
+        
+        flows_count = len(flows_df)
+        
+        # Comprehensive memory cleanup
+        for flow in flows:
+            if hasattr(flow, 'packets'):
+                flow.packets.clear()
+            # Clear any cached features to free more memory
+            if hasattr(flow, '_features_cache'):
+                flow._features_cache = None
+        
+        # Clear references and force garbage collection
+        del flows_df
+        del flows
+        gc.collect()
+        
+        logger.logger.debug(f"Processed and exported batch of {flows_count} flows with memory cleanup")
+        return flows_count
+        
+    except Exception as e:
+        logger.log_error(f"Error processing flow batch: {e}")
+        return 0
+
+
+def process_single_folder(folder_name: str, pcap_files: list, processing_config: dict, 
+                         log_config: dict, global_labeling_config: dict, logger) -> dict:
+    """Original single folder processing (kept for compatibility)."""
+    # Use batched version if batching is enabled
+    if processing_config.get('enable_batching', True):
+        return process_single_folder_batched(folder_name, pcap_files, processing_config, log_config, global_labeling_config, logger)
+>>>>>>> 58d8b89 (new code 1)
     
     logger.logger.info(f"Processing folder: {folder_name} ({len(pcap_files)} files)")
     
@@ -463,6 +682,7 @@ def generate_charts(results: list, output_dir: Path):
             for protocol, count in result['protocol_stats'].items():
                 all_protocol_stats[protocol] += count
         
+<<<<<<< HEAD
         if result and 'flows_df' in result and not result['flows_df'].empty:
             all_flow_stats.append(result['flows_df'])
     
@@ -505,6 +725,50 @@ def generate_charts(results: list, output_dir: Path):
     else:
         ax4.text(0.5, 0.5, 'No flow data available', ha='center', va='center', transform=ax4.transAxes)
         ax4.set_title('Flow Statistics')
+=======
+        # Create visualizations from final CSV file
+        try:
+            if os.path.exists(result['batch_files']['combined']):
+                import pandas as pd
+                final_flows_df = pd.read_csv(result['batch_files']['combined'])
+                folder_output_dir = Path(processing_config['output_dir']) / folder_name
+                
+                # Create standard plots
+                plotter = FlowlyzerPlotter(str(folder_output_dir))
+                plot_files = plotter.create_all_plots(final_flows_df, result['final_stats'])
+                
+                if plot_files:
+                    logger.logger.info(f"Generated {len(plot_files)} visualization files for {folder_name}")
+        except Exception as e:
+            logger.logger.warning(f"Could not create visualizations for {folder_name}: {e}")
+    else:
+        # Non-batched processing - need to export CSV
+        folder_output_dir = Path(processing_config['output_dir']) / folder_name
+        folder_output_dir.mkdir(parents=True, exist_ok=True)
+        
+        csv_exporter = CSVExporter(str(folder_output_dir))
+        export_info = csv_exporter.export_flows(
+            result['flows_df'],
+            separate_layers=processing_config['separate_l2_l3'],
+            base_filename=f"{folder_name}_features"
+        )
+        
+        combined_file, layer2_file, layer3_file = export_info
+        export_info_dict = {
+            'combined_file': combined_file,
+            'layer2_file': layer2_file,
+            'layer3_file': layer3_file,
+            'total_flows': len(result['flows_df']),
+        }
+        logger.log_export_results(export_info_dict)
+        
+        # Create standard plots
+        plotter = FlowlyzerPlotter(str(folder_output_dir))
+        plot_files = plotter.create_all_plots(result['flows_df'], result['final_stats'])
+        
+        if plot_files:
+            logger.logger.info(f"Generated {len(plot_files)} visualization files for {folder_name}")
+>>>>>>> 58d8b89 (new code 1)
     
     plt.tight_layout()
     chart_file = output_dir / f"protocol_analysis_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.png"
@@ -599,6 +863,7 @@ def main():
             if result:
                 results.append(result)
         
+<<<<<<< HEAD
         # Generate summary charts
         if results:
             generate_charts(results, output_dir)
@@ -618,6 +883,125 @@ def main():
         else:
             print("❌ No results generated")
             return 1
+=======
+        # Use standard flow manager with full feature extraction
+        flow_manager = FlowManager(
+            flow_timeout=processing_config['flow_timeout'],
+            max_flows=processing_config.get('max_flows', 100000)
+        )
+        
+        packet_queue = PacketQueue(
+            maxsize=processing_config['queue_size'],
+            num_workers=processing_config.get('workers', 4)
+        )
+        
+        packet_queue.set_packet_processor(flow_manager.process_packet)
+        packet_queue.start()
+        start_time = time.time()
+        total_packets = 0
+        
+        try:
+            for file_index, pcap_file in enumerate(pcap_files, 1):
+                logger.log_file_progress(file_index, len(pcap_files), pcap_file, 0)
+                
+                packets_in_file = 0
+                try:
+                    # Use PcapReader for memory efficiency with large files
+                    with PcapReader(pcap_file) as pcap_reader:
+                        for frame_number, packet in enumerate(pcap_reader, total_packets + 1):
+                            packet_queue.put_packet(packet, frame_number)
+                            packets_in_file += 1
+                            
+                            # Log progress every 10,000 packets
+                            if frame_number % 10000 == 0:
+                                stats = flow_manager.get_statistics()
+                                logger.log_progress(
+                                    frame_number,
+                                    stats['protocol_stats'],
+                                    stats['flow_stats']
+                                )
+                
+                except Exception as e:
+                    logger.log_error(f"Error processing file {pcap_file}: {e}")
+                    continue
+                
+                total_packets += packets_in_file
+                logger.log_file_progress(file_index, len(pcap_files), pcap_file, packets_in_file)
+        
+        finally:
+            # Wait for queue to finish and stop workers
+            logger.logger.info("Waiting for packet processing to complete...")
+            packet_queue.wait_for_completion()
+            packet_queue.stop()
+            
+            # Finalize all remaining flows
+            flow_manager.finalize_all_flows()
+        
+        # Log final flow statistics
+        final_stats = flow_manager.get_statistics()
+        logger.log_flow_statistics(final_stats)
+        
+        # Extract features using standard feature extractor
+        logger.log_feature_extraction(final_stats['total_flows'], len(FeatureExtractor().feature_columns))
+        
+        feature_extractor = FeatureExtractor(num_threads=processing_config.get('feature_threads', 4))
+        all_flows = flow_manager.get_all_flows()
+        flows_df = feature_extractor.extract_features(all_flows)
+        
+        # Apply labeling
+        if labeling_config:
+            flow_labeler = FlowLabeler()
+            
+            # Load labeling rules
+            attack_labels = LabelingConfig.load_from_config(labeling_config)
+            flow_labeler.attack_labels = attack_labels
+            
+            # Apply labels
+            flows_df = flow_labeler.label_flows(flows_df)
+            
+            # Log labeling results
+            if 'label' in flows_df.columns:
+                label_stats = flows_df['label'].value_counts().to_dict()
+                logger.log_labeling_results(label_stats)
+        
+        # Export to CSV using standard mode
+        csv_exporter = CSVExporter(processing_config['output_dir'])
+        export_info = csv_exporter.export_flows(
+            flows_df,
+            separate_layers=processing_config['separate_l2_l3'],
+            base_filename=processing_config.get('csv_file', 'features').replace('.csv', '')
+        )
+        
+        # Update export_info format for logging
+        combined_file, layer2_file, layer3_file = export_info
+        export_info_dict = {
+            'combined_file': combined_file,
+            'layer2_file': layer2_file,
+            'layer3_file': layer3_file,
+            'total_flows': len(flows_df),
+        }
+        
+        logger.log_export_results(export_info_dict)
+        
+        # Create plots and statistics (automatic plotting)
+        print("📊 Generating visualization plots...")
+        plotter = FlowlyzerPlotter(processing_config['output_dir'])
+        plot_files = plotter.create_all_plots(flows_df, final_stats)
+        
+        if plot_files:
+            logger.logger.info(f"Generated {len(plot_files)} visualization files:")
+            for plot_file in plot_files:
+                logger.logger.info(f"  - {Path(plot_file).name}")
+        
+        # Log completion
+        total_time = time.time() - start_time
+        logger.log_completion(total_time, final_stats)
+        
+        # Final success message
+        print(f"\nAnalysis completed successfully!")
+        print(f"Results saved to: {processing_config['output_dir']}")
+        print(f"Log file: {log_file}")
+>>>>>>> 58d8b89 (new code 1)
         
         return 0
         
