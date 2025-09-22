@@ -24,14 +24,37 @@ class Layer2OnlyPacket(BasePacket):
                 'timestamp': float(self.packet.time) if hasattr(self.packet, 'time') else self.timestamp
             })
             
+            # First extract basic ethernet info to set src_mac and dst_mac
+            self._extract_basic_ethernet_info()
             self._extract_ethernet_features()
             self._extract_vlan_features()
             self._extract_layer2_protocols()
+            self._analyze_mac_addresses()
+            self._extract_layer2_quality_metrics()
             self._extract_quality_metrics()
             
         except Exception as e:
             self.logger.debug(f"Layer 2 extraction error: {e}")
             self._set_layer2_defaults()
+    
+    def _extract_basic_ethernet_info(self):
+        """Extract basic Ethernet info for flow keys."""
+        try:
+            if self.packet.haslayer('Ether'):
+                eth_layer = self.packet['Ether']
+                # Set basic MAC addresses for flow identification
+                self.features['src_mac'] = str(eth_layer.src)
+                self.features['dst_mac'] = str(eth_layer.dst)
+                self.features['eth_type'] = int(eth_layer.type)
+            else:
+                self.features['src_mac'] = str(MISSING_VALUE)
+                self.features['dst_mac'] = str(MISSING_VALUE)
+                self.features['eth_type'] = MISSING_VALUE
+        except Exception as e:
+            self.logger.debug(f"Error extracting basic ethernet info: {e}")
+            self.features['src_mac'] = str(MISSING_VALUE)
+            self.features['dst_mac'] = str(MISSING_VALUE) 
+            self.features['eth_type'] = MISSING_VALUE
     
     def _analyze_mac_addresses(self):
         """Analyze MAC addresses for vendor info and characteristics."""

@@ -5,7 +5,7 @@ Focuses exclusively on Layer 2 features and MAC-based flow identification.
 
 from typing import List, Dict, Any, Tuple
 import numpy as np
-from ..packets.simple_layer2_packet import SimpleLayer2Packet
+from ..packets.layer2_only_packet import Layer2OnlyPacket
 from ..packets.fixed_layer2_packet import MISSING_VALUE
 import logging
 
@@ -13,9 +13,9 @@ import logging
 class Layer2OnlyFlow:
     """Flow class that extracts only Layer 2 features."""
     
-    def __init__(self, flow_key: str, first_packet: SimpleLayer2Packet):
+    def __init__(self, flow_key: str, first_packet: Layer2OnlyPacket):
         self.flow_key = flow_key
-        self.packets: List[SimpleLayer2Packet] = [first_packet]
+        self.packets: List[Layer2OnlyPacket] = [first_packet]
         self.start_time = first_packet.timestamp
         self.end_time = first_packet.timestamp
         self.last_activity = first_packet.timestamp
@@ -25,7 +25,7 @@ class Layer2OnlyFlow:
         self.src_mac = first_packet.features.get('src_mac', str(MISSING_VALUE))
         self.dst_mac = first_packet.features.get('dst_mac', str(MISSING_VALUE))
     
-    def add_packet(self, packet: SimpleLayer2Packet):
+    def add_packet(self, packet: Layer2OnlyPacket):
         """Add a packet to the flow."""
         self.packets.append(packet)
         self.end_time = max(self.end_time, packet.timestamp)
@@ -86,7 +86,7 @@ class Layer2OnlyFlow:
             if protocol_counts:
                 try:
                     max_protocol_item = max(protocol_counts.items(), key=lambda x: x[1])
-                    features['primary_protocol'] = max_protocol_item[0]
+                    features['primary_protocol'] = str(max_protocol_item[0])
                 except (ValueError, IndexError, TypeError):
                     features['primary_protocol'] = 'Layer2'
             else:
@@ -187,9 +187,9 @@ class Layer2OnlyFlow:
             if protocol_counts:
                 try:
                     dominant_protocol = max(protocol_counts.items(), key=lambda x: x[1])
-                    features['dominant_l2_protocol'] = dominant_protocol[0].replace('_count', '')
-                    features['dominant_protocol_percentage'] = (dominant_protocol[1] / total_packets) * 100 if total_packets > 0 else 0
-                except (ValueError, IndexError, TypeError):
+                    features['dominant_l2_protocol'] = str(dominant_protocol[0]).replace('_count', '')
+                    features['dominant_protocol_percentage'] = float(dominant_protocol[1]) / max(1, total_packets) * 100
+                except (ValueError, IndexError, TypeError, ZeroDivisionError):
                     features['dominant_l2_protocol'] = str(MISSING_VALUE)
                     features['dominant_protocol_percentage'] = MISSING_VALUE
             else:
@@ -214,7 +214,10 @@ class Layer2OnlyFlow:
                 features['total_bytes'] = sum(frame_sizes)
                 features['mean_frame_size'] = np.mean(frame_sizes)
                 features['min_frame_size'] = min(frame_sizes)
-                features['max_frame_size'] = max(frame_sizes)
+                try:
+                    features['max_frame_size'] = max(frame_sizes)
+                except (ValueError, TypeError):
+                    features['max_frame_size'] = MISSING_VALUE
                 features['std_frame_size'] = np.std(frame_sizes) if len(frame_sizes) > 1 else 0
                 features['median_frame_size'] = np.median(frame_sizes)
             else:
@@ -244,7 +247,10 @@ class Layer2OnlyFlow:
                     features['mean_inter_arrival_time'] = np.mean(inter_arrival_times)
                     features['std_inter_arrival_time'] = np.std(inter_arrival_times)
                     features['min_inter_arrival_time'] = min(inter_arrival_times)
-                    features['max_inter_arrival_time'] = max(inter_arrival_times)
+                    try:
+                        features['max_inter_arrival_time'] = max(inter_arrival_times)
+                    except (ValueError, TypeError):
+                        features['max_inter_arrival_time'] = MISSING_VALUE
                 else:
                     features.update({
                         'mean_inter_arrival_time': MISSING_VALUE,
@@ -358,7 +364,10 @@ class Layer2OnlyFlow:
                 
                 features['stp_sum_msg_age'] = sum(msg_ages)
                 features['stp_mean_msg_age'] = np.mean(msg_ages) if msg_ages else MISSING_VALUE
-                features['stp_max_msg_age'] = max(msg_ages) if msg_ages else MISSING_VALUE
+                try:
+                    features['stp_max_msg_age'] = max(msg_ages) if msg_ages else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['stp_max_msg_age'] = MISSING_VALUE
                 features['stp_min_msg_age'] = min(msg_ages) if msg_ages else MISSING_VALUE
                 features['stp_median_msg_age'] = np.median(msg_ages) if msg_ages else MISSING_VALUE
                 features['stp_std_msg_age'] = np.std(msg_ages) if len(msg_ages) > 1 else MISSING_VALUE
@@ -366,7 +375,10 @@ class Layer2OnlyFlow:
                 
                 features['stp_sum_forward'] = sum(forward_delays)
                 features['stp_mean_forward'] = np.mean(forward_delays) if forward_delays else MISSING_VALUE
-                features['stp_max_forward'] = max(forward_delays) if forward_delays else MISSING_VALUE
+                try:
+                    features['stp_max_forward'] = max(forward_delays) if forward_delays else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['stp_max_forward'] = MISSING_VALUE
                 features['stp_min_forward'] = min(forward_delays) if forward_delays else MISSING_VALUE
                 features['stp_median_forward'] = np.median(forward_delays) if forward_delays else MISSING_VALUE
                 features['stp_std_forward'] = np.std(forward_delays) if len(forward_delays) > 1 else MISSING_VALUE
@@ -395,7 +407,10 @@ class Layer2OnlyFlow:
                 
                 features['cdp_sum_addresses_count'] = sum(addresses_counts)
                 features['cdp_mean_addresses_count'] = np.mean(addresses_counts) if addresses_counts else MISSING_VALUE
-                features['cdp_max_addresses_count'] = max(addresses_counts) if addresses_counts else MISSING_VALUE
+                try:
+                    features['cdp_max_addresses_count'] = max(addresses_counts) if addresses_counts else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['cdp_max_addresses_count'] = MISSING_VALUE
                 features['cdp_min_addresses_count'] = min(addresses_counts) if addresses_counts else MISSING_VALUE
                 features['cdp_median_addresses_count'] = np.median(addresses_counts) if addresses_counts else MISSING_VALUE
                 features['cdp_std_addresses_count'] = np.std(addresses_counts) if len(addresses_counts) > 1 else MISSING_VALUE
@@ -405,7 +420,10 @@ class Layer2OnlyFlow:
                 features['cdp_sum_capabilities'] = sum(capabilities)
                 
                 features['cdp_mean_power_sum'] = np.mean(power_sums) if power_sums else MISSING_VALUE
-                features['cdp_max_power_sum'] = max(power_sums) if power_sums else MISSING_VALUE
+                try:
+                    features['cdp_max_power_sum'] = max(power_sums) if power_sums else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['cdp_max_power_sum'] = MISSING_VALUE
                 features['cdp_min_power_sum'] = min(power_sums) if power_sums else MISSING_VALUE
                 features['cdp_median_power_sum'] = np.median(power_sums) if power_sums else MISSING_VALUE
                 features['cdp_std_power_sum'] = np.std(power_sums) if len(power_sums) > 1 else MISSING_VALUE
@@ -429,7 +447,10 @@ class Layer2OnlyFlow:
                 
                 features['arp_sum_hw_type'] = sum(hw_types) if hw_types else MISSING_VALUE
                 features['arp_mean_hw_type'] = float(np.mean(hw_types)) if hw_types else MISSING_VALUE
-                features['arp_max_hw_type'] = max(hw_types) if hw_types else MISSING_VALUE
+                try:
+                    features['arp_max_hw_type'] = max(hw_types) if hw_types else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['arp_max_hw_type'] = MISSING_VALUE
                 features['arp_min_hw_type'] = min(hw_types) if hw_types else MISSING_VALUE
                 
                 features['arp_sum_proto_type'] = sum(proto_types) if proto_types else MISSING_VALUE
@@ -437,12 +458,18 @@ class Layer2OnlyFlow:
                 
                 features['arp_sum_opcode'] = sum(opcodes) if opcodes else MISSING_VALUE
                 features['arp_mean_opcode'] = float(np.mean(opcodes)) if opcodes else MISSING_VALUE
-                features['arp_max_opcode'] = max(opcodes) if opcodes else MISSING_VALUE
+                try:
+                    features['arp_max_opcode'] = max(opcodes) if opcodes else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['arp_max_opcode'] = MISSING_VALUE
                 features['arp_min_opcode'] = min(opcodes) if opcodes else MISSING_VALUE
                 
                 features['arp_sum_size'] = sum(packet_sizes) if packet_sizes else MISSING_VALUE
                 features['arp_mean_size'] = float(np.mean(packet_sizes)) if packet_sizes else MISSING_VALUE
-                features['arp_max_size'] = max(packet_sizes) if packet_sizes else MISSING_VALUE
+                try:
+                    features['arp_max_size'] = max(packet_sizes) if packet_sizes else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['arp_max_size'] = MISSING_VALUE
                 features['arp_min_size'] = min(packet_sizes) if packet_sizes else MISSING_VALUE
                 
                 # Protocol-specific counts
@@ -477,12 +504,18 @@ class Layer2OnlyFlow:
                 
                 features['dhcp_sum_transaction_id'] = sum(transaction_ids) if transaction_ids else MISSING_VALUE
                 features['dhcp_mean_transaction_id'] = float(np.mean(transaction_ids)) if transaction_ids else MISSING_VALUE
-                features['dhcp_max_transaction_id'] = max(transaction_ids) if transaction_ids else MISSING_VALUE
+                try:
+                    features['dhcp_max_transaction_id'] = max(transaction_ids) if transaction_ids else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['dhcp_max_transaction_id'] = MISSING_VALUE
                 features['dhcp_min_transaction_id'] = min(transaction_ids) if transaction_ids else MISSING_VALUE
                 
                 features['dhcp_sum_lease_time'] = sum(lease_times) if lease_times else MISSING_VALUE
                 features['dhcp_mean_lease_time'] = float(np.mean(lease_times)) if lease_times else MISSING_VALUE
-                features['dhcp_max_lease_time'] = max(lease_times) if lease_times else MISSING_VALUE
+                try:
+                    features['dhcp_max_lease_time'] = max(lease_times) if lease_times else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['dhcp_max_lease_time'] = MISSING_VALUE
                 features['dhcp_min_lease_time'] = min(lease_times) if lease_times else MISSING_VALUE
                 
                 features['dhcp_sum_message_type'] = MISSING_VALUE  # Not extracted by fixed parser
@@ -490,7 +523,10 @@ class Layer2OnlyFlow:
                 
                 features['dhcp_sum_options_count'] = sum(options_counts) if options_counts else MISSING_VALUE
                 features['dhcp_mean_options_count'] = float(np.mean(options_counts)) if options_counts else MISSING_VALUE
-                features['dhcp_max_options_count'] = max(options_counts) if options_counts else MISSING_VALUE
+                try:
+                    features['dhcp_max_options_count'] = max(options_counts) if options_counts else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['dhcp_max_options_count'] = MISSING_VALUE
                 features['dhcp_min_options_count'] = min(options_counts) if options_counts else MISSING_VALUE
                 
             else:
@@ -510,7 +546,10 @@ class Layer2OnlyFlow:
                 
                 # SSAP statistics
                 features['llc_mean_ssap_sap'] = np.mean(ssap_saps) if ssap_saps else MISSING_VALUE
-                features['llc_max_ssap_sap'] = max(ssap_saps) if ssap_saps else MISSING_VALUE
+                try:
+                    features['llc_max_ssap_sap'] = max(ssap_saps) if ssap_saps else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['llc_max_ssap_sap'] = MISSING_VALUE
                 features['llc_min_ssap_sap'] = min(ssap_saps) if ssap_saps else MISSING_VALUE
                 features['llc_median_ssap_sap'] = np.median(ssap_saps) if ssap_saps else MISSING_VALUE
                 features['llc_std_ssap_sap'] = np.std(ssap_saps) if len(ssap_saps) > 1 else MISSING_VALUE
@@ -519,7 +558,10 @@ class Layer2OnlyFlow:
                 # DSAP statistics
                 features['llc_sum_dsap_sap'] = sum(dsap_saps)
                 features['llc_mean_dsap_sap'] = np.mean(dsap_saps) if dsap_saps else MISSING_VALUE
-                features['llc_max_dsap_sap'] = max(dsap_saps) if dsap_saps else MISSING_VALUE
+                try:
+                    features['llc_max_dsap_sap'] = max(dsap_saps) if dsap_saps else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['llc_max_dsap_sap'] = MISSING_VALUE
                 features['llc_min_dsap_sap'] = min(dsap_saps) if dsap_saps else MISSING_VALUE
                 features['llc_median_dsap_sap'] = np.median(dsap_saps) if dsap_saps else MISSING_VALUE
                 features['llc_std_dsap_sap'] = np.std(dsap_saps) if len(dsap_saps) > 1 else MISSING_VALUE
@@ -527,7 +569,10 @@ class Layer2OnlyFlow:
                 
                 # Control field statistics
                 features['llc_mean_ctrl'] = np.mean(ctrl_vals) if ctrl_vals else MISSING_VALUE
-                features['llc_max_ctrl'] = max(ctrl_vals) if ctrl_vals else MISSING_VALUE
+                try:
+                    features['llc_max_ctrl'] = max(ctrl_vals) if ctrl_vals else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['llc_max_ctrl'] = MISSING_VALUE
                 
             else:
                 self._set_default_llc_aggregated_features(features)
@@ -548,7 +593,10 @@ class Layer2OnlyFlow:
                 
                 features['isl_sum_frame_type'] = sum(frame_types)
                 features['isl_mean_frame_type'] = np.mean(frame_types) if frame_types else MISSING_VALUE
-                features['isl_max_frame_type'] = max(frame_types) if frame_types else MISSING_VALUE
+                try:
+                    features['isl_max_frame_type'] = max(frame_types) if frame_types else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['isl_max_frame_type'] = MISSING_VALUE
                 features['isl_min_frame_type'] = min(frame_types) if frame_types else MISSING_VALUE
                 
                 features['isl_sum_user_bits'] = sum(user_bits)
@@ -556,7 +604,10 @@ class Layer2OnlyFlow:
                 
                 features['isl_sum_vlan_id'] = sum(vlan_ids)
                 features['isl_mean_vlan_id'] = np.mean(vlan_ids) if vlan_ids else MISSING_VALUE
-                features['isl_max_vlan_id'] = max(vlan_ids) if vlan_ids else MISSING_VALUE
+                try:
+                    features['isl_max_vlan_id'] = max(vlan_ids) if vlan_ids else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['isl_max_vlan_id'] = MISSING_VALUE
                 features['isl_min_vlan_id'] = min(vlan_ids) if vlan_ids else MISSING_VALUE
                 features['isl_std_vlan_id'] = np.std(vlan_ids) if len(vlan_ids) > 1 else MISSING_VALUE
                 
@@ -590,7 +641,10 @@ class Layer2OnlyFlow:
                 
                 features['dtp_sum_tlv_count'] = sum(tlv_counts) if tlv_counts else MISSING_VALUE
                 features['dtp_mean_tlv_count'] = float(np.mean(tlv_counts)) if tlv_counts else MISSING_VALUE
-                features['dtp_max_tlv_count'] = max(tlv_counts) if tlv_counts else MISSING_VALUE
+                try:
+                    features['dtp_max_tlv_count'] = max(tlv_counts) if tlv_counts else MISSING_VALUE
+                except (ValueError, TypeError):
+                    features['dtp_max_tlv_count'] = MISSING_VALUE
                 features['dtp_min_tlv_count'] = min(tlv_counts) if tlv_counts else MISSING_VALUE
                 
                 features['dtp_sum_domain_length'] = sum(domain_lengths) if domain_lengths else MISSING_VALUE
