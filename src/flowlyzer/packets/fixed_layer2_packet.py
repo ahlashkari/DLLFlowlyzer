@@ -40,10 +40,24 @@ def parse_cdp_packet(raw_data: bytes) -> dict:
                             break
         
         if cdp_offset >= 0 and cdp_offset + 4 <= len(raw_data):
-            # Parse CDP header
-            version = raw_data[cdp_offset]
-            ttl = raw_data[cdp_offset + 1]
-            checksum = struct.unpack('!H', raw_data[cdp_offset+2:cdp_offset+4])[0]
+            try:
+                # Parse CDP header safely
+                version_byte = raw_data[cdp_offset]
+                ttl_byte = raw_data[cdp_offset + 1]
+                
+                version = int(version_byte) if isinstance(version_byte, int) else ord(version_byte)
+                ttl = int(ttl_byte) if isinstance(ttl_byte, int) else ord(ttl_byte)
+                checksum = struct.unpack('!H', raw_data[cdp_offset+2:cdp_offset+4])[0]
+            except (struct.error, IndexError, TypeError, ValueError) as header_error:
+                logger.debug(f"CDP header parsing error: {header_error}")
+                # Set defaults and skip TLV parsing
+                for key in ['cdp_version', 'cdp_ttl', 'cdp_checksum', 'cdp_tlv_count', 'cdp_device_id_tlv_len',
+                           'cdp_software_version_tlv_len', 'cdp_platform_tlv_len', 'cdp_addresses_count',
+                           'cdp_capabilities', 'cdp_capabilities_router', 'cdp_capabilities_trans_bridge',
+                           'cdp_capabilities_switch', 'cdp_capabilities_host']:
+                    features[key] = MISSING_VALUE
+                features['cdp_tlvs'] = 1
+                return features
             
             features['cdp_version'] = int(version)
             features['cdp_ttl'] = int(ttl)
@@ -170,18 +184,25 @@ def parse_dhcp_packet(scapy_packet: Packet) -> dict:
             
             # Parse DHCP options
             for option in dhcp_layer.options:
-                if isinstance(option, tuple) and len(option) >= 2:
-                    option_name, option_value = option[0], option[1]
-                    
-                    # Extract message type
-                    if option_name == 'message-type':
-                        message_type = int(option_value) if isinstance(option_value, int) else MISSING_VALUE
-                    
-                    # Calculate option length
-                    if isinstance(option_value, (str, bytes)):
-                        options_total_len += len(option_value)
+                try:
+                    if isinstance(option, tuple) and len(option) >= 2:
+                        option_name, option_value = option[0], option[1]
+                    elif isinstance(option, (list, tuple)) and len(option) >= 2:
+                        option_name, option_value = option[0], option[1]
                     else:
-                        options_total_len += 4  # Approximate for non-string options
+                        continue
+                except (IndexError, TypeError):
+                    continue
+                    
+                # Extract message type
+                if option_name == 'message-type':
+                    message_type = int(option_value) if isinstance(option_value, int) else MISSING_VALUE
+                
+                # Calculate option length
+                if isinstance(option_value, (str, bytes)):
+                    options_total_len += len(option_value)
+                else:
+                    options_total_len += 4  # Approximate for non-string options
             
             features['dhcp_options'] = options_count
             features['dhcp_options_len'] = options_total_len
@@ -316,14 +337,25 @@ def parse_isl_packet(raw_data: bytes) -> dict:
     
     try:
         # ISL header is at the beginning of the frame
-        if len(raw_data) >= 30:  # ISL header is 26 bytes + Ethernet header
-            # Parse ISL fields safely with int conversion
-            features['isl_frame_type'] = int((raw_data[0] & 0xF0) >> 4)
-            features['isl_user_bits'] = int(raw_data[0] & 0x0F)
-            features['isl_src_vlan_id'] = int(((raw_data[1] & 0x0F) << 8) | raw_data[2])
-            features['isl_bpdu'] = bool(raw_data[3] & 0x80)
-            features['isl_index'] = int(raw_data[3] & 0x1F)
-            features['isl_reserved'] = int(raw_data[4])
+        if len(raw_data) >= 30 and isinstance(raw_data, (bytes, bytearray)):  # ISL header is 26 bytes + Ethernet header
+            try:
+                # Parse ISL fields safely with int conversion
+                byte0 = int(raw_data[0]) if isinstance(raw_data[0], int) else ord(raw_data[0])
+                byte1 = int(raw_data[1]) if isinstance(raw_data[1], int) else ord(raw_data[1])
+                byte2 = int(raw_data[2]) if isinstance(raw_data[2], int) else ord(raw_data[2])
+                byte3 = int(raw_data[3]) if isinstance(raw_data[3], int) else ord(raw_data[3])
+                byte4 = int(raw_data[4]) if isinstance(raw_data[4], int) else ord(raw_data[4])
+                
+                features['isl_frame_type'] = int((byte0 & 0xF0) >> 4)
+                features['isl_user_bits'] = int(byte0 & 0x0F)
+                features['isl_src_vlan_id'] = int(((byte1 & 0x0F) << 8) | byte2)
+                features['isl_bpdu'] = bool(byte3 & 0x80)
+                features['isl_index'] = int(byte3 & 0x1F)
+                features['isl_reserved'] = int(byte4)
+            except (TypeError, ValueError, IndexError) as parse_error:
+                logger.debug(f"ISL field parsing error: {parse_error}")
+                for key in ['isl_frame_type', 'isl_user_bits', 'isl_src_vlan_id', 'isl_bpdu', 'isl_index', 'isl_reserved']:
+                    features[key] = MISSING_VALUE
             
         else:
             # Not enough data for ISL

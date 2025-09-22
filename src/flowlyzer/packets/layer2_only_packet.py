@@ -340,17 +340,27 @@ class Layer2OnlyPacket(BasePacket):
     def _is_multicast_mac(self, mac_address: str) -> bool:
         """Check if MAC address is multicast."""
         try:
-            first_octet = int(mac_address.split(':')[0], 16)
+            if not isinstance(mac_address, str) or not mac_address or mac_address == str(MISSING_VALUE):
+                return False
+            mac_parts = mac_address.split(':')
+            if not mac_parts or len(mac_parts) == 0:
+                return False
+            first_octet = int(mac_parts[0], 16)
             return bool(first_octet & 0x01)
-        except Exception:
+        except (ValueError, IndexError, TypeError, AttributeError):
             return False
     
     def _is_local_mac(self, mac_address: str) -> bool:
         """Check if MAC address is locally administered."""
         try:
-            first_octet = int(mac_address.split(':')[0], 16)
+            if not isinstance(mac_address, str) or not mac_address or mac_address == str(MISSING_VALUE):
+                return False
+            mac_parts = mac_address.split(':')
+            if not mac_parts or len(mac_parts) == 0:
+                return False
+            first_octet = int(mac_parts[0], 16)
             return bool(first_octet & 0x02)
-        except Exception:
+        except (ValueError, IndexError, TypeError, AttributeError):
             return False
     
     # Protocol feature extraction methods
