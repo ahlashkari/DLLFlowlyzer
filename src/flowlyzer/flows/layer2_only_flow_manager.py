@@ -210,6 +210,49 @@ class Layer2OnlyFlowManager:
             percentage = (count / total_protocols) * 100 if total_protocols > 0 else 0
             self.logger.info(f"  {protocol}: {count:,} ({percentage:.1f}%)")
     
+    def get_memory_usage_estimate(self) -> int:
+        """Estimate memory usage in bytes."""
+        try:
+            # Estimate memory per flow (rough calculation)
+            bytes_per_flow = 2048  # Rough estimate for Layer 2-only flows
+            
+            active_memory = len(self.active_flows) * bytes_per_flow
+            completed_memory = len(self.completed_flows) * bytes_per_flow
+            
+            # Add overhead for statistics and manager itself
+            overhead = 1024 * 1024  # 1MB overhead
+            
+            return active_memory + completed_memory + overhead
+        except Exception as e:
+            self.logger.debug(f"Error estimating memory usage: {e}")
+            return 0
+    
+    def get_all_flows(self) -> list:
+        """Get all flows (active + completed)."""
+        try:
+            all_flows = list(self.active_flows.values()) + self.completed_flows
+            return all_flows
+        except Exception as e:
+            self.logger.error(f"Error getting all flows: {e}")
+            return []
+    
+    def finalize_all_flows(self) -> list:
+        """Finalize all flows and return them."""
+        try:
+            # Complete all active flows first
+            self.complete_all_active_flows()
+            
+            # Return all completed flows
+            all_flows = self.completed_flows.copy()
+            
+            # Clear flows from memory
+            self.completed_flows.clear()
+            
+            return all_flows
+        except Exception as e:
+            self.logger.error(f"Error finalizing all flows: {e}")
+            return []
+
     def __del__(self):
         """Cleanup on destruction."""
         try:
