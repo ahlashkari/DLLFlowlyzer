@@ -83,7 +83,11 @@ class Layer2OnlyFlow:
                 protocol_counts[proto] = protocol_counts.get(proto, 0) + 1
             
             if protocol_counts:
-                features['primary_protocol'] = max(protocol_counts.items(), key=lambda x: x[1])[0]
+                try:
+                    max_protocol_item = max(protocol_counts.items(), key=lambda x: x[1])
+                    features['primary_protocol'] = max_protocol_item[0]
+                except (ValueError, IndexError, TypeError):
+                    features['primary_protocol'] = 'Layer2'
             else:
                 features['primary_protocol'] = 'Layer2'
                 
@@ -180,9 +184,13 @@ class Layer2OnlyFlow:
             
             # Dominant protocol analysis
             if protocol_counts:
-                dominant_protocol = max(protocol_counts.items(), key=lambda x: x[1])
-                features['dominant_l2_protocol'] = dominant_protocol[0].replace('_count', '')
-                features['dominant_protocol_percentage'] = (dominant_protocol[1] / total_packets) * 100 if total_packets > 0 else 0
+                try:
+                    dominant_protocol = max(protocol_counts.items(), key=lambda x: x[1])
+                    features['dominant_l2_protocol'] = dominant_protocol[0].replace('_count', '')
+                    features['dominant_protocol_percentage'] = (dominant_protocol[1] / total_packets) * 100 if total_packets > 0 else 0
+                except (ValueError, IndexError, TypeError):
+                    features['dominant_l2_protocol'] = str(MISSING_VALUE)
+                    features['dominant_protocol_percentage'] = MISSING_VALUE
             else:
                 features['dominant_l2_protocol'] = str(MISSING_VALUE)
                 features['dominant_protocol_percentage'] = MISSING_VALUE
