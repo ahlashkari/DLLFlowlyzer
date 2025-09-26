@@ -24,20 +24,90 @@ from scapy.all import PcapReader
 import json
 
 
+def parse_json_labeling_config(config: dict, flow_labeler) -> None:
+    """Parse JSON labeling configuration and add attack rules to flow labeler."""
+    if not config or not flow_labeler:
+        return
+    
+    # Handle time-based labels (most common in JSON configs)
+    time_labels = config.get('time_labels', [])
+    for time_label in time_labels:
+        label = time_label.get('label', 'Attack')
+        time_range = time_label.get('time_range', '')
+        
+        if time_range and '-' in time_range:
+            try:
+                start_time, end_time = time_range.split('-')
+                flow_labeler.add_time_attack(
+                    label=label,
+                    time_ranges=[(start_time.strip(), end_time.strip())],
+                    layer_2_only=config.get('layer_2_only', False)
+                )
+                print(f"✅ Added time-based attack rule: {label} for {time_range}")
+            except Exception as e:
+                print(f"❌ Error parsing time range {time_range}: {e}")
+    
+    # Handle protocol-specific labels
+    protocol_labels = config.get('protocol_specific_labels', [])
+    for proto_label in protocol_labels:
+        label = proto_label.get('label', 'Attack')
+        protocols = proto_label.get('protocols', [])
+        time_range = proto_label.get('time_range', '')
+        
+        if protocols:
+            try:
+                time_ranges = None
+                if time_range and '-' in time_range:
+                    start_time, end_time = time_range.split('-')
+                    time_ranges = [(start_time.strip(), end_time.strip())]
+                
+                flow_labeler.add_protocol_attack(
+                    label=label,
+                    protocols=protocols,
+                    time_ranges=time_ranges,
+                    layer_2_only=config.get('layer_2_only', True)
+                )
+                print(f"✅ Added protocol-based attack rule: {label} for protocols {protocols}")
+            except Exception as e:
+                print(f"❌ Error adding protocol attack {label}: {e}")
+    
+    # Handle IP-based labels
+    ip_attacks = config.get('ip_attacks', [])
+    for ip_attack in ip_attacks:
+        label = ip_attack.get('label', 'Attack')
+        ips = ip_attack.get('ips', [])
+        if ips:
+            flow_labeler.add_ip_attack(label, ips)
+            print(f"✅ Added IP-based attack rule: {label} for IPs {ips}")
+    
+    # Handle MAC-based labels
+    mac_attacks = config.get('mac_attacks', [])
+    for mac_attack in mac_attacks:
+        label = mac_attack.get('label', 'Attack')
+        macs = mac_attack.get('macs', [])
+        if macs:
+            flow_labeler.add_mac_attack(label, macs)
+            print(f"✅ Added MAC-based attack rule: {label} for MACs {macs}")
+
+
 def load_folder_labeling_config(folder_path: str) -> dict:
     """Load labeling configuration from folder"""
     folder_path = Path(folder_path)
     
-    # Try JSON first (priority)
-    labeling_json = folder_path / "labeling.json"
-    if labeling_json.exists():
-        try:
-            with open(labeling_json, 'r') as f:
-                config = json.load(f)
-                print(f"✅ Loaded JSON labeling config from {labeling_json}")
-                return config
-        except Exception as e:
-            print(f"❌ Error loading JSON labeling: {e}")
+    # Try different JSON file names (priority order)
+    json_filenames = ["labeling.json", "arp_spoof_labels.json", "attack_config.json"]
+    
+    for json_filename in json_filenames:
+        labeling_json = folder_path / json_filename
+        if labeling_json.exists():
+            try:
+                with open(labeling_json, 'r') as f:
+                    config = json.load(f)
+                    print(f"✅ Loaded JSON labeling config from {labeling_json}")
+                    return config
+            except Exception as e:
+                print(f"❌ Error loading JSON labeling from {json_filename}: {e}")
+                continue
     
     # Fallback to text file
     labeling_txt = folder_path / "labeling.txt"
@@ -227,8 +297,20 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
     feature_extractor = FeatureExtractor(num_threads=processing_config.get('feature_threads', 4))
     flow_labeler = FlowLabeler() if actual_labeling_config else None
     if flow_labeler and actual_labeling_config:
-        attack_labels = LabelingConfig.load_from_config(actual_labeling_config)
-        flow_labeler.attack_labels = attack_labels
+        # Try JSON parsing first (for new format)
+        try:
+            parse_json_labeling_config(actual_labeling_config, flow_labeler)
+            print(f"✅ Applied JSON labeling configuration for {folder_name}")
+        except Exception as e:
+            print(f"⚠️ JSON labeling failed, trying legacy format: {e}")
+            # Fallback to legacy format
+            try:
+                attack_labels = LabelingConfig.load_from_config(actual_labeling_config)
+                flow_labeler.attack_labels = attack_labels
+                print(f"✅ Applied legacy labeling configuration for {folder_name}")
+            except Exception as e2:
+                print(f"❌ Both JSON and legacy labeling failed: {e2}")
+                flow_labeler = None
     
     # Initialize memory monitor
     memory_monitor = MemoryMonitor(

@@ -506,32 +506,46 @@ class Layer2OnlyPacket(BasePacket):
     
     # MAC address analysis helpers
     def _get_mac_vendor(self, mac_address: str) -> str:
-        """Get vendor information from MAC OUI."""
+        """Get vendor information from MAC OUI using comprehensive database."""
         try:
-            oui = mac_address.replace(':', '').replace('-', '')[:6].upper()
+            # Import here to avoid circular imports
+            import sys
+            from pathlib import Path
             
-            # Common vendor OUIs
-            vendor_map = {
-                '000C29': 'VMware',
-                '005056': 'VMware', 
-                '0050F2': 'Microsoft',
-                '00E04C': 'Realtek',
-                '001B21': 'Intel',
-                '00D0C9': 'Intel',
-                '00AA00': 'Intel',
-                '0002B3': 'Intel',
-                '000394': 'Cisco',
-                '00000C': 'Cisco',
-                '001F26': 'Cisco',
-                '0025B3': 'Apple',
-                '001CB3': 'Apple',
-                '7CF05F': 'Apple',
-                '001FF3': 'Apple'
-            }
+            # Add project root to path if needed
+            project_root = Path(__file__).parent.parent.parent.parent
+            if str(project_root) not in sys.path:
+                sys.path.insert(0, str(project_root))
             
-            return vendor_map.get(oui, 'Unknown')
+            from vendors import get_vendor_from_mac
+            return get_vendor_from_mac(mac_address)
         except Exception:
-            return 'Unknown'
+            # Fallback to basic mapping if import fails
+            try:
+                oui = mac_address.replace(':', '').replace('-', '')[:6].upper()
+                
+                # Common vendor OUIs
+                vendor_map = {
+                    '000C29': 'VMware',
+                    '005056': 'VMware', 
+                    '0050F2': 'Microsoft',
+                    '00E04C': 'Realtek',
+                    '001B21': 'Intel',
+                    '00D0C9': 'Intel',
+                    '00AA00': 'Intel',
+                    '0002B3': 'Intel',
+                    '000394': 'Cisco',
+                    '00000C': 'Cisco',
+                    '001F26': 'Cisco',
+                    '0025B3': 'Apple',
+                    '001CB3': 'Apple',
+                    '7CF05F': 'Apple',
+                    '001FF3': 'Apple'
+                }
+                
+                return vendor_map.get(oui, 'Unknown')
+            except Exception:
+                return 'Unknown'
     
     def _is_multicast_mac(self, mac_address: str) -> bool:
         """Check if MAC address is multicast."""

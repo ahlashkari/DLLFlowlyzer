@@ -108,18 +108,40 @@ class BasePacket:
             self.features[f'{prefix}_vendor_name_known'] = False
     
     def _get_vendor_from_oui(self, oui: str) -> str:
-        """Get vendor name from OUI (simplified implementation)."""
-        # This would typically use an OUI database
-        common_ouis = {
-            '000C29': 'VMware',
-            '0050F2': 'Microsoft',
-            '00E04C': 'Realtek',
-            '001B21': 'Intel',
-            '00D0C9': 'Intel',
-            '001125': 'Apple',
-            '3C0754': 'Apple',
-        }
-        return common_ouis.get(oui, 'Unknown')
+        """Get vendor name from OUI using comprehensive database."""
+        try:
+            # Import here to avoid circular imports
+            import sys
+            from pathlib import Path
+            
+            # Add project root to path if needed
+            project_root = Path(__file__).parent.parent.parent.parent
+            if str(project_root) not in sys.path:
+                sys.path.insert(0, str(project_root))
+            
+            from vendors import get_vendor_from_mac
+            
+            # Convert OUI format (AABBCC) to MAC format (aa:bb:cc:00:00:00)
+            if len(oui) >= 6:
+                formatted_mac = f"{oui[0:2].lower()}:{oui[2:4].lower()}:{oui[4:6].lower()}:00:00:00"
+                return get_vendor_from_mac(formatted_mac)
+            else:
+                return 'Unknown'
+        except Exception as e:
+            # Fallback to basic mapping if import fails
+            common_ouis = {
+                '000C29': 'VMware',
+                '0050F2': 'Microsoft', 
+                '00E04C': 'Realtek',
+                '001B21': 'Intel',
+                '00D0C9': 'Intel',
+                '001125': 'Apple',
+                '3C0754': 'Apple',
+                '00000C': 'Cisco Systems',
+                '000142': 'Cisco Systems',
+                '001B17': 'Palo Alto Networks',
+            }
+            return common_ouis.get(oui, 'Unknown')
     
     def _extract_port_features(self):
         """Extract port information from transport layer."""
