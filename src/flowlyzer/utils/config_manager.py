@@ -347,17 +347,8 @@ Simple Examples:
             print(f"Output: {self.args.output}")
             print(f"Multi-folder Mode: {getattr(self.args, 'multi_folder', False)}")
             print(f"Separate Layers: {getattr(self.args, 'separate_layers', False)}")
-            print(f"Flow Timeout: {self.args.flow_timeout}s")
-            print(f"Max Flows: {self.args.max_flows}")
-            print(f"Queue Size: {self.args.queue_size}")
             print(f"Workers: {self.args.workers}")
-            print(f"Log Level: {self.args.log_level}")
-            
-            # Labeling summary
-            labeling_config = self.get_labeling_config()
-            total_rules = (len(labeling_config['ip_attacks']) + 
-                          len(labeling_config['mac_attacks']) + 
-                          len(labeling_config['time_attacks']))
-            print(f"Labeling Rules: {total_rules}")
+            print(f"Quiet Mode: {getattr(self.args, 'quiet', False)}")
+            print(f"All flows labeled as: UnLabeled")
             
         print("=" * 40)

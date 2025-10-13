@@ -188,7 +188,7 @@ pip install -r requirements.txt
 
 ## Simple Command Interface
 
-The tool now features a simplified command-line interface for easier interaction:
+The tool now features a **greatly simplified** command-line interface for easier interaction. No more complex configuration arguments needed!
 
 ```bash
 # Basic usage
