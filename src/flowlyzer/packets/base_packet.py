@@ -9,7 +9,6 @@ from typing import Dict, Any, Optional
 from scapy.all import Packet
 import numpy as np
 
-# Missing value constant
 MISSING_VALUE = -100
 
 
@@ -36,25 +35,21 @@ class BasePacket:
     def _extract_base_features(self):
         """Extract basic features common to all packets."""
         try:
-            # Frame-level features
             self.features['num_frame'] = self.frame_number
             self.features['frame_len'] = len(self.packet)
             self.features['timestamp'] = self.timestamp
             
-            # Ethernet layer features
             if self.packet.haslayer('Ether'):
                 eth_layer = self.packet['Ether']
                 self.features['dst_mac_addr'] = str(eth_layer.dst)
                 self.features['src_mac_addr'] = str(eth_layer.src)
                 self.features['eth_type'] = int(eth_layer.type)
                 
-                # MAC address analysis
                 self._extract_mac_features('dst_mac', eth_layer.dst)
                 self._extract_mac_features('src_mac', eth_layer.src)
             else:
                 self._set_default_mac_features()
             
-            # IP layer features
             if self.packet.haslayer('IP'):
                 ip_layer = self.packet['IP']
                 self.features['dst_ip_addr'] = str(ip_layer.dst)
@@ -67,7 +62,6 @@ class BasePacket:
                 self.features['dst_ip_addr'] = str(MISSING_VALUE)
                 self.features['src_ip_addr'] = str(MISSING_VALUE)
             
-            # Port features
             self._extract_port_features()
             
         except Exception as e:
@@ -76,21 +70,16 @@ class BasePacket:
     def _extract_mac_features(self, prefix: str, mac_addr: str):
         """Extract MAC address specific features."""
         try:
-            # Clean MAC address
             mac_clean = mac_addr.replace(':', '').replace('-', '').upper()
             
-            # OUI (first 3 bytes)
             oui = mac_clean[:6]
             self.features[f'{prefix}_oui'] = oui
             
-            # Individual/Group bit (bit 0 of first byte)
             first_byte = int(mac_clean[:2], 16)
             self.features[f'{prefix}_ig'] = (first_byte & 0x01) == 1
             
-            # Local/Global bit (bit 1 of first byte)
             self.features[f'{prefix}_lg'] = (first_byte & 0x02) == 2
             
-            # Vendor information (simplified - would need OUI database for full implementation)
             self.features[f'{prefix}_vendor'] = self._get_vendor_from_oui(oui)
             self.features[f'{prefix}_vendor_known'] = self.features[f'{prefix}_vendor'] != 'Unknown'
             self.features[f'{prefix}_device'] = 'Unknown'
@@ -110,25 +99,21 @@ class BasePacket:
     def _get_vendor_from_oui(self, oui: str) -> str:
         """Get vendor name from OUI using comprehensive database."""
         try:
-            # Import here to avoid circular imports
             import sys
             from pathlib import Path
             
-            # Add project root to path if needed
             project_root = Path(__file__).parent.parent.parent.parent
             if str(project_root) not in sys.path:
                 sys.path.insert(0, str(project_root))
             
             from vendors import get_vendor_from_mac
             
-            # Convert OUI format (AABBCC) to MAC format (aa:bb:cc:00:00:00)
             if len(oui) >= 6:
                 formatted_mac = f"{oui[0:2].lower()}:{oui[2:4].lower()}:{oui[4:6].lower()}:00:00:00"
                 return get_vendor_from_mac(formatted_mac)
             else:
                 return 'Unknown'
         except Exception as e:
-            # Fallback to basic mapping if import fails
             common_ouis = {
                 '000C29': 'VMware',
                 '0050F2': 'Microsoft', 
@@ -198,7 +183,6 @@ class BasePacket:
     def get_protocol_type(self) -> str:
         """Return the main protocol type of this packet."""
         try:
-            # Check Layer 3/4 protocols first
             if self.packet.haslayer('TCP'):
                 return 'TCP'
             elif self.packet.haslayer('UDP'):
@@ -208,11 +192,9 @@ class BasePacket:
             elif self.packet.haslayer('ARP'):
                 return 'ARP'
             
-            # Check Layer 2 protocols
             elif self.packet.haslayer('STP'):
                 return 'STP'
             elif self.packet.haslayer('LLC'):
-                # Try to identify LLC sub-protocols
                 if self.packet.haslayer('Ether'):
                     dst_mac = str(self.packet['Ether'].dst).lower()
                     if dst_mac == '01:00:0c:cc:cc:cc':
@@ -221,27 +203,24 @@ class BasePacket:
                         return 'LLDP'
                 return 'LLC'
             
-            # Check other Layer 2 protocols by EtherType
             elif self.packet.haslayer('Ether'):
                 eth_type = self.packet['Ether'].type
-                if eth_type == 0x8100:  # 802.1Q VLAN
+                if eth_type == 0x8100:
                     return '802.1Q'
-                elif eth_type == 0x88cc:  # LLDP
+                elif eth_type == 0x88cc:
                     return 'LLDP'
-                elif eth_type == 0x809b:  # AppleTalk
+                elif eth_type == 0x809b:
                     return 'AppleTalk'
-                elif eth_type == 0x8038:  # DEC LAT
+                elif eth_type == 0x8038:
                     return 'DEC_LAT'
-                elif eth_type == 0x86dd:  # IPv6
+                elif eth_type == 0x86dd:
                     return 'IPv6'
-                elif eth_type == 0x0800:  # IPv4 (might be missed)
+                elif eth_type == 0x0800:
                     return 'IPv4'
                 else:
                     return f'ETH_0x{eth_type:04x}'
             
-            # Final fallback with packet analysis
             else:
-                # Try to get more specific info from packet layers
                 layers = [layer.name for layer in self.packet.layers()]
                 if 'Raw' in layers:
                     return 'RAW'
@@ -269,7 +248,6 @@ class BasePacket:
             dst_port = self.features.get('dst_port', 0)
             protocol = self.get_protocol_type()
             
-            # Create bidirectional flow key (normalize by sorting endpoints)
             endpoints = sorted([
                 f"{src_mac}:{src_ip}:{src_port}",
                 f"{dst_mac}:{dst_ip}:{dst_port}"
@@ -283,11 +261,9 @@ class BasePacket:
     def is_marked(self) -> bool:
         """Check if packet is marked (has special flags or conditions)."""
         try:
-            # Check for specific protocol flags or conditions that mark a packet as special
             if self.packet.haslayer('TCP'):
                 tcp_layer = self.packet['TCP']
-                # Mark packets with special TCP flags
-                return bool(tcp_layer.flags & 0x3F)  # Any control flags
+                return bool(tcp_layer.flags & 0x3F)
             return False
         except Exception:
             return False
@@ -295,7 +271,6 @@ class BasePacket:
     def is_ignored(self) -> bool:
         """Check if packet should be ignored in analysis."""
         try:
-            # Ignore malformed or corrupted packets
-            return len(self.packet) < 14  # Minimum Ethernet frame size
+            return len(self.packet) < 14
         except Exception:
             return True

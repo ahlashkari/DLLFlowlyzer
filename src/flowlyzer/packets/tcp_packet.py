@@ -22,7 +22,6 @@ class TCPPacket(BasePacket):
             
             tcp_layer = self.packet['TCP']
             
-            # TCP flags
             self.features['tcp_flags'] = int(tcp_layer.flags)
             self.features['tcp_syn'] = bool(tcp_layer.flags & 0x02)
             self.features['tcp_ack'] = bool(tcp_layer.flags & 0x10)
@@ -31,18 +30,14 @@ class TCPPacket(BasePacket):
             self.features['tcp_psh'] = bool(tcp_layer.flags & 0x08)
             self.features['tcp_urg'] = bool(tcp_layer.flags & 0x20)
             
-            # TCP sequence and acknowledgment numbers
             self.features['tcp_seq'] = int(tcp_layer.seq)
             self.features['tcp_ack_seq'] = int(tcp_layer.ack)
             
-            # TCP window size
             self.features['tcp_window'] = int(tcp_layer.window)
             
-            # TCP payload length
             self.features['tcp_payload_len'] = len(tcp_layer.payload) if tcp_layer.payload else 0
             
-            # TCP options length
-            tcp_options_len = (tcp_layer.dataofs * 4) - 20  # TCP header size - standard 20 bytes
+            tcp_options_len = (tcp_layer.dataofs * 4) - 20
             self.features['tcp_options_len'] = max(0, tcp_options_len)
             
         except Exception:
@@ -82,7 +77,6 @@ class TCPPacket(BasePacket):
             src_port = self.features.get('src_port', 0)
             dst_port = self.features.get('dst_port', 0)
             
-            # Create bidirectional stream key
             endpoints = sorted([f"{src_ip}:{src_port}", f"{dst_ip}:{dst_port}"])
             return f"TCP:{endpoints[0]}:{endpoints[1]}"
             

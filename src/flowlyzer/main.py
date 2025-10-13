@@ -29,7 +29,6 @@ def parse_json_labeling_config(config: dict, flow_labeler) -> None:
     if not config or not flow_labeler:
         return
     
-    # Handle time-based labels (most common in JSON configs)
     time_labels = config.get('time_labels', [])
     for time_label in time_labels:
         label = time_label.get('label', 'Attack')
@@ -47,7 +46,6 @@ def parse_json_labeling_config(config: dict, flow_labeler) -> None:
             except Exception as e:
                 print(f"❌ Error parsing time range {time_range}: {e}")
     
-    # Handle protocol-specific labels
     protocol_labels = config.get('protocol_specific_labels', [])
     for proto_label in protocol_labels:
         label = proto_label.get('label', 'Attack')
@@ -71,7 +69,6 @@ def parse_json_labeling_config(config: dict, flow_labeler) -> None:
             except Exception as e:
                 print(f"❌ Error adding protocol attack {label}: {e}")
     
-    # Handle IP-based labels
     ip_attacks = config.get('ip_attacks', [])
     for ip_attack in ip_attacks:
         label = ip_attack.get('label', 'Attack')
@@ -80,7 +77,6 @@ def parse_json_labeling_config(config: dict, flow_labeler) -> None:
             flow_labeler.add_ip_attack(label, ips)
             print(f"✅ Added IP-based attack rule: {label} for IPs {ips}")
     
-    # Handle MAC-based labels
     mac_attacks = config.get('mac_attacks', [])
     for mac_attack in mac_attacks:
         label = mac_attack.get('label', 'Attack')
@@ -94,7 +90,6 @@ def load_folder_labeling_config(folder_path: str) -> dict:
     """Load labeling configuration from folder"""
     folder_path = Path(folder_path)
     
-    # Try different JSON file names (priority order)
     json_filenames = ["labeling.json", "arp_spoof_labels.json", "attack_config.json"]
     
     for json_filename in json_filenames:
@@ -109,7 +104,6 @@ def load_folder_labeling_config(folder_path: str) -> dict:
                 print(f"❌ Error loading JSON labeling from {json_filename}: {e}")
                 continue
     
-    # Fallback to text file
     labeling_txt = folder_path / "labeling.txt"
     if labeling_txt.exists():
         try:
@@ -146,7 +140,6 @@ def load_folder_labeling_config(folder_path: str) -> dict:
         except Exception as e:
             print(f"❌ Error loading text labeling: {e}")
     
-    # No labeling config found
     print(f"📁 No labeling config found in {folder_path} - all traffic will be labeled as 'Benign'")
     return None
 
@@ -154,26 +147,21 @@ def load_folder_labeling_config(folder_path: str) -> dict:
 def perform_aggressive_cleanup(flow_manager, logger, memory_monitor=None):
     """Perform aggressive memory cleanup when memory usage is high."""
     try:
-        # Get memory stats before cleanup
         if memory_monitor:
             before_stats = memory_monitor.get_memory_stats()
             logger.logger.info(f"Pre-cleanup memory: {before_stats.process_mb:.1f} MB")
         
-        # Force completion of oldest 70% of active flows
         stats = flow_manager.get_statistics()
         current_active = stats['active_flows']
-        target_active = max(500, current_active // 3)  # Keep at least 500, or 1/3 current
+        target_active = max(500, current_active // 3)
         
         flow_manager.force_flow_completion(max_active_flows=target_active)
         logger.logger.info(f"Aggressive cleanup: reduced active flows from {current_active} to {target_active}")
         
-        # Clear completed flows that have accumulated
         completed_flows = stats.get('completed_flows', 0)
         if completed_flows > 100:
-            # Get and clear completed flows without processing (emergency)
             emergency_flows = flow_manager.get_batch_completed_flows(completed_flows)
             if emergency_flows:
-                # Just clear packet data without feature extraction
                 for flow in emergency_flows:
                     if hasattr(flow, 'packets'):
                         flow.packets.clear()
@@ -182,7 +170,6 @@ def perform_aggressive_cleanup(flow_manager, logger, memory_monitor=None):
                 del emergency_flows
                 logger.logger.warning(f"Emergency: cleared {completed_flows} flows without processing")
         
-        # Intensive garbage collection
         if memory_monitor:
             collected = memory_monitor.force_garbage_collection()
             logger.logger.info(f"Garbage collection: {collected} objects collected")
@@ -190,7 +177,6 @@ def perform_aggressive_cleanup(flow_manager, logger, memory_monitor=None):
             for _ in range(3):
                 gc.collect()
         
-        # Log memory stats after cleanup
         if memory_monitor:
             after_stats = memory_monitor.get_memory_stats()
             memory_freed = before_stats.process_mb - after_stats.process_mb
@@ -211,31 +197,25 @@ def process_flow_batch(flows: list, feature_extractor, flow_labeler, csv_exporte
         return 0
     
     try:
-        # Extract features using standard feature extractor
         flows_df = feature_extractor.extract_features(flows, global_protocol_stats)
         
-        # Apply labeling
         if flow_labeler:
             flows_df = flow_labeler.label_flows(flows_df)
         else:
-            flows_df['label'] = 'Benign'
+            flows_df['label'] = 'UnLabeled'
         
-        # Export batch to CSV (append to existing files)
         csv_exporter.export_flows_batch(
             flows_df, batch_files, processing_config['separate_l2_l3']
         )
         
         flows_count = len(flows_df)
         
-        # Comprehensive memory cleanup
         for flow in flows:
             if hasattr(flow, 'packets'):
                 flow.packets.clear()
-            # Clear any cached features to free more memory
             if hasattr(flow, '_features_cache'):
                 flow._features_cache = None
         
-        # Clear references and force garbage collection
         del flows_df
         del flows
         gc.collect()
@@ -253,7 +233,6 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
     """Process folder with batched CSV export and memory optimization."""
     logger.logger.info(f"Processing folder (batched): {folder_name} ({len(pcap_files)} files)")
     
-    # Check for folder-specific labeling configuration
     if pcap_files:
         folder_path = Path(pcap_files[0]).parent
         folder_labeling_config = load_folder_labeling_config(folder_path)
@@ -266,10 +245,9 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
     else:
         actual_labeling_config = global_labeling_config
     
-    # Setup flow manager with smaller max_flows for batching
     flow_manager = FlowManager(
         flow_timeout=processing_config['flow_timeout'],
-        max_flows=min(processing_config.get('max_flows', 100000), 10000)  # Limit for memory
+        max_flows=min(processing_config.get('max_flows', 100000), 10000)
     )
     
     packet_queue = PacketQueue(
@@ -283,7 +261,6 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
     total_packets = 0
     total_flows_processed = 0
     
-    # Setup CSV batching
     folder_output_dir = Path(processing_config['output_dir']) / folder_name
     folder_output_dir.mkdir(parents=True, exist_ok=True)
     csv_exporter = CSVExporter(str(folder_output_dir))
@@ -293,17 +270,14 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
         processing_config['separate_l2_l3']
     )
     
-    # Initialize feature extractor and labeler
     feature_extractor = FeatureExtractor(num_threads=processing_config.get('feature_threads', 4))
     flow_labeler = FlowLabeler() if actual_labeling_config else None
     if flow_labeler and actual_labeling_config:
-        # Try JSON parsing first (for new format)
         try:
             parse_json_labeling_config(actual_labeling_config, flow_labeler)
             print(f"✅ Applied JSON labeling configuration for {folder_name}")
         except Exception as e:
             print(f"⚠️ JSON labeling failed, trying legacy format: {e}")
-            # Fallback to legacy format
             try:
                 attack_labels = LabelingConfig.load_from_config(actual_labeling_config)
                 flow_labeler.attack_labels = attack_labels
@@ -312,28 +286,26 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                 print(f"❌ Both JSON and legacy labeling failed: {e2}")
                 flow_labeler = None
     
-    # Initialize memory monitor
     memory_monitor = MemoryMonitor(
         warning_threshold_mb=processing_config.get('memory_warning_mb', 1024),
         critical_threshold_mb=processing_config.get('memory_critical_mb', 2048)
     )
     
-    BATCH_SIZE = processing_config.get('batch_size', 30)  # Process flows in configurable batches
-    CSV_BATCH_SIZE = processing_config.get('csv_batch_size', 50)  # Number of flows per CSV batch
+    BATCH_SIZE = processing_config.get('batch_size', 30)
+    CSV_BATCH_SIZE = processing_config.get('csv_batch_size', 50)
     
     try:
         for file_index, pcap_file in enumerate(pcap_files, 1):
             logger.log_file_progress(file_index, len(pcap_files), pcap_file, 0)
             
             packets_in_file = 0
-            stats = None  # Initialize stats variable
+            stats = None
             try:
                 with PcapReader(pcap_file) as pcap_reader:
                     for frame_number, packet in enumerate(pcap_reader, total_packets + 1):
                         packet_queue.put_packet(packet, frame_number)
                         packets_in_file += 1
                         
-                        # Log progress every 10,000 packets
                         if frame_number % 10000 == 0:
                             stats = flow_manager.get_statistics()
                             logger.log_progress(
@@ -342,9 +314,7 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                                 stats['flow_stats']
                             )
                         
-                        # Batched flow processing during file processing
                         if frame_number % (BATCH_SIZE * 10) == 0:
-                            # Get batch of completed flows
                             if stats is None:
                                 stats = flow_manager.get_statistics()
                             completed_batch = flow_manager.get_batch_completed_flows(CSV_BATCH_SIZE)
@@ -359,7 +329,6 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
                                 if batch_flows_processed > 0:
                                     logger.logger.info(f"Processed batch: {batch_flows_processed} flows (Total: {total_flows_processed})")
                         
-                        # Memory pressure monitoring and cleanup
                         if frame_number % 50000 == 0:
                             memory_stats = memory_monitor.get_memory_stats()
                             if memory_monitor.check_memory_pressure():
@@ -373,16 +342,13 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
             total_packets += packets_in_file
             logger.log_file_progress(file_index, len(pcap_files), pcap_file, packets_in_file)
         
-        # Final processing after all files
         logger.logger.info("Waiting for packet processing to complete...")
         packet_queue.wait_for_completion()
         packet_queue.stop()
         
-        # Finalize remaining flows
         flow_manager.finalize_all_flows()
         
-        # Process all remaining completed flows
-        final_flows = flow_manager.get_batch_completed_flows(batch_size=None)  # Get all remaining
+        final_flows = flow_manager.get_batch_completed_flows(batch_size=None)
         if final_flows:
             final_stats = flow_manager.get_statistics()
             final_batch_processed = process_flow_batch(
@@ -393,13 +359,10 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
             total_flows_processed += final_batch_processed
             logger.logger.info(f"Final batch processed: {final_batch_processed} flows")
         
-        # Get final statistics
         final_stats = flow_manager.get_statistics()
         logger.log_flow_statistics(final_stats)
         
         processing_time = time.time() - start_time
-        
-        # Log completion
         logger.logger.info(f"Batched processing completed for {folder_name}")
         logger.logger.info(f"Total packets: {total_packets:,}")
         logger.logger.info(f"Total flows processed: {total_flows_processed:,}")
@@ -427,7 +390,6 @@ def process_single_folder_batched(folder_name: str, pcap_files: list, processing
         }
     
     finally:
-        # Cleanup
         if 'packet_queue' in locals():
             packet_queue.stop()
         gc.collect()
@@ -448,13 +410,11 @@ def process_multi_folders(config_manager, processing_config: dict, log_config: d
         )
         results.append(result)
         
-        # Create visualizations from final CSV file if it exists
         if 'batch_files' in result and os.path.exists(result['batch_files']['combined']):
             try:
                 final_flows_df = pd.read_csv(result['batch_files']['combined'])
                 folder_output_dir = Path(processing_config['output_dir']) / folder_name
                 
-                # Create standard plots
                 plotter = FlowlyzerPlotter(str(folder_output_dir))
                 plot_files = plotter.create_all_plots(final_flows_df, result['final_stats'])
                 
@@ -465,7 +425,6 @@ def process_multi_folders(config_manager, processing_config: dict, log_config: d
         
         logger.logger.info(f"Completed folder: {folder_name}")
     
-    # Log overall completion
     total_packets = sum(r.get('total_packets', 0) for r in results)
     total_flows = sum(r.get('total_flows_processed', 0) for r in results)
     
@@ -513,16 +472,13 @@ def main():
         if processing_config.get('multi_folder', False):
             return process_multi_folders(config_manager, processing_config, log_config, labeling_config, logger)
         else:
-            # Single file/folder processing - USE BATCHED VERSION for real-time CSV saving
             pcap_files = config_manager.get_pcap_files()
             logger.log_start(pcap_files, processing_config)
             
-            # Process with real-time batching to prevent data loss and memory issues
             result = process_single_folder_batched(
                 "analysis", pcap_files, processing_config, log_config, labeling_config, logger
             )
             
-            # Create visualizations from the batched results
             if 'batch_files' in result and result['batch_files'] and 'combined' in result['batch_files']:
                 if os.path.exists(result['batch_files']['combined']):
                     final_flows_df = pd.read_csv(result['batch_files']['combined'])
@@ -540,7 +496,6 @@ def main():
             else:
                 logger.logger.warning("No batch files found in result")
             
-            # Log completion
             logger.log_completion(result['processing_time'], result['final_stats'])
             
             print(f"\n✅ Analysis completed successfully!")

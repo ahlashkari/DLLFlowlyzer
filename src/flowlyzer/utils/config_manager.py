@@ -62,50 +62,33 @@ class ConfigManager:
     
     def parse_arguments(self) -> argparse.Namespace:
         parser = argparse.ArgumentParser(
-            description='DLL Flowlyzer - DataLink Layer Network Flow Analyzer',
+            description='DLL Flowlyzer - Network Flow Analyzer',
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
-Examples:
-  %(prog)s -i single_file.pcap
-  %(prog)s -i Input/
-  %(prog)s -i Input/ --separate-layers
-  %(prog)s -i Input/ --multi-folder
-  %(prog)s -i Input/ --label-ip "192.168.1.100=ARP Spoofing"
+Simple Examples:
+  %(prog)s -i file.pcap                    # Analyze single file
+  %(prog)s -i Input/                       # Analyze directory
+  %(prog)s -i Input/ --multi-folder        # Process multiple folders
+  %(prog)s -i Input/ --separate-layers     # Separate Layer 2/3 files
             """
         )
         
-        parser.add_argument('-i', '--input', required=True, help='Input PCAP file or directory')
-        parser.add_argument('--multi-folder', action='store_true', help='Process multiple folders with related PCAP files')
-        parser.add_argument('-o', '--output', default='Results', help='Output directory')
-        parser.add_argument('--separate-layers', action='store_true', help='Create separate L2/L3 CSV files')
+        parser.add_argument('-i', '--input', required=True, 
+                          help='Input PCAP file or directory')
+        parser.add_argument('-o', '--output', default='Results', 
+                          help='Output directory (default: Results)')
         
-        parser.add_argument('--label-ip', action='append', metavar='IP=LABEL', help='Label flows by attacker IP')
-        parser.add_argument('--label-mac', action='append', metavar='MAC=LABEL', help='Label flows by attacker MAC')
-        parser.add_argument('--label-time', action='append', metavar='TIME_RANGE=LABEL', help='Label flows by time range')
-        parser.add_argument('--label-config', metavar='FILE', help='JSON file with labeling configuration')
-        parser.add_argument('--label-file', metavar='FILE', help='Text file with labeling rules')
+        parser.add_argument('--multi-folder', action='store_true', 
+                          help='Process multiple folders containing PCAP files')
+        parser.add_argument('--separate-layers', action='store_true', 
+                          help='Create separate Layer 2 and Layer 3 CSV files')
         
-        parser.add_argument('--flow-timeout', type=int, default=1200, help='Flow timeout in seconds')
-        parser.add_argument('--max-flows', type=int, default=100000, help='Maximum concurrent flows')
-        parser.add_argument('--queue-size', type=int, default=100000, help='Packet queue size')
-        parser.add_argument('--workers', type=int, default=4, help='Number of worker threads for packet processing')
-        parser.add_argument('--feature-threads', type=int, default=4, help='Number of threads for feature extraction')
-        parser.add_argument('--folder-threads', type=int, default=1, help='Number of threads for parallel folder processing')
-        parser.add_argument('--batch-size', type=int, default=30, help='Number of flows to process in each batch for memory optimization')
-        parser.add_argument('--csv-batch-size', type=int, default=50, help='Number of flows to write to CSV file in each batch (default: 50)')
-        parser.add_argument('--disable-batching', action='store_true', help='Disable batched processing and CSV creation')
-        parser.add_argument('--missing-value', choices=['nan', '-100'], default='-100', help='Value to use for missing feature data (default: -100)')
-        parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], default='INFO', help='Logging level')
-        parser.add_argument('--quiet', action='store_true', help='Suppress progress logging')
-        parser.add_argument('--config', default='config.ini', help='Configuration file path')
+        parser.add_argument('--workers', type=int, default=4, 
+                          help='Number of processing threads (default: 4)')
+        parser.add_argument('--quiet', action='store_true', 
+                          help='Suppress detailed progress output')
         
         self.args = parser.parse_args()
-        
-        if self.args.config != 'config.ini':
-            self.config_file = Path(self.args.config)
-            if self.config_file.exists():
-                self.config.read(self.config_file)
-        
         return self.args
     
     def get_pcap_files(self) -> List[str]:
@@ -177,99 +160,12 @@ Examples:
         return [int(s) if s.isdigit() else s.lower() for s in re.split(r'(\d+)', text)]
     
     def get_labeling_config(self) -> Dict[str, Any]:
-        labeling_config = {
+        """Get labeling configuration (simplified - always returns empty since all flows are UnLabeled)."""
+        return {
             'ip_attacks': [],
             'mac_attacks': [],
-            'time_attacks': [],
+            'time_attacks': []
         }
-        
-        if not self.args:
-            return labeling_config
-        
-        # Parse IP-based attacks
-        if self.args.label_ip:
-            for ip_label in self.args.label_ip:
-                try:
-                    ip, label = ip_label.split('=', 1)
-                    labeling_config['ip_attacks'].append({
-                        'label': label.strip(),
-                        'ips': [ip.strip()]
-                    })
-                except ValueError:
-                    logging.warning(f"Invalid IP label format: {ip_label}")
-        
-        # Parse MAC-based attacks
-        if self.args.label_mac:
-            for mac_label in self.args.label_mac:
-                try:
-                    mac, label = mac_label.split('=', 1)
-                    labeling_config['mac_attacks'].append({
-                        'label': label.strip(),
-                        'macs': [mac.strip()]
-                    })
-                except ValueError:
-                    logging.warning(f"Invalid MAC label format: {mac_label}")
-        
-        # Parse time-based attacks
-        if self.args.label_time:
-            for time_label in self.args.label_time:
-                try:
-                    time_range, label = time_label.split('=', 1)
-                    start_time, end_time = time_range.split('-', 1)
-                    
-                    labeling_config['time_attacks'].append({
-                        'label': label.strip(),
-                        'time_ranges': [{'start': start_time.strip(), 'end': end_time.strip()}]
-                    })
-                except ValueError:
-                    logging.warning(f"Invalid time label format: {time_label}")
-        
-        # Load from JSON config file if specified
-        if self.args.label_config:
-            try:
-                with open(self.args.label_config, 'r') as f:
-                    file_config = json.load(f)
-                
-                # Merge file config with command-line config
-                for key in ['ip_attacks', 'mac_attacks', 'time_attacks']:
-                    if key in file_config:
-                        labeling_config[key].extend(file_config[key])
-                        
-            except Exception as e:
-                logging.error(f"Error loading labeling config file: {e}")
-        
-        # Load from text file if specified
-        if self.args.label_file:
-            try:
-                from ..features.labeling import LabelingConfig
-                text_labels = LabelingConfig.load_from_text_file(self.args.label_file)
-                
-                # Convert to config format
-                for attack_label in text_labels:
-                    if attack_label.attack_type == 'IP':
-                        labeling_config['ip_attacks'].append({
-                            'label': attack_label.label,
-                            'ips': attack_label.criteria.get('attacker_ips', [])
-                        })
-                    elif attack_label.attack_type == 'MAC':
-                        labeling_config['mac_attacks'].append({
-                            'label': attack_label.label,
-                            'macs': attack_label.criteria.get('attacker_macs', [])
-                        })
-                    elif attack_label.attack_type == 'TIME':
-                        time_ranges = []
-                        for start_time, end_time in attack_label.criteria.get('time_ranges', []):
-                            time_ranges.append({'start': start_time.strftime('%I:%M %p'), 'end': end_time.strftime('%I:%M %p')})
-                        
-                        labeling_config['time_attacks'].append({
-                            'label': attack_label.label,
-                            'time_ranges': time_ranges
-                        })
-                        
-            except Exception as e:
-                logging.error(f"Error loading text labeling file: {e}")
-        
-        return labeling_config
     
     def get_processing_config(self) -> Dict[str, Any]:
         """Get processing configuration parameters."""
@@ -282,44 +178,19 @@ Examples:
             'output_dir': self.get_str('OUTPUT', 'output_dir'),
             'log_file': self.get_str('OUTPUT', 'log_file'),
             'csv_file': self.get_str('OUTPUT', 'csv_file'),
+            'workers': 4,
+            'feature_threads': 4,
+            'folder_threads': 1,
+            'batch_size': 30,
+            'csv_batch_size': 50,
+            'enable_batching': True,
         }
         
-        # Override with command-line arguments if present
         if self.args:
-            if self.args.flow_timeout != 1200:  # Not default
-                config['flow_timeout'] = self.args.flow_timeout
-            if self.args.max_flows != 100000:  # Not default
-                config['max_flows'] = self.args.max_flows
-            if self.args.queue_size != 100000:  # Not default
-                config['queue_size'] = self.args.queue_size
-            if self.args.workers != 4:  # Not default
-                config['workers'] = self.args.workers
-            if hasattr(self.args, 'feature_threads') and self.args.feature_threads != 4:
-                config['feature_threads'] = self.args.feature_threads
-            else:
-                config['feature_threads'] = 4
-            if hasattr(self.args, 'folder_threads') and self.args.folder_threads != 1:
-                config['folder_threads'] = self.args.folder_threads
-            else:
-                config['folder_threads'] = 1
-            if hasattr(self.args, 'batch_size') and self.args.batch_size != 30:
-                config['batch_size'] = self.args.batch_size
-            else:
-                config['batch_size'] = 30
-            if hasattr(self.args, 'csv_batch_size') and self.args.csv_batch_size != 50:
-                config['csv_batch_size'] = self.args.csv_batch_size
-            else:
-                config['csv_batch_size'] = 50  # Save every 50 flows as requested
-            if hasattr(self.args, 'disable_batching') and self.args.disable_batching:
-                config['enable_batching'] = False
-            else:
-                config['enable_batching'] = True
-            if hasattr(self.args, 'separate_layers') and self.args.separate_layers:
-                config['separate_l2_l3'] = True
-            if hasattr(self.args, 'multi_folder') and self.args.multi_folder:
-                config['multi_folder'] = True
-            if self.args.output != 'Results':
-                config['output_dir'] = self.args.output
+            config['workers'] = self.args.workers
+            config['separate_l2_l3'] = getattr(self.args, 'separate_layers', False)
+            config['multi_folder'] = getattr(self.args, 'multi_folder', False)
+            config['output_dir'] = getattr(self.args, 'output', config['output_dir'])
         
         return config
     
