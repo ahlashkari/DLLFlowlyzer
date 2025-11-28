@@ -1,94 +1,77 @@
+<<<<<<< HEAD
 ![](https://github.com/ahlashkari/ALFlowLyzer/blob/main/bccc.jpg)
 
 # DLL Flowlyzer - Enhanced Network Flow Analyzer
+=======
+# DLL Flowlyzer
+>>>>>>> 857dff5 (clean code)
 
-A comprehensive network flow analysis tool focused on Layer 2 (DataLink Layer) protocol feature extraction with advanced machine learning features. Analyzes PCAP files to extract 350+ detailed features from network flows, supporting all major Layer 2 protocols with real-time processing and advanced visualization.
+This is a network flow analysis tool that extracts features from packet capture files. It focuses on analyzing Layer 2 protocols and generates detailed statistics about network traffic patterns.
 
-## Quick Start
+## Getting Started
 
-1. Install dependencies:
+First, install the required dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Run analysis:
+Then run the analyzer on your PCAP files:
+
 ```bash
 python -m src.flowlyzer.main -i Input/your_capture.pcap
 ```
 
-## Core Features
+## What It Does
 
-- **352+ Comprehensive Features**: Statistical, protocol-specific, advanced entropy/jitter features, and flow timing
-- **Multi-Protocol Support**: TCP, UDP, QUIC, and Layer 2 protocols (STP, CDP, LLDP, ARP, DHCP, LLC, DTP, VTP, ISL)  
-- **Enhanced Layer 2 Analysis**: Deep packet inspection for CDP TLVs, STP identifiers, DHCP options, ARP details
-- **Advanced Statistical Analysis**: Entropy, jitter, burstiness, temporal concentration, protocol diversity
-- **Real-time Processing**: Batched CSV export with memory optimization
-- **Automatic Visualization**: Layer 2 protocol distribution plots and comprehensive analysis charts
-- **Flow Detection**: Bidirectional flow detection with configurable timeouts
-- **Multi-threaded Processing**: Parallel packet processing with optimized queuing
+The tool examines network packet captures and extracts over 350 different features that describe the traffic flows. It works with various network protocols including TCP, UDP, and specialized Layer 2 protocols like STP, CDP, ARP, and DHCP.
 
-## New Advanced Features
+The analyzer processes packets to identify flow patterns, timing characteristics, and protocol-specific behaviors. It can handle both individual files and entire directories of capture files.
 
-### Statistical Analysis Features
-- **Packet Length Entropy**: Shannon entropy of packet sizes for randomness detection
-- **Inter-arrival Jitter**: Packet timing variance analysis  
-- **Burstiness Factor**: Ratio of maximum to mean inter-arrival time
-- **Temporal Concentration**: Distribution of packets across time bins
-- **Protocol Diversity**: Protocol switching and diversity within flows
-- **Payload Size Regularity**: Consistency analysis of payload sizes
+## Basic Usage
 
-### Enhanced Layer 2 Features
-- **ARP Protocol**: Hardware/protocol types, opcodes, address mappings, gratuitous detection
-- **DHCP Protocol**: BOOTP fields, flags, options parsing, message types, transaction analysis
-- **STP Protocol**: Root/bridge identifiers with priorities, timing fields, topology flags
-- **CDP Protocol**: Complete TLV parsing, device capabilities, power management
-- **LLDP Protocol**: TLV structure analysis, chassis/port ID extraction
-- **DTP/ISL Protocol**: Dynamic Trunking and Inter-Switch Link analysis
+Here are some common ways to use the tool:
 
-## Usage Examples
-
-### Simple Commands (Easy Interface)
 ```bash
-python -m src.flowlyzer.main -i file.pcap                    # Analyze single file
-python -m src.flowlyzer.main -i Input/                       # Analyze directory
-python -m src.flowlyzer.main -i Input/ --multi-folder        # Process multiple folders
-python -m src.flowlyzer.main -i Input/ --separate-layers     # Separate Layer 2/3 files
-python -m src.flowlyzer.main -i Input/ --workers 8           # Use more threads
-python -m src.flowlyzer.main -i Input/ -o MyResults          # Custom output directory
-python -m src.flowlyzer.main -i Input/ --quiet               # Suppress detailed output
+# Analyze a single file
+python -m src.flowlyzer.main -i capture.pcap
+
+# Process all files in a directory
+python -m src.flowlyzer.main -i Input/
+
+# Use multiple threads for faster processing
+python -m src.flowlyzer.main -i Input/ --workers 8
+
+# Save results to a specific directory
+python -m src.flowlyzer.main -i Input/ -o MyResults
 ```
+
+## Output
+
+The tool generates several types of output:
+
+- CSV files containing extracted features for each network flow
+- Statistics about protocol usage and traffic patterns  
+- Visualization charts showing protocol distributions and correlations
+- Log files documenting the processing steps
+
+All output files include timestamps in their names to avoid conflicts between runs.
+
+## Features
+
+The analyzer extracts features in several categories:
+
+- Basic flow information (duration, packet count, byte count)
+- MAC address and vendor details
+- Protocol-specific characteristics for Layer 2 protocols
+- Statistical measures like entropy and timing variance
+- Network topology and switching protocol data
+
+Missing values in the output are represented as -100 to maintain consistency for analysis tools.
 
 ## Project Structure
 
-```
-DLLFlowlyzerV1/
-├── Input/                          # Directory for input PCAP files
-├── Results/                        # Directory for output CSV files and plots
-├── config.ini                     # Configuration file
-├── requirements.txt               # Python dependencies
-├── src/
-│   └── flowlyzer/                 # Main package
-│       ├── main.py                # Entry point and orchestration
-│       ├── packets/               # Packet analysis classes
-│       │   ├── base_packet.py     # Base packet class
-│       │   ├── tcp_packet.py      # TCP packet analysis
-│       │   ├── udp_packet.py      # UDP packet analysis
-│       │   ├── layer2_packet.py   # Layer 2 protocols
-│       │   └── llc_packet.py      # LLC and related protocols
-│       ├── flows/                 # Flow management
-│       │   ├── flow.py            # Flow class with feature extraction
-│       │   └── flow_manager.py    # Flow lifecycle management
-│       ├── features/              # Feature extraction and export
-│       │   ├── feature_extractor.py # Main feature extraction engine
-│       │   ├── labeling.py        # Labeling system (always UnLabeled)
-│       │   └── csv_exporter.py    # CSV export with batching
-│       └── utils/                 # Utility classes
-│           ├── config_manager.py  # Configuration management
-│           ├── logger.py          # Logging system
-│           ├── memory_monitor.py  # Memory optimization
-│           ├── packet_queue.py    # Packet processing queue
-│           └── plotting.py        # Visualization system
-```
+The code is organized into several modules:
 
 ## Feature Categories (352+ Total Features)
 

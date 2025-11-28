@@ -1,14 +1,10 @@
-"""
-Improved feature extraction system using the successful approach from DLFlowlyzer.
-This module uses numpy.nan for missing features and follows the proven syntax.
-"""
+
 
 import numpy as np
 from typing import Dict, Any
 
-
 def get_missing_value(missing_value_type: str = '-100'):
-    """Get the appropriate missing value based on configuration."""
+
     if missing_value_type == 'nan':
         return np.nan
     elif missing_value_type == '-100':
@@ -16,9 +12,8 @@ def get_missing_value(missing_value_type: str = '-100'):
     else:
         return -100
 
-
 def extract_stp_features(data: Dict[str, Any], index: int, missing_value_type: str = '-100') -> Dict[str, Any]:
-    """Extract STP features using the proven approach from DLFlowlyzer."""
+
     res = {'pkt_num': index}
     missing_val = get_missing_value(missing_value_type)
 
@@ -99,9 +94,8 @@ def extract_stp_features(data: Dict[str, Any], index: int, missing_value_type: s
 
     return res
 
-
 def extract_arp_features(data: Dict[str, Any], index: int, missing_value_type: str = '-100') -> Dict[str, Any]:
-    """Extract ARP features using the proven approach from DLFlowlyzer."""
+
     res = {'pkt_num': index}
     missing_val = get_missing_value(missing_value_type)
 
@@ -147,9 +141,8 @@ def extract_arp_features(data: Dict[str, Any], index: int, missing_value_type: s
 
     return res
 
-
 def extract_cdp_features(data: Dict[str, Any], index: int, missing_value_type: str = '-100') -> Dict[str, Any]:
-    """Extract CDP features using the proven approach from DLFlowlyzer."""
+
     res = {'pkt_num': index}
     missing_val = get_missing_value(missing_value_type)
 
@@ -228,7 +221,6 @@ def extract_cdp_features(data: Dict[str, Any], index: int, missing_value_type: s
     except:
         res['cdp_addresses_count'] = missing_val
 
-    # CDP Capabilities
     try:
         res['cdp_capabilities_router'] = data['Capabilities']['cdp.capabilities_tree']['cdp.capabilities.router']
     except:
@@ -252,9 +244,8 @@ def extract_cdp_features(data: Dict[str, Any], index: int, missing_value_type: s
 
     return res
 
-
 def extract_dhcp_features(data: Dict[str, Any], index: int, missing_value_type: str = '-100') -> Dict[str, Any]:
-    """Extract DHCP features using the proven approach from DLFlowlyzer."""
+
     res = {'pkt_num': index}
     missing_val = get_missing_value(missing_value_type)
 
@@ -326,9 +317,8 @@ def extract_dhcp_features(data: Dict[str, Any], index: int, missing_value_type: 
 
     return res
 
-
 def extract_llc_features(data: Dict[str, Any], index: int, missing_value_type: str = '-100') -> Dict[str, Any]:
-    """Extract LLC features using the proven approach from DLFlowlyzer."""
+
     res = {'pkt_num': index}
     missing_val = get_missing_value(missing_value_type)
 

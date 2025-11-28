@@ -1,13 +1,9 @@
-"""
-Comprehensive MAC Address Vendor Database
-Extended database of MAC address prefixes to vendor mappings
-"""
 
-# Comprehensive IEEE OUI (Organizationally Unique Identifier) database
+
 MAC_VENDOR_DATABASE = {
-    # Cisco Systems
+
     "00:00:0c": "Cisco Systems",
-    "00:01:42": "Cisco Systems", 
+    "00:01:42": "Cisco Systems",
     "00:01:43": "Cisco Systems",
     "00:01:96": "Cisco Systems",
     "00:01:97": "Cisco Systems",
@@ -55,8 +51,7 @@ MAC_VENDOR_DATABASE = {
     "00:05:9b": "Cisco Systems",
     "00:05:dc": "Cisco Systems",
     "00:05:dd": "Cisco Systems",
-    
-    # Juniper Networks
+
     "00:05:85": "Juniper Networks",
     "00:12:1e": "Juniper Networks",
     "00:19:e2": "Juniper Networks",
@@ -82,10 +77,9 @@ MAC_VENDOR_DATABASE = {
     "f0:1c:2d": "Juniper Networks",
     "f4:b5:2f": "Juniper Networks",
     "f4:cc:55": "Juniper Networks",
-    
-    # Hewlett Packard Enterprise / Aruba
+
     "00:01:e6": "Hewlett Packard",
-    "00:01:e7": "Hewlett Packard", 
+    "00:01:e7": "Hewlett Packard",
     "00:02:a5": "Hewlett Packard",
     "00:04:ea": "Hewlett Packard",
     "00:08:02": "Hewlett Packard",
@@ -114,22 +108,19 @@ MAC_VENDOR_DATABASE = {
     "9c:1c:12": "Aruba Networks",
     "ac:a3:1e": "Aruba Networks",
     "d8:c7:c8": "Aruba Networks",
-    
-    # Extreme Networks
+
     "00:01:30": "Extreme Networks",
-    "00:04:96": "Extreme Networks", 
+    "00:04:96": "Extreme Networks",
     "00:e0:2b": "Extreme Networks",
     "02:04:96": "Extreme Networks",
-    
-    # Brocade / Ruckus
+
     "00:05:33": "Brocade",
     "00:27:f8": "Brocade",
     "24:b6:57": "Ruckus Wireless",
     "2c:10:c1": "Ruckus Wireless",
     "58:93:96": "Ruckus Wireless",
     "88:dc:96": "Ruckus Wireless",
-    
-    # Dell / Force10
+
     "00:01:e8": "Dell Inc",
     "00:06:5b": "Dell Inc",
     "00:08:74": "Dell Inc",
@@ -162,8 +153,7 @@ MAC_VENDOR_DATABASE = {
     "d0:67:e5": "Dell Inc",
     "f0:1f:af": "Dell Inc",
     "f8:b1:56": "Dell Inc",
-    
-    # Intel Corporation
+
     "00:03:47": "Intel Corporation",
     "00:07:e9": "Intel Corporation",
     "00:0e:0c": "Intel Corporation",
@@ -239,17 +229,15 @@ MAC_VENDOR_DATABASE = {
     "f4:4d:30": "Intel Corporation",
     "f8:63:3f": "Intel Corporation",
     "fc:aa:14": "Intel Corporation",
-    
-    # Broadcom
+
     "00:10:18": "Broadcom",
     "00:e0:11": "Broadcom",
     "b4:99:ba": "Broadcom",
     "d0:67:26": "Broadcom",
-    
-    # 3Com Corporation
+
     "00:01:03": "3Com Corporation",
     "00:04:76": "3Com Corporation",
-    "00:05:9a": "3Com Corporation", 
+    "00:05:9a": "3Com Corporation",
     "00:06:29": "3Com Corporation",
     "00:08:a3": "3Com Corporation",
     "00:10:4b": "3Com Corporation",
@@ -258,8 +246,7 @@ MAC_VENDOR_DATABASE = {
     "00:60:08": "3Com Corporation",
     "00:a0:24": "3Com Corporation",
     "02:60:8c": "3Com Corporation",
-    
-    # Netgear
+
     "00:09:5b": "Netgear",
     "00:0f:b5": "Netgear",
     "00:14:6c": "Netgear",
@@ -280,8 +267,7 @@ MAC_VENDOR_DATABASE = {
     "b0:7f:b9": "Netgear",
     "c4:04:15": "Netgear",
     "e0:91:f5": "Netgear",
-    
-    # D-Link Corporation
+
     "00:05:5d": "D-Link Corporation",
     "00:0b:be": "D-Link Corporation",
     "00:0d:88": "D-Link Corporation",
@@ -321,10 +307,9 @@ MAC_VENDOR_DATABASE = {
     "e4:6f:13": "D-Link Corporation",
     "f0:7d:68": "D-Link Corporation",
     "f8:1a:67": "D-Link Corporation",
-    
-    # TP-Link Technologies
+
     "14:cf:92": "TP-Link Technologies",
-    "50:c7:bf": "TP-Link Technologies", 
+    "50:c7:bf": "TP-Link Technologies",
     "64:70:02": "TP-Link Technologies",
     "74:da:38": "TP-Link Technologies",
     "88:25:93": "TP-Link Technologies",
@@ -333,8 +318,7 @@ MAC_VENDOR_DATABASE = {
     "c4:6e:1f": "TP-Link Technologies",
     "e8:48:b8": "TP-Link Technologies",
     "f4:f2:6d": "TP-Link Technologies",
-    
-    # Linksys (Belkin)
+
     "00:06:25": "Linksys",
     "00:0c:41": "Linksys",
     "00:12:17": "Linksys",
@@ -355,8 +339,7 @@ MAC_VENDOR_DATABASE = {
     "48:f8:b3": "Linksys",
     "58:6d:8f": "Linksys",
     "c0:56:27": "Linksys",
-    
-    # ASUS
+
     "00:0e:a6": "ASUSTek Computer",
     "00:11:2f": "ASUSTek Computer",
     "00:13:d4": "ASUSTek Computer",
@@ -435,8 +418,7 @@ MAC_VENDOR_DATABASE = {
     "f4:6d:04": "ASUSTek Computer",
     "f8:32:e4": "ASUSTek Computer",
     "fc:34:97": "ASUSTek Computer",
-    
-    # Microsoft Corporation
+
     "00:03:ff": "Microsoft Corporation",
     "00:0d:3a": "Microsoft Corporation",
     "00:12:5a": "Microsoft Corporation",
@@ -446,8 +428,7 @@ MAC_VENDOR_DATABASE = {
     "00:50:f2": "Microsoft Corporation",
     "28:18:78": "Microsoft Corporation",
     "7c:1e:52": "Microsoft Corporation",
-    
-    # Apple Inc
+
     "00:03:93": "Apple Inc",
     "00:05:02": "Apple Inc",
     "00:0a:27": "Apple Inc",
@@ -655,8 +636,7 @@ MAC_VENDOR_DATABASE = {
     "f8:2f:a8": "Apple Inc",
     "fc:25:3f": "Apple Inc",
     "fc:e9:98": "Apple Inc",
-    
-    # Samsung Electronics
+
     "00:07:ab": "Samsung Electronics",
     "00:12:fb": "Samsung Electronics",
     "00:13:77": "Samsung Electronics",
@@ -769,8 +749,7 @@ MAC_VENDOR_DATABASE = {
     "f4:7b:5e": "Samsung Electronics",
     "f8:04:2e": "Samsung Electronics",
     "fc:00:12": "Samsung Electronics",
-    
-    # Huawei Technologies
+
     "00:e0:fc": "Huawei Technologies",
     "08:7a:4c": "Huawei Technologies",
     "0c:37:dc": "Huawei Technologies",
@@ -819,10 +798,9 @@ MAC_VENDOR_DATABASE = {
     "f4:28:53": "Huawei Technologies",
     "f8:e7:1e": "Huawei Technologies",
     "fc:48:ef": "Huawei Technologies",
-    
-    # Ubiquiti Networks
+
     "00:15:6d": "Ubiquiti Networks",
-    "00:27:22": "Ubiquiti Networks", 
+    "00:27:22": "Ubiquiti Networks",
     "04:18:d6": "Ubiquiti Networks",
     "18:e8:29": "Ubiquiti Networks",
     "24:a4:3c": "Ubiquiti Networks",
@@ -835,121 +813,80 @@ MAC_VENDOR_DATABASE = {
     "e0:63:da": "Ubiquiti Networks",
     "f0:9f:c2": "Ubiquiti Networks",
     "f4:e2:c6": "Ubiquiti Networks",
-    
-    # VMware Inc
+
     "00:05:69": "VMware Inc",
     "00:0c:29": "VMware Inc",
     "00:1c:14": "VMware Inc",
     "00:50:56": "VMware Inc",
-    
-    # Special addresses
+
     "ff:ff:ff": "Broadcast",
     "01:00:0c": "Cisco Multicast",
     "01:80:c2": "Spanning Tree Multicast",
     "01:00:5e": "IPv4 Multicast",
     "33:33:00": "IPv6 Multicast",
     "01:1b:19": "IEEE 802.1 Group Address",
-    
-    # Fortinet
+
     "00:09:0f": "Fortinet Inc",
     "04:bd:88": "Fortinet Inc",
     "90:6c:ac": "Fortinet Inc",
     "a0:1d:48": "Fortinet Inc",
-    
-    # Palo Alto Networks
+
     "00:1b:17": "Palo Alto Networks",
     "78:05:90": "Palo Alto Networks",
-    
-    # SonicWall
+
     "00:06:b1": "SonicWall",
     "00:17:c5": "SonicWall",
     "c0:ea:e4": "SonicWall",
-    
-    # Check Point Software Technologies
+
     "00:1c:7f": "Check Point Software Technologies",
-    
-    # Watchguard Technologies
+
     "00:90:7f": "Watchguard Technologies",
-    
-    # Barracuda Networks
+
     "00:50:ba": "Barracuda Networks",
     "00:96:2f": "Barracuda Networks"
 }
 
-
 def get_vendor_from_mac(mac_address: str) -> str:
-    """
-    Get vendor name from MAC address using OUI lookup.
-    
-    Args:
-        mac_address: MAC address in format "aa:bb:cc:dd:ee:ff"
-        
-    Returns:
-        Vendor name or "Unknown" if not found
-    """
+
     if not mac_address or len(mac_address) < 8:
         return "Unknown"
-    
-    # Extract OUI (first 3 octets)
-    oui = mac_address[:8].lower()  # "aa:bb:cc"
-    
+
+    oui = mac_address[:8].lower()
+
     return MAC_VENDOR_DATABASE.get(oui, "Unknown")
 
-
 def get_all_vendors() -> list:
-    """
-    Get list of all known vendors in the database.
-    
-    Returns:
-        Sorted list of unique vendor names
-    """
+
     return sorted(set(MAC_VENDOR_DATABASE.values()))
 
-
 def get_vendor_count() -> int:
-    """
-    Get total number of vendor entries in database.
-    
-    Returns:
-        Number of OUI entries
-    """
+
     return len(MAC_VENDOR_DATABASE)
 
-
 def search_vendors(search_term: str) -> dict:
-    """
-    Search for vendors containing the search term.
-    
-    Args:
-        search_term: Term to search for in vendor names
-        
-    Returns:
-        Dictionary of matching OUI -> vendor mappings
-    """
+
     search_lower = search_term.lower()
     matches = {}
-    
+
     for oui, vendor in MAC_VENDOR_DATABASE.items():
         if search_lower in vendor.lower():
             matches[oui] = vendor
-            
+
     return matches
 
-
 if __name__ == "__main__":
-    # Test the vendor database
+
     print(f"Total vendor entries: {get_vendor_count()}")
     print(f"Unique vendors: {len(get_all_vendors())}")
-    
-    # Test some lookups
+
     test_macs = [
-        "00:00:0c:12:34:56",  # Cisco
-        "00:21:59:ab:cd:ef",  # Juniper
-        "a4:5e:60:12:34:56",  # ASUS
-        "ff:ff:ff:ff:ff:ff",  # Broadcast
-        "12:34:56:78:90:ab"   # Unknown
+        "00:00:0c:12:34:56",
+        "00:21:59:ab:cd:ef",
+        "a4:5e:60:12:34:56",
+        "ff:ff:ff:ff:ff:ff",
+        "12:34:56:78:90:ab"
     ]
-    
+
     for mac in test_macs:
         vendor = get_vendor_from_mac(mac)
         print(f"{mac} -> {vendor}")
