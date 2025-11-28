@@ -1,3 +1,5 @@
+![](https://github.com/ahlashkari/ALFlowLyzer/blob/main/bccc.jpg)
+
 # DLL Flowlyzer - Enhanced Network Flow Analyzer
 
 A comprehensive network flow analysis tool focused on Layer 2 (DataLink Layer) protocol feature extraction with advanced machine learning features. Analyzes PCAP files to extract 350+ detailed features from network flows, supporting all major Layer 2 protocols with real-time processing and advanced visualization.
