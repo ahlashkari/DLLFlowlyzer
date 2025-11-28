@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 ![](https://github.com/ahlashkari/ALFlowLyzer/blob/main/bccc.jpg)
 
 # DLL Flowlyzer - Enhanced Network Flow Analyzer
-=======
-# DLL Flowlyzer
->>>>>>> 857dff5 (clean code)
 
 This is a network flow analysis tool that extracts features from packet capture files. It focuses on analyzing Layer 2 protocols and generates detailed statistics about network traffic patterns.
 
