@@ -1,4 +1,4 @@
-![](https://github.com/ahlashkari/ALFlowLyzer/blob/main/bccc.jpg)
+
 
 # DLL Flowlyzer - Enhanced Network Flow Analyzer
 
